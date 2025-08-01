@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>La Lotería</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="icon" href="icon.png" type="image/png">
+</head>
+<body>
+  <div id="pantalla-carga">
+    <img src="carga.gif" alt="Cargando..." />
+    <h2>Que la suerte esté con vosotros</h2>
+  </div>
+
+  <div id="contenedor-cartas" class="oculto">
+    <div id="cartas-seleccionadas"></div>
+    <div id="botones-controles">
+      <button onclick="cambiarCarta()">Cambiar Carta</button>
+      <button onclick="limpiarCartas()">Limpiar Cartas</button>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
