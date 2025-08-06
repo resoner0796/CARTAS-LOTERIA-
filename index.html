@@ -36,9 +36,9 @@
 
     #loader {
       position: absolute;
-      bottom: 5%;
-      width: 40px;
-      height: 40px;
+      bottom: 3%;
+      width: 30px;
+      height: 30px;
       border: 4px solid #fff;
       border-top: 4px solid gold;
       border-radius: 50%;
@@ -135,6 +135,14 @@
       width: 40px;
       border-radius: 5px;
     }
+
+    #pantallaSeleccion {
+      background-image: url("fondo-seleccion.PNG");
+    }
+
+    #pantallaJuego {
+      background-image: url("fondo-juego.PNG");
+    }
   </style>
 </head>
 <body>
@@ -202,10 +210,10 @@
     function entrarJuego() {
       nickname = document.getElementById("nicknameInput").value.trim();
       if (!nickname) return alert("Escribe tu nombre");
-      socket.emit("nuevoJugador", nickname);
+      socket.emit("registrar-nickname", nickname);
     }
 
-    socket.on("jugadorRegistrado", ({ host }) => {
+    socket.on("rol-asignado", ({ host }) => {
       soyHost = host;
       nicknameDiv.classList.remove("activa");
       pantallaSeleccion.classList.add("activa");
@@ -218,6 +226,7 @@
     });
 
     function generarCartas() {
+      contenedorCartas.innerHTML = "";
       cartasDisponibles.forEach(carta => {
         const img = document.createElement("img");
         img.src = `${carta}.jpg`;
@@ -234,6 +243,7 @@
       if (seleccionadas.length < 2) {
         img.classList.add("seleccionada");
         seleccionadas.push(id);
+        socket.emit("seleccionar-carta", id);
         if (seleccionadas.length === 2) btnIniciar.style.display = "block";
       }
     }
@@ -279,11 +289,11 @@
     }
 
     function emitirIniciarJuego() {
-      socket.emit("iniciarJuego");
+      socket.emit("iniciar-juego");
     }
 
     function emitirDetenerJuego() {
-      socket.emit("detenerJuego");
+      socket.emit("detener-juego");
     }
 
     function emitirLoteria() {
@@ -295,19 +305,37 @@
       reproducirSonido("barajar.mp3");
     });
 
-    socket.on("cartaCantada", nombre => {
+    socket.on("carta-cantada", nombre => {
       const img = document.createElement("img");
       img.src = `${nombre}.png`;
       historial.appendChild(img);
       reproducirSonido(`${nombre}.mp3`);
     });
 
-    socket.on("detenerJuego", () => {
+    socket.on("historial-actualizado", cartas => {
+      historial.innerHTML = "";
+      cartas.forEach(carta => {
+        const img = document.createElement("img");
+        img.src = `${carta}.png`;
+        historial.appendChild(img);
+      });
+    });
+
+    socket.on("juego-detenido", () => {
       reproducirSonido("aplausos.mp3");
     });
 
-    socket.on("anunciarGanador", ganador => {
+    socket.on("loteria-anunciada", ganador => {
       alert(`¡${ganador} ha cantado LOTERÍA!`);
+    });
+
+    socket.on("cartas-desactivadas", (desactivadas) => {
+      document.querySelectorAll(".carta-img").forEach(img => {
+        if (desactivadas.includes(img.dataset.id)) {
+          img.style.opacity = "0.3";
+          img.style.pointerEvents = "none";
+        }
+      });
     });
   </script>
 </body>
