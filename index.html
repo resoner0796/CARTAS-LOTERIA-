@@ -62,7 +62,7 @@
     button {
       padding: 0.6rem 1.2rem;
       font-size: 1rem;
-      margin: 1rem;
+      margin: 0.5rem;
       border-radius: 10px;
       border: none;
       background-color: gold;
@@ -92,13 +92,11 @@
       width: 100%;
     }
 
-   .ficha {
+    .ficha {
       position: absolute;
       pointer-events: none;
-      width: 40px;
+      width: 6px;
       height: auto;
-      max-width: 40px;
-      max-height: 40px;
       transform: translate(-50%, -50%);
     }
 
@@ -121,21 +119,18 @@
   <!-- Pantalla de selección -->
   <div id="pantallaSeleccion" class="pantalla activa">
     <h1>Selecciona tus 2 cartas</h1>
-    <div class="cartas-container" id="contenedorCartas">
-      <!-- Cartas generadas con JS -->
-    </div>
+    <div class="cartas-container" id="contenedorCartas"></div>
     <button id="btnIniciar" style="display:none">Iniciar juego</button>
   </div>
 
   <!-- Pantalla de juego -->
   <div id="pantallaJuego" class="pantalla">
     <h2>Tu juego</h2>
-    <div class="juego-cartas" id="juegoCartas">
-      <!-- Cartas seleccionadas aquí -->
-    </div>
+    <div class="juego-cartas" id="juegoCartas"></div>
     <div>
       <button onclick="limpiarFichas()">Limpiar cartas</button>
-      <button onclick="iniciarBarajeo()">Barajear</button>
+      <button onclick="barajearCartas()">Barajear</button>
+      <button onclick="iniciarBarajeo()">Iniciar juego</button>
       <button onclick="detenerJuego()">Detener juego</button>
     </div>
     <div id="historial"></div>
@@ -218,10 +213,10 @@
         .sort(() => Math.random() - 0.5);
       index = 0;
       historial.innerHTML = '';
+      reproducirSonido("barajar.mp3");
     }
 
     function iniciarBarajeo() {
-      barajearCartas();
       reproducirSonido("campana.mp3");
       reproducirSonido("corre.mp3");
 
