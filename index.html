@@ -77,9 +77,9 @@
 
     .ficha {
       position: absolute;
-      width: 35px;
-      height: 35px;
       pointer-events: none;
+      width: 11%; /* Proporcional al ancho de la carta */
+      transform: translate(-50%, -50%);
     }
 
     .tituloCarta {
@@ -160,24 +160,20 @@ function iniciarJuego() {
 
 function colocarFicha(event, cartaNum) {
   const img = event.target;
-  const contenedor = document.getElementById(`carta${cartaNum}Container`);
   const rect = img.getBoundingClientRect();
   const clickX = event.clientX - rect.left;
   const clickY = event.clientY - rect.top;
 
-  const proporX = clickX / rect.width;
-  const proporY = clickY / rect.height;
+  const offsetX = (clickX / rect.width) * 100;
+  const offsetY = (clickY / rect.height) * 100;
 
   const ficha = document.createElement("img");
-  ficha.src = "ficha.PNG"; // 👈 Usa el nombre exacto en mayúsculas
+  ficha.src = "ficha.PNG";
   ficha.className = "ficha";
+  ficha.style.left = `${offsetX}%`;
+  ficha.style.top = `${offsetY}%`;
 
-  const offsetX = proporX * img.width - 17;
-  const offsetY = proporY * img.height - 17;
-
-  ficha.style.left = `${offsetX}px`;
-  ficha.style.top = `${offsetY}px`;
-
+  const contenedor = document.getElementById(`carta${cartaNum}Container`);
   contenedor.appendChild(ficha);
 }
 
