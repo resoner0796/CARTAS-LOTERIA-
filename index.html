@@ -4,15 +4,15 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Lotería WebApp</title>
+  <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
   <style>
     body {
       margin: 0;
-      background-image: url('fondo-seleccion.PNG');
-      background-size: cover;
-      background-position: center;
+      background-color: #111;
       color: #fff;
       font-family: sans-serif;
     }
+
     .pantalla {
       display: none;
       flex-direction: column;
@@ -21,31 +21,65 @@
       min-height: 100vh;
       overflow-y: auto;
       padding: 1rem;
-      background-color: rgba(0, 0, 0, 0.5);
     }
+
     .pantalla.activa {
       display: flex;
     }
+
     .cartas-container {
       display: flex;
       flex-wrap: wrap;
       justify-content: center;
       gap: 1rem;
     }
+
     .carta-img {
       width: 180px;
       border: 3px solid #fff;
       border-radius: 10px;
       cursor: pointer;
-      transition: transform 0.3s;
       position: relative;
-      box-shadow: 0 0 15px gold;
     }
+
     .carta-img.seleccionada {
-      transform: scale(1.05);
-      box-shadow: 0 0 20px gold;
+      box-shadow: 0 0 15px gold;
       border-color: gold;
     }
+
+    .carta-img.deshabilitada {
+      opacity: 0.3;
+      pointer-events: none;
+    }
+
+    .juego-cartas {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 2rem;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .carta-juego {
+      position: relative;
+      width: 250px;
+    }
+
+    .carta-juego img {
+      width: 100%;
+      box-shadow: 0 0 15px gold;
+    }
+
+    .ficha {
+      position: absolute;
+      pointer-events: none;
+      width: 40px;
+      height: auto;
+      max-width: 40px;
+      max-height: 40px;
+      transform: translate(-50%, -50%);
+    }
+
     button {
       padding: 0.6rem 1.2rem;
       font-size: 1rem;
@@ -57,98 +91,63 @@
       cursor: pointer;
       font-weight: bold;
     }
-    .juego-cartas {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 2rem;
-      justify-content: center;
-      align-items: center;
-    }
-    .carta-juego {
-      position: relative;
-      width: 250px;
-    }
-    .carta-juego img {
-      width: 100%;
-    }
-    .ficha {
-      position: absolute;
-      pointer-events: none;
-      width: 40px;
-      height: auto;
-      max-width: 40px;
-      max-height: 40px;
-      transform: translate(-50%, -50%);
-    }
+
     #historial {
       display: flex;
-      flex-wrap: nowrap;
       overflow-x: auto;
       gap: 5px;
       margin-top: 1rem;
+      max-width: 90vw;
     }
+
     #historial img {
       width: 40px;
       border-radius: 5px;
     }
-    #pantallaNickname {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      height: 100vh;
-      background-image: url('splash.PNG');
-      background-size: cover;
-      background-position: center;
-    }
-    #cargando {
-      width: 40px;
-      height: 40px;
-      border: 5px solid #fff;
-      border-top: 5px solid gold;
-      border-radius: 50%;
-      animation: girar 1s linear infinite;
-      margin-top: 8rem;
-    }
-    @keyframes girar {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
-    }
   </style>
 </head>
 <body>
-  <div id="pantallaNickname">
-    <input type="text" id="inputNickname" placeholder="Ingresa tu apodo" />
+
+  <!-- Pantalla de inicio para nickname -->
+  <div id="pantallaNickname" class="pantalla activa">
+    <h2>Ingresa tu nickname</h2>
+    <input type="text" id="inputNickname" placeholder="Tu apodo" />
     <button onclick="registrarJugador()">Entrar</button>
-    <div id="cargando"></div>
   </div>
 
+  <!-- Pantalla de selección -->
   <div id="pantallaSeleccion" class="pantalla">
     <h1>Selecciona tus 2 cartas</h1>
     <div class="cartas-container" id="contenedorCartas"></div>
     <button id="btnIniciar" style="display:none">Iniciar juego</button>
   </div>
 
+  <!-- Pantalla de juego -->
   <div id="pantallaJuego" class="pantalla">
     <h2>Tu juego</h2>
     <div class="juego-cartas" id="juegoCartas"></div>
-    <div>
-      <button onclick="limpiarFichas()">Limpiar cartas</button>
+    <div id="controlesHost" style="display:none">
       <button onclick="barajearCartas()">Barajear</button>
       <button onclick="iniciarBarajeo()">Iniciar juego</button>
       <button onclick="detenerJuego()">Detener juego</button>
+    </div>
+    <div>
+      <button onclick="limpiarFichas()">Limpiar cartas</button>
       <button onclick="gritarLoteria()">¡Lotería!</button>
     </div>
     <div id="historial"></div>
   </div>
 
-  <script src="https://cdn.socket.io/4.3.2/socket.io.min.js"></script>
   <script>
-    const socket = io("https://loteria-backend-3nde.onrender.com");
-    let nickname = "";
-    let esHost = false;
-    let seleccionadas = [];
+    const socket = io("https://loteria-backend-3nde.onrender.com"); // <--- tu servidor render aquí
+
     const cartasDisponibles = Array.from({ length: 10 }, (_, i) => String(i + 1).padStart(2, '0'));
+    const seleccionadas = [];
+    let mezcladas = [];
+    let index = 0;
+    let intervalo;
+    let nickname = "";
+    const tiempo = 4000;
 
     const pantallaNickname = document.getElementById("pantallaNickname");
     const pantallaSeleccion = document.getElementById("pantallaSeleccion");
@@ -157,29 +156,7 @@
     const juegoCartas = document.getElementById("juegoCartas");
     const btnIniciar = document.getElementById("btnIniciar");
     const historial = document.getElementById("historial");
-
-    function registrarJugador() {
-      nickname = document.getElementById("inputNickname").value.trim();
-      if (!nickname) return;
-      socket.emit("join", nickname);
-      pantallaNickname.style.display = "none";
-      pantallaSeleccion.classList.add("activa");
-    }
-
-    socket.on("rol", (rol) => {
-      esHost = rol;
-      mostrarBotonesSegunRol();
-    });
-
-    function mostrarBotonesSegunRol() {
-      const botones = document.querySelectorAll("button");
-      botones.forEach(btn => {
-        const texto = btn.textContent;
-        if (["Barajear", "Iniciar juego", "Detener juego"].includes(texto)) {
-          btn.style.display = esHost ? "inline-block" : "none";
-        }
-      });
-    }
+    const controlesHost = document.getElementById("controlesHost");
 
     cartasDisponibles.forEach(carta => {
       const img = document.createElement("img");
@@ -190,40 +167,55 @@
       contenedorCartas.appendChild(img);
     });
 
+    function registrarJugador() {
+      nickname = document.getElementById("inputNickname").value.trim();
+      if (!nickname) return alert("Ingresa un nickname");
+
+      socket.emit("registrarJugador", nickname);
+      pantallaNickname.classList.remove("activa");
+      pantallaSeleccion.classList.add("activa");
+    }
+
     function seleccionarCarta(img) {
       const id = img.dataset.id;
-      if (img.classList.contains("tachada") || seleccionadas.includes(id)) return;
-      if (seleccionadas.length < 2) {
-        img.classList.add("seleccionada");
-        seleccionadas.push(id);
-        if (seleccionadas.length === 2) btnIniciar.style.display = "block";
+      if (seleccionadas.length >= 2 || img.classList.contains("deshabilitada")) return;
+
+      img.classList.add("seleccionada");
+      seleccionadas.push(id);
+
+      if (seleccionadas.length === 2) {
+        btnIniciar.style.display = "block";
+        socket.emit("cartasSeleccionadas", seleccionadas);
       }
     }
 
     btnIniciar.onclick = () => {
       pantallaSeleccion.classList.remove("activa");
       pantallaJuego.classList.add("activa");
+
       seleccionadas.forEach(id => {
         const contenedor = document.createElement("div");
         contenedor.classList.add("carta-juego");
-        contenedor.innerHTML = `<img src="${id}.jpg" alt="Carta ${id}">`;
+        contenedor.innerHTML = `<img src="${id}.jpg">`;
         contenedor.onclick = e => marcarFicha(e, contenedor);
         juegoCartas.appendChild(contenedor);
       });
     };
 
-    function marcarFicha(event, contenedor) {
+    function marcarFicha(e, contenedor) {
       const imgCarta = contenedor.querySelector("img");
       const bounds = imgCarta.getBoundingClientRect();
-      const x = event.clientX - bounds.left;
-      const y = event.clientY - bounds.top;
-      const porcentajeX = (x / bounds.width) * 100;
-      const porcentajeY = (y / bounds.height) * 100;
+      const x = e.clientX - bounds.left;
+      const y = e.clientY - bounds.top;
+      const px = (x / bounds.width) * 100;
+      const py = (y / bounds.height) * 100;
+
       const ficha = document.createElement("img");
       ficha.src = "ficha.PNG";
       ficha.classList.add("ficha");
-      ficha.style.left = `${porcentajeX}%`;
-      ficha.style.top = `${porcentajeY}%`;
+      ficha.style.left = `${px}%`;
+      ficha.style.top = `${py}%`;
+
       contenedor.appendChild(ficha);
     }
 
@@ -232,7 +224,8 @@
     }
 
     function barajearCartas() {
-      mezcladas = Array.from({ length: 54 }, (_, i) => String(i + 1).padStart(2, '0')).sort(() => Math.random() - 0.5);
+      mezcladas = Array.from({ length: 54 }, (_, i) => String(i + 1).padStart(2, '0'))
+        .sort(() => Math.random() - 0.5);
       index = 0;
       historial.innerHTML = '';
       reproducirSonido("barajar.mp3");
@@ -241,22 +234,23 @@
     function iniciarBarajeo() {
       reproducirSonido("campana.mp3");
       reproducirSonido("corre.mp3");
+
       intervalo = setInterval(() => {
         if (index < mezcladas.length) {
           const nombre = mezcladas[index];
-          mostrarEnHistorial(nombre);
-          reproducirSonido(`${nombre}.mp3`);
+          socket.emit("cartaCantada", nombre); // Avisar a todos
           index++;
         } else {
           detenerJuego();
         }
-      }, 4000);
+      }, tiempo);
     }
 
     function mostrarEnHistorial(nombre) {
       const img = document.createElement("img");
       img.src = `${nombre}.png`;
       historial.appendChild(img);
+      reproducirSonido(`${nombre}.mp3`);
     }
 
     function detenerJuego() {
@@ -264,19 +258,32 @@
       reproducirSonido("aplausos.mp3");
     }
 
-    function gritarLoteria() {
-      socket.emit("loteria", nickname);
-    }
-
-    socket.on("ganador", (ganador) => {
-      alert(`${ganador} ha gritado ¡LOTERÍA!`);
-      detenerJuego();
-    });
-
     function reproducirSonido(nombre) {
       const audio = new Audio(nombre);
       audio.play();
     }
+
+    function gritarLoteria() {
+      alert("¡Lotería! 🎉 Avísale al host.");
+    }
+
+    // --- SOCKET EVENTS ---
+    socket.on("esHost", () => {
+      controlesHost.style.display = "block";
+    });
+
+    socket.on("cartasOcupadas", (ocupadas) => {
+      document.querySelectorAll(".carta-img").forEach(img => {
+        if (ocupadas.includes(img.dataset.id)) {
+          img.classList.add("deshabilitada");
+        }
+      });
+    });
+
+    socket.on("actualizarHistorial", (lista) => {
+      historial.innerHTML = "";
+      lista.forEach(nombre => mostrarEnHistorial(nombre));
+    });
   </script>
 </body>
 </html>
