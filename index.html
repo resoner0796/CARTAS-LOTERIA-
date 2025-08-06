@@ -1,168 +1,183 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Lotería Mexicana</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Lotería Interactiva</title>
   <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
+      margin: 0;
       font-family: sans-serif;
       background-color: #111;
-      color: #fff;
+      color: white;
+      overflow: hidden;
+      text-align: center;
     }
-    .pantalla {
+
+    #pantallaInicio, #pantallaJuego {
       display: none;
-      padding: 20px;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
     }
-    .activa {
-      display: block;
+
+    #pantallaInicio.active, #pantallaJuego.active {
+      display: flex;
     }
-    .cartas-container {
+
+    .cartas {
       display: flex;
       flex-wrap: wrap;
+      gap: 10px;
       justify-content: center;
-      gap: 15px;
     }
-    .carta {
-      width: 150px;
-      border: 4px solid gold;
-      border-radius: 8px;
+
+    .cartas img {
+      width: 160px;
+      height: auto;
       cursor: pointer;
-      position: relative;
-      transition: transform 0.2s;
+      border: 3px solid transparent;
+      transition: 0.3s;
     }
-    .carta:hover {
+
+    .cartas img.seleccionada {
+      border: 3px solid gold;
       transform: scale(1.05);
     }
-    .carta.tachada::after {
-      content: "";
-      position: absolute;
-      top: 0; left: 0;
-      width: 100%; height: 100%;
-      background: rgba(255, 0, 0, 0.5);
-      pointer-events: none;
-    }
-    #botonIniciar {
+
+    #btnIniciar {
       margin-top: 20px;
       padding: 10px 20px;
-      font-size: 1rem;
-      background-color: gold;
+      font-size: 1.2rem;
+      background: gold;
       border: none;
-      border-radius: 6px;
+      border-radius: 10px;
       cursor: pointer;
+      display: none;
     }
-    .juego-cartas {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
-      gap: 15px;
-    }
-    .juego-carta {
-      width: 180px;
+
+    .cartaJuego {
       position: relative;
+      margin: 10px;
     }
+
+    .cartaJuego img {
+      width: 300px;
+      height: auto;
+    }
+
     .ficha {
-      width: 25px;
-      height: 25px;
       position: absolute;
+      width: 35px;
+      height: 35px;
       pointer-events: none;
     }
-    #limpiar {
+
+    .tituloCarta {
+      font-weight: bold;
+      font-size: 1.2rem;
+      margin-bottom: 5px;
+    }
+
+    #btnLimpiar {
       margin-top: 20px;
       padding: 10px 20px;
       background-color: crimson;
-      color: white;
       border: none;
-      border-radius: 6px;
+      color: white;
+      border-radius: 8px;
+      font-size: 1rem;
       cursor: pointer;
     }
   </style>
 </head>
 <body>
 
-<!-- Pantalla 1 -->
-<div id="pantallaSeleccion" class="pantalla activa">
-  <h2>Selecciona tus 2 cartas:</h2>
-  <div class="cartas-container" id="cartasDisponibles"></div>
-  <button id="botonIniciar" style="display:none">Iniciar Juego</button>
+<div id="pantallaInicio" class="active">
+  <h1>Selecciona tus 2 cartas</h1>
+  <div class="cartas" id="seleccionCartas">
+    <!-- Se generan desde JS -->
+  </div>
+  <button id="btnIniciar" onclick="iniciarJuego()">Iniciar Juego</button>
 </div>
 
-<!-- Pantalla 2 -->
-<div id="pantallaJuego" class="pantalla">
-  <h2>¡A jugar!</h2>
-  <div class="juego-cartas" id="cartasJuego"></div>
-  <button id="limpiar">Limpiar fichas</button>
+<div id="pantallaJuego">
+  <div style="display: flex; justify-content: center; gap: 20px;">
+    <div class="cartaJuego" id="carta1Container">
+      <div class="tituloCarta">Carta 1</div>
+      <img id="carta1" src="" onclick="colocarFicha(event, 1)">
+    </div>
+    <div class="cartaJuego" id="carta2Container">
+      <div class="tituloCarta">Carta 2</div>
+      <img id="carta2" src="" onclick="colocarFicha(event, 2)">
+    </div>
+  </div>
+  <button id="btnLimpiar" onclick="limpiarFichas()">Limpiar Fichas</button>
 </div>
 
 <script>
-  const MAX_CARTAS = 2;
-  const fichas = [];
-  let cartasSeleccionadas = [];
+let cartasSeleccionadas = [];
 
-  const contenedorCartas = document.getElementById('cartasDisponibles');
-  const contenedorJuego = document.getElementById('cartasJuego');
-  const botonIniciar = document.getElementById('botonIniciar');
-  const btnLimpiar = document.getElementById('limpiar');
+const coordenadas = [
+  [35, 55], [205, 55], [375, 55], [545, 55],
+  [35, 270], [205, 270], [375, 270], [545, 270],
+  [35, 500], [205, 500], [375, 500], [545, 500],
+  [35, 730], [205, 730], [375, 730], [545, 730],
+];
 
-  // Generar cartas para seleccionar
+function crearPantallaInicio() {
+  const contenedor = document.getElementById("seleccionCartas");
   for (let i = 1; i <= 10; i++) {
-    const carta = document.createElement('img');
-    carta.src = `${String(i).padStart(2, '0')}.jpg`;
-    carta.classList.add('carta');
-    carta.dataset.id = i;
-    carta.addEventListener('click', () => seleccionarCarta(carta));
-    contenedorCartas.appendChild(carta);
+    const img = document.createElement("img");
+    img.src = `${String(i).padStart(2, '0')}.jpg`;
+    img.alt = `Carta ${i}`;
+    img.onclick = () => seleccionarCarta(img, i);
+    contenedor.appendChild(img);
+  }
+}
+
+function seleccionarCarta(img, num) {
+  if (cartasSeleccionadas.includes(num)) {
+    cartasSeleccionadas = cartasSeleccionadas.filter(n => n !== num);
+    img.classList.remove("seleccionada");
+  } else if (cartasSeleccionadas.length < 2) {
+    cartasSeleccionadas.push(num);
+    img.classList.add("seleccionada");
   }
 
-  function seleccionarCarta(carta) {
-    if (carta.classList.contains('tachada')) return;
+  document.getElementById("btnIniciar").style.display =
+    cartasSeleccionadas.length === 2 ? "inline-block" : "none";
+}
 
-    if (cartasSeleccionadas.length < MAX_CARTAS) {
-      carta.classList.add('tachada');
-      cartasSeleccionadas.push(carta.dataset.id);
-      if (cartasSeleccionadas.length === MAX_CARTAS) {
-        botonIniciar.style.display = 'inline-block';
-      }
-    }
-  }
+function iniciarJuego() {
+  document.getElementById("pantallaInicio").classList.remove("active");
+  document.getElementById("pantallaJuego").classList.add("active");
 
-  botonIniciar.addEventListener('click', () => {
-    document.getElementById('pantallaSeleccion').classList.remove('activa');
-    document.getElementById('pantallaJuego').classList.add('activa');
-    cargarCartasDeJuego();
-  });
+  document.getElementById("carta1").src = `${String(cartasSeleccionadas[0]).padStart(2, '0')}.jpg`;
+  document.getElementById("carta2").src = `${String(cartasSeleccionadas[1]).padStart(2, '0')}.jpg`;
+}
 
-  function cargarCartasDeJuego() {
-    cartasSeleccionadas.forEach(id => {
-      const contenedor = document.createElement('div');
-      contenedor.classList.add('juego-carta');
+function colocarFicha(event, cartaNum) {
+  const img = event.target;
+  const rect = img.getBoundingClientRect();
+  const offsetX = event.clientX - rect.left;
+  const offsetY = event.clientY - rect.top;
 
-      const img = document.createElement('img');
-      img.src = `${String(id).padStart(2, '0')}.jpg`;
-      img.style.width = '100%';
-      img.addEventListener('click', (e) => colocarFicha(e, contenedor));
+  const ficha = document.createElement("img");
+  ficha.src = "ficha.png";
+  ficha.className = "ficha";
+  ficha.style.left = `${offsetX - 17}px`;
+  ficha.style.top = `${offsetY - 17}px`;
 
-      contenedor.appendChild(img);
-      contenedorJuego.appendChild(contenedor);
-    });
-  }
+  document.getElementById(`carta${cartaNum}Container`).appendChild(ficha);
+}
 
-  function colocarFicha(e, contenedor) {
-    const ficha = document.createElement('img');
-    ficha.src = 'ficha.png';
-    ficha.classList.add('ficha');
-    ficha.style.left = (e.offsetX - 12) + 'px';
-    ficha.style.top = (e.offsetY - 12) + 'px';
-    contenedor.appendChild(ficha);
-    fichas.push(ficha);
-  }
+function limpiarFichas() {
+  document.querySelectorAll(".ficha").forEach(f => f.remove());
+}
 
-  btnLimpiar.addEventListener('click', () => {
-    fichas.forEach(f => f.remove());
-    fichas.length = 0;
-  });
+crearPantallaInicio();
 </script>
-
 </body>
 </html>
