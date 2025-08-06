@@ -128,10 +128,10 @@
   const btnIniciar = document.getElementById("btnIniciar");
   const historial = document.getElementById("historial");
 
-  // Cargar cartas disponibles
+  // Cargar cartas de jugador (.jpg)
   cartasDisponibles.forEach(carta => {
     const img = document.createElement("img");
-    img.src = `${carta}.png`;
+    img.src = `${carta}.jpg`; // Cartas del jugador
     img.classList.add("carta-img");
     img.dataset.id = carta;
     img.onclick = () => seleccionarCarta(img);
@@ -156,7 +156,7 @@
     seleccionadas.forEach(id => {
       const contenedor = document.createElement("div");
       contenedor.classList.add("carta-juego");
-      contenedor.innerHTML = `<img src="${id}.png" alt="Carta ${id}">`;
+      contenedor.innerHTML = `<img src="${id}.jpg" alt="Carta ${id}">`;
       contenedor.onclick = e => marcarFicha(e, contenedor);
       juegoCartas.appendChild(contenedor);
     });
@@ -172,7 +172,7 @@
     const porcentajeY = (y / bounds.height) * 100;
 
     const ficha = document.createElement("img");
-    ficha.src = "ficha.PNG"; // mantener mayúsculas si así está en tu repo
+    ficha.src = "ficha.PNG"; // mantén esto en mayúsculas si tu archivo está así
     ficha.classList.add("ficha");
     ficha.style.left = `${porcentajeX}%`;
     ficha.style.top = `${porcentajeY}%`;
@@ -184,7 +184,7 @@
     document.querySelectorAll(".ficha").forEach(f => f.remove());
   }
 
-  // Barajeo de cartas
+  // Barajitas: 01.png a 54.png
   const barajas = Array.from({ length: 54 }, (_, i) => i + 1);
   let mezcladas = [];
   let index = 0;
@@ -208,9 +208,10 @@
       }
 
       const numero = mezcladas[index];
-      const img = document.createElement("img");
       const nombre = String(numero).padStart(2, '0');
-      img.src = `${nombre}.png`;
+
+      const img = document.createElement("img");
+      img.src = `${nombre}.png`; // barajita cantada
       img.alt = `Carta ${nombre}`;
       historial.appendChild(img);
 
