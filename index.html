@@ -34,20 +34,8 @@
       color: gold;
     }
 
-    .texto-cargando {
-      font-size: 1.5rem;
-      font-weight: bold;
-      animation: parpadeo 1.5s infinite;
-      margin-top: 60%;
-    }
-
-    @keyframes parpadeo {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0; }
-    }
-
     .loader {
-      margin-top: 2rem;
+      margin-top: 75%;
       border: 6px solid #f3f3f3;
       border-top: 6px solid gold;
       border-radius: 50%;
@@ -131,10 +119,22 @@
     .carta-juego {
       position: relative;
       width: 250px;
+      animation: glow 2s infinite alternate;
+      border-radius: 10px;
     }
 
     .carta-juego img {
       width: 100%;
+      border-radius: 10px;
+    }
+
+    @keyframes glow {
+      from {
+        box-shadow: 0 0 10px 2px rgba(255, 215, 0, 0.4);
+      }
+      to {
+        box-shadow: 0 0 25px 4px rgba(255, 215, 0, 0.8);
+      }
     }
 
     .ficha {
@@ -165,7 +165,6 @@
 
   <!-- Pantalla de carga -->
   <div id="pantallaCarga" class="pantalla activa">
-    <div class="texto-cargando">Que la suerte esté con vosotros</div>
     <div class="loader"></div>
   </div>
 
@@ -211,7 +210,7 @@
       setTimeout(() => {
         pantallaCarga.classList.remove("activa");
         pantallaSeleccion.classList.add("activa");
-      }, 5000); // 5 segundos de carga
+      }, 5000);
     };
 
     cartasDisponibles.forEach(carta => {
@@ -295,7 +294,7 @@
 
     function mostrarEnHistorial(nombre) {
       const img = document.createElement("img");
-      img.src = `${nombre}.png`; // barajita
+      img.src = `${nombre}.png`;
       historial.appendChild(img);
     }
 
