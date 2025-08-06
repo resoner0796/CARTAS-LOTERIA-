@@ -80,7 +80,7 @@
     .ficha {
       position: absolute;
       pointer-events: none;
-      width: 200px;
+      width: 30px;
       height: auto;
       transform: translate(-50%, -50%);
     }
@@ -119,15 +119,8 @@
 </div>
 
 <script>
-  const MAX_JUGADORES = 5;
   const cartasDisponibles = Array.from({ length: 10 }, (_, i) => String(i + 1).padStart(2, '0'));
   const seleccionadas = [];
-  const mezcladas = Array.from({ length: 54 }, (_, i) => i + 1);
-
-  let index = 0;
-  let intervalo = null;
-  const tiempoEntreCartas = 3000;
-
   const pantallaSeleccion = document.getElementById("pantallaSeleccion");
   const pantallaJuego = document.getElementById("pantallaJuego");
   const contenedorCartas = document.getElementById("contenedorCartas");
@@ -135,9 +128,10 @@
   const btnIniciar = document.getElementById("btnIniciar");
   const historial = document.getElementById("historial");
 
+  // Cargar cartas disponibles
   cartasDisponibles.forEach(carta => {
     const img = document.createElement("img");
-    img.src = `${carta}.jpg`;
+    img.src = `${carta}.png`;
     img.classList.add("carta-img");
     img.dataset.id = carta;
     img.onclick = () => seleccionarCarta(img);
@@ -146,7 +140,8 @@
 
   function seleccionarCarta(img) {
     const id = img.dataset.id;
-    if (seleccionadas.includes(id)) return;
+    if (img.classList.contains("seleccionada") || seleccionadas.includes(id)) return;
+
     if (seleccionadas.length < 2) {
       img.classList.add("seleccionada");
       seleccionadas.push(id);
@@ -157,10 +152,11 @@
   btnIniciar.onclick = () => {
     pantallaSeleccion.classList.remove("activa");
     pantallaJuego.classList.add("activa");
+
     seleccionadas.forEach(id => {
       const contenedor = document.createElement("div");
       contenedor.classList.add("carta-juego");
-      contenedor.innerHTML = `<img src="${id}.jpg" alt="Carta ${id}">`;
+      contenedor.innerHTML = `<img src="${id}.png" alt="Carta ${id}">`;
       contenedor.onclick = e => marcarFicha(e, contenedor);
       juegoCartas.appendChild(contenedor);
     });
@@ -171,14 +167,16 @@
     const bounds = imgCarta.getBoundingClientRect();
     const x = event.clientX - bounds.left;
     const y = event.clientY - bounds.top;
+
     const porcentajeX = (x / bounds.width) * 100;
     const porcentajeY = (y / bounds.height) * 100;
 
     const ficha = document.createElement("img");
-    ficha.src = "ficha.PNG"; // ¡En mayúsculas como pediste!
+    ficha.src = "ficha.PNG"; // mantener mayúsculas si así está en tu repo
     ficha.classList.add("ficha");
     ficha.style.left = `${porcentajeX}%`;
     ficha.style.top = `${porcentajeY}%`;
+
     contenedor.appendChild(ficha);
   }
 
@@ -186,38 +184,44 @@
     document.querySelectorAll(".ficha").forEach(f => f.remove());
   }
 
+  // Barajeo de cartas
+  const barajas = Array.from({ length: 54 }, (_, i) => i + 1);
+  let mezcladas = [];
+  let index = 0;
+  let intervalo = null;
+
   function reproducirSonido(nombre) {
-    const audio = new Audio(`${nombre}.mp3`);
+    const audio = new Audio(nombre);
     audio.play();
   }
 
   function iniciarBarajeo() {
+    mezcladas = [...barajas].sort(() => Math.random() - 0.5);
     index = 0;
-    mezcladas.sort(() => Math.random() - 0.5);
-    reproducirSonido("barajar");
+    historial.innerHTML = "";
+    reproducirSonido("barajar.mp3");
 
     intervalo = setInterval(() => {
-      if (index < mezcladas.length) {
-        const num = mezcladas[index];
-        mostrarEnHistorial(num);
-        reproducirSonido(String(num).padStart(2, '0'));
-        index++;
-      } else {
+      if (index >= mezcladas.length) {
         detenerJuego();
+        return;
       }
-    }, tiempoEntreCartas);
-  }
 
-  function mostrarEnHistorial(numero) {
-    const img = document.createElement("img");
-    img.src = `${String(numero).padStart(2, '0')}.jpg`;
-    img.alt = `Carta ${numero}`;
-    historial.appendChild(img);
+      const numero = mezcladas[index];
+      const img = document.createElement("img");
+      const nombre = String(numero).padStart(2, '0');
+      img.src = `${nombre}.png`;
+      img.alt = `Carta ${nombre}`;
+      historial.appendChild(img);
+
+      reproducirSonido(`${nombre}.mp3`);
+      index++;
+    }, 3000);
   }
 
   function detenerJuego() {
     clearInterval(intervalo);
-    reproducirSonido("aplausos");
+    reproducirSonido("aplausos.mp3");
   }
 </script>
 
