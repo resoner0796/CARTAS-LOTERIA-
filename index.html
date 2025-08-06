@@ -26,6 +26,51 @@
       display: flex;
     }
 
+    #pantallaCarga {
+      background: url('splash.PNG') no-repeat center center;
+      background-size: cover;
+      justify-content: center;
+      text-align: center;
+      color: gold;
+    }
+
+    .texto-cargando {
+      font-size: 1.5rem;
+      font-weight: bold;
+      animation: parpadeo 1.5s infinite;
+      margin-top: 60%;
+    }
+
+    @keyframes parpadeo {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0; }
+    }
+
+    .loader {
+      margin-top: 2rem;
+      border: 6px solid #f3f3f3;
+      border-top: 6px solid gold;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      animation: girar 1s linear infinite;
+    }
+
+    @keyframes girar {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    #pantallaSeleccion {
+      background: url('fondo-seleccion.PNG') no-repeat center center;
+      background-size: cover;
+    }
+
+    #pantallaJuego {
+      background: url('fondo-juego.PNG') no-repeat center center;
+      background-size: cover;
+    }
+
     .cartas-container {
       display: flex;
       flex-wrap: wrap;
@@ -118,8 +163,14 @@
 </head>
 <body>
 
+  <!-- Pantalla de carga -->
+  <div id="pantallaCarga" class="pantalla activa">
+    <div class="texto-cargando">Que la suerte esté con vosotros</div>
+    <div class="loader"></div>
+  </div>
+
   <!-- Pantalla de selección -->
-  <div id="pantallaSeleccion" class="pantalla activa">
+  <div id="pantallaSeleccion" class="pantalla">
     <h1>Selecciona tus 2 cartas</h1>
     <div class="cartas-container" id="contenedorCartas"></div>
     <button id="btnIniciar" style="display:none">Iniciar juego</button>
@@ -143,6 +194,7 @@
     const cartasDisponibles = Array.from({ length: 10 }, (_, i) => String(i + 1).padStart(2, '0'));
     const seleccionadas = [];
 
+    const pantallaCarga = document.getElementById("pantallaCarga");
     const pantallaSeleccion = document.getElementById("pantallaSeleccion");
     const pantallaJuego = document.getElementById("pantallaJuego");
     const contenedorCartas = document.getElementById("contenedorCartas");
@@ -154,6 +206,13 @@
     let index = 0;
     let intervalo;
     let tiempo = 4000;
+
+    window.onload = () => {
+      setTimeout(() => {
+        pantallaCarga.classList.remove("activa");
+        pantallaSeleccion.classList.add("activa");
+      }, 5000); // 5 segundos de carga
+    };
 
     cartasDisponibles.forEach(carta => {
       const img = document.createElement("img");
