@@ -36,7 +36,7 @@
 
     #loader {
       position: absolute;
-      bottom: 3%;
+      bottom: 2%;
       width: 30px;
       height: 30px;
       border: 4px solid #fff;
@@ -135,38 +135,26 @@
       width: 40px;
       border-radius: 5px;
     }
-
-    #pantallaSeleccion {
-      background-image: url("fondo-seleccion.PNG");
-    }
-
-    #pantallaJuego {
-      background-image: url("fondo-juego.PNG");
-    }
   </style>
 </head>
 <body>
-  <!-- Splash Screen -->
   <div id="pantallaSplash" class="pantalla activa">
     <div id="loader"></div>
   </div>
 
-  <!-- Nickname -->
   <div id="pantallaNickname" class="pantalla">
     <h2>Ingresa tu nickname</h2>
     <input type="text" id="nicknameInput" placeholder="Tu nombre..." />
     <button onclick="entrarJuego()">Entrar</button>
   </div>
 
-  <!-- Selección de cartas -->
-  <div id="pantallaSeleccion" class="pantalla">
+  <div id="pantallaSeleccion" class="pantalla" style="background-image: url('fondo-seleccion.PNG')">
     <h1>Selecciona tus 2 cartas</h1>
     <div class="cartas-container" id="contenedorCartas"></div>
     <button id="btnIniciar" style="display:none">Continuar</button>
   </div>
 
-  <!-- Juego -->
-  <div id="pantallaJuego" class="pantalla">
+  <div id="pantallaJuego" class="pantalla" style="background-image: url('fondo-juego.PNG')">
     <h2>Tu juego</h2>
     <div class="juego-cartas" id="juegoCartas"></div>
     <div>
@@ -182,7 +170,6 @@
   <script src="https://loteria-backend-3nde.onrender.com/socket.io/socket.io.js"></script>
   <script>
     const socket = io("https://loteria-backend-3nde.onrender.com");
-
     let nickname = "";
     let soyHost = false;
     let seleccionadas = [];
@@ -222,11 +209,24 @@
         btnBarajear.style.display = "none";
         btnIniciarJuego.style.display = "none";
         btnDetenerJuego.style.display = "none";
+      } else {
+        const btnReiniciar = document.createElement("button");
+        btnReiniciar.innerText = "Reiniciar juego";
+        btnReiniciar.onclick = () => socket.emit("reiniciarJuego");
+        document.querySelector("#pantallaJuego div").appendChild(btnReiniciar);
       }
     });
 
+    socket.on("cartas-desactivadas", desactivadas => {
+      document.querySelectorAll(".carta-img").forEach(img => {
+        if (desactivadas.includes(img.dataset.id)) {
+          img.classList.add("tachada");
+          img.onclick = null;
+        }
+      });
+    });
+
     function generarCartas() {
-      contenedorCartas.innerHTML = "";
       cartasDisponibles.forEach(carta => {
         const img = document.createElement("img");
         img.src = `${carta}.jpg`;
@@ -289,7 +289,7 @@
     }
 
     function emitirIniciarJuego() {
-      socket.emit("iniciar-juego");
+      socket.emit("iniciarJuego");
     }
 
     function emitirDetenerJuego() {
@@ -312,15 +312,6 @@
       reproducirSonido(`${nombre}.mp3`);
     });
 
-    socket.on("historial-actualizado", cartas => {
-      historial.innerHTML = "";
-      cartas.forEach(carta => {
-        const img = document.createElement("img");
-        img.src = `${carta}.png`;
-        historial.appendChild(img);
-      });
-    });
-
     socket.on("juego-detenido", () => {
       reproducirSonido("aplausos.mp3");
     });
@@ -329,13 +320,8 @@
       alert(`¡${ganador} ha cantado LOTERÍA!`);
     });
 
-    socket.on("cartas-desactivadas", (desactivadas) => {
-      document.querySelectorAll(".carta-img").forEach(img => {
-        if (desactivadas.includes(img.dataset.id)) {
-          img.style.opacity = "0.3";
-          img.style.pointerEvents = "none";
-        }
-      });
+    socket.on("reiniciarJuego", () => {
+      location.reload();
     });
   </script>
 </body>
