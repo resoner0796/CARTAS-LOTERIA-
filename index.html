@@ -95,7 +95,7 @@
     .ficha {
       position: absolute;
       pointer-events: none;
-      width: 0.01%;
+      width: 0.005%;
       transform: translate(-50%, -50%);
     }
   </style>
@@ -174,7 +174,7 @@
       const porcentajeY = (y / bounds.height) * 100;
 
       const ficha = document.createElement("img");
-      ficha.src = "ficha.PNG"; // asegurando que se respete el nombre exacto
+      ficha.src = "ficha.PNG"; // respetando el nombre exacto del archivo
       ficha.classList.add("ficha");
       ficha.style.left = `${porcentajeX}%`;
       ficha.style.top = `${porcentajeY}%`;
