@@ -95,44 +95,58 @@
     .ficha {
       position: absolute;
       pointer-events: none;
-      width: 40px;
-      height: auto;
-      max-width: 40px;
-      max-height: 40px;
+      width: 10px;
+      height: 10px;
+      max-width: 10px;
+      max-height: 10px;
       transform: translate(-50%, -50%);
+    }
+
+    #historial {
+      margin-top: 2rem;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+      justify-content: center;
+    }
+
+    #historial img {
+      width: 40px;
     }
   </style>
 </head>
 <body>
-
-  <!-- Pantalla de selección -->
   <div id="pantallaSeleccion" class="pantalla activa">
     <h1>Selecciona tus 2 cartas</h1>
-    <div class="cartas-container" id="contenedorCartas">
-      <!-- Cartas generadas con JS -->
-    </div>
+    <div class="cartas-container" id="contenedorCartas"></div>
     <button id="btnIniciar" style="display:none">Iniciar juego</button>
   </div>
 
-  <!-- Pantalla de juego -->
   <div id="pantallaJuego" class="pantalla">
     <h2>Tu juego</h2>
-    <div class="juego-cartas" id="juegoCartas">
-      <!-- Cartas seleccionadas aquí -->
+    <div class="juego-cartas" id="juegoCartas"></div>
+    <div style="margin-top: 1rem;">
+      <button onclick="limpiarFichas()">Limpiar cartas</button>
+      <button onclick="barajear()">Barajear</button>
+      <button onclick="detenerJuego()">Detener juego</button>
     </div>
-    <button onclick="limpiarFichas()">Limpiar cartas</button>
+    <div id="historial"></div>
   </div>
 
   <script>
-    const MAX_JUGADORES = 5;
     const cartasDisponibles = Array.from({ length: 10 }, (_, i) => String(i + 1).padStart(2, '0'));
     const seleccionadas = [];
+    let barajas = Array.from({ length: 54 }, (_, i) => i + 1);
+    let mezcladas = [];
+    let index = 0;
+    let intervalo;
 
     const pantallaSeleccion = document.getElementById("pantallaSeleccion");
     const pantallaJuego = document.getElementById("pantallaJuego");
     const contenedorCartas = document.getElementById("contenedorCartas");
     const juegoCartas = document.getElementById("juegoCartas");
     const btnIniciar = document.getElementById("btnIniciar");
+    const historial = document.getElementById("historial");
 
     cartasDisponibles.forEach(carta => {
       const img = document.createElement("img");
@@ -165,6 +179,8 @@
         contenedor.onclick = e => marcarFicha(e, contenedor);
         juegoCartas.appendChild(contenedor);
       });
+
+      barajear();
     };
 
     function marcarFicha(event, contenedor) {
@@ -177,7 +193,7 @@
       const porcentajeY = (y / bounds.height) * 100;
 
       const ficha = document.createElement("img");
-      ficha.src = "ficha.PNG"; // respetar el nombre exacto
+      ficha.src = "ficha.PNG";
       ficha.classList.add("ficha");
       ficha.style.left = `${porcentajeX}%`;
       ficha.style.top = `${porcentajeY}%`;
@@ -188,7 +204,41 @@
     function limpiarFichas() {
       document.querySelectorAll(".ficha").forEach(f => f.remove());
     }
-  </script>
 
+    function reproducirSonido(nombreArchivo) {
+      const audio = new Audio(`audios/${nombreArchivo}`);
+      audio.play();
+    }
+
+    function barajear() {
+      mezcladas = [...barajas].sort(() => Math.random() - 0.5);
+      index = 0;
+      historial.innerHTML = "";
+      clearInterval(intervalo);
+
+      intervalo = setInterval(() => {
+        if (index < mezcladas.length) {
+          const num = mezcladas[index];
+          mostrarCarta(num);
+          reproducirSonido(`${String(num).padStart(2, '0')}.mp3`);
+          index++;
+        } else {
+          detenerJuego();
+        }
+      }, 3000);
+    }
+
+    function mostrarCarta(num) {
+      const img = document.createElement("img");
+      img.src = `img/${String(num).padStart(2, '0')}.png`;
+      img.alt = `Carta ${num}`;
+      historial.appendChild(img);
+    }
+
+    function detenerJuego() {
+      clearInterval(intervalo);
+      reproducirSonido("aplausos.mp3");
+    }
+  </script>
 </body>
 </html>
