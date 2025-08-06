@@ -3,186 +3,186 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Lotería Interactiva</title>
+  <title>Lotería WebApp</title>
   <style>
-    * {
-      box-sizing: border-box;
-    }
-
     body {
       margin: 0;
-      font-family: sans-serif;
       background-color: #111;
-      color: white;
-      text-align: center;
+      color: #fff;
+      font-family: sans-serif;
+      overflow: hidden;
     }
 
-    html, body {
-      scroll-behavior: smooth;
-    }
-
-    #pantallaInicio, #pantallaJuego {
+    .pantalla {
       display: none;
       flex-direction: column;
       align-items: center;
-      justify-content: flex-start;
-      min-height: 100vh;
-      padding: 20px;
+      justify-content: center;
+      height: 100vh;
+      overflow-y: auto;
+      padding: 1rem;
     }
 
-    #pantallaInicio.active, #pantallaJuego.active {
+    .pantalla.activa {
       display: flex;
     }
 
-    .cartas {
+    .cartas-container {
       display: flex;
       flex-wrap: wrap;
-      gap: 10px;
       justify-content: center;
+      gap: 1rem;
     }
 
-    .cartas img {
-      width: 160px;
-      height: auto;
-      cursor: pointer;
-      border: 3px solid transparent;
-      transition: 0.3s;
-    }
-
-    .cartas img.seleccionada {
-      border: 3px solid gold;
-      transform: scale(1.05);
-    }
-
-    #btnIniciar {
-      margin-top: 20px;
-      padding: 10px 20px;
-      font-size: 1.2rem;
-      background: gold;
-      border: none;
+    .carta-img {
+      width: 180px;
+      border: 3px solid #fff;
       border-radius: 10px;
       cursor: pointer;
-      display: none;
-    }
-
-    .cartaJuego {
+      transition: transform 0.3s;
       position: relative;
-      margin: 10px;
     }
 
-    .cartaJuego img {
-      width: 300px;
-      height: auto;
+    .carta-img.seleccionada {
+      transform: scale(1.05);
+      box-shadow: 0 0 15px gold;
+      border-color: gold;
+    }
+
+    .carta-img.tachada::after {
+      content: "❌";
+      font-size: 4rem;
+      color: red;
+      position: absolute;
+      top: 30%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+    }
+
+    button {
+      padding: 0.6rem 1.2rem;
+      font-size: 1rem;
+      margin: 1rem;
+      border-radius: 10px;
+      border: none;
+      background-color: gold;
+      color: black;
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    .juego-cartas {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 2rem;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .carta-juego {
+      position: relative;
+      width: 250px;
+    }
+
+    .carta-juego img {
+      width: 100%;
     }
 
     .ficha {
       position: absolute;
       pointer-events: none;
-      width: 11%; /* Proporcional al ancho de la carta */
+      width: 2.5%;
       transform: translate(-50%, -50%);
-    }
-
-    .tituloCarta {
-      font-weight: bold;
-      font-size: 1.2rem;
-      margin-bottom: 5px;
-    }
-
-    #btnLimpiar {
-      margin-top: 20px;
-      padding: 10px 20px;
-      background-color: crimson;
-      border: none;
-      color: white;
-      border-radius: 8px;
-      font-size: 1rem;
-      cursor: pointer;
     }
   </style>
 </head>
 <body>
 
-<div id="pantallaInicio" class="active">
-  <h1>Selecciona tus 2 cartas</h1>
-  <div class="cartas" id="seleccionCartas"></div>
-  <button id="btnIniciar" onclick="iniciarJuego()">Iniciar Juego</button>
-</div>
-
-<div id="pantallaJuego">
-  <div style="display: flex; justify-content: center; gap: 20px; flex-wrap: wrap;">
-    <div class="cartaJuego" id="carta1Container">
-      <div class="tituloCarta">Carta 1</div>
-      <img id="carta1" src="" onclick="colocarFicha(event, 1)">
+  <!-- Pantalla de selección -->
+  <div id="pantallaSeleccion" class="pantalla activa">
+    <h1>Selecciona tus 2 cartas</h1>
+    <div class="cartas-container" id="contenedorCartas">
+      <!-- Cartas generadas con JS -->
     </div>
-    <div class="cartaJuego" id="carta2Container">
-      <div class="tituloCarta">Carta 2</div>
-      <img id="carta2" src="" onclick="colocarFicha(event, 2)">
-    </div>
+    <button id="btnIniciar" style="display:none">Iniciar juego</button>
   </div>
-  <button id="btnLimpiar" onclick="limpiarFichas()">Limpiar Fichas</button>
-</div>
 
-<script>
-let cartasSeleccionadas = [];
+  <!-- Pantalla de juego -->
+  <div id="pantallaJuego" class="pantalla">
+    <h2>Tu juego</h2>
+    <div class="juego-cartas" id="juegoCartas">
+      <!-- Cartas seleccionadas aquí -->
+    </div>
+    <button onclick="limpiarFichas()">Limpiar cartas</button>
+  </div>
 
-function crearPantallaInicio() {
-  const contenedor = document.getElementById("seleccionCartas");
-  for (let i = 1; i <= 10; i++) {
-    const img = document.createElement("img");
-    img.src = `${String(i).padStart(2, '0')}.jpg`;
-    img.alt = `Carta ${i}`;
-    img.onclick = () => seleccionarCarta(img, i);
-    contenedor.appendChild(img);
-  }
-}
+  <script>
+    const MAX_JUGADORES = 5;
+    const cartasDisponibles = Array.from({ length: 10 }, (_, i) => String(i + 1).padStart(2, '0'));
+    const seleccionadas = [];
 
-function seleccionarCarta(img, num) {
-  if (cartasSeleccionadas.includes(num)) {
-    cartasSeleccionadas = cartasSeleccionadas.filter(n => n !== num);
-    img.classList.remove("seleccionada");
-  } else if (cartasSeleccionadas.length < 2) {
-    cartasSeleccionadas.push(num);
-    img.classList.add("seleccionada");
-  }
+    const pantallaSeleccion = document.getElementById("pantallaSeleccion");
+    const pantallaJuego = document.getElementById("pantallaJuego");
+    const contenedorCartas = document.getElementById("contenedorCartas");
+    const juegoCartas = document.getElementById("juegoCartas");
+    const btnIniciar = document.getElementById("btnIniciar");
 
-  document.getElementById("btnIniciar").style.display =
-    cartasSeleccionadas.length === 2 ? "inline-block" : "none";
-}
+    cartasDisponibles.forEach(carta => {
+      const img = document.createElement("img");
+      img.src = `${carta}.jpg`;
+      img.classList.add("carta-img");
+      img.dataset.id = carta;
+      img.onclick = () => seleccionarCarta(img);
+      contenedorCartas.appendChild(img);
+    });
 
-function iniciarJuego() {
-  window.scrollTo(0, 0);
-  document.getElementById("pantallaInicio").classList.remove("active");
-  document.getElementById("pantallaJuego").classList.add("active");
+    function seleccionarCarta(img) {
+      const id = img.dataset.id;
+      if (img.classList.contains("tachada") || seleccionadas.includes(id)) return;
 
-  document.getElementById("carta1").src = `${String(cartasSeleccionadas[0]).padStart(2, '0')}.jpg`;
-  document.getElementById("carta2").src = `${String(cartasSeleccionadas[1]).padStart(2, '0')}.jpg`;
-}
+      if (seleccionadas.length < 2) {
+        img.classList.add("seleccionada");
+        seleccionadas.push(id);
+        if (seleccionadas.length === 2) btnIniciar.style.display = "block";
+      }
+    }
 
-function colocarFicha(event, cartaNum) {
-  const img = event.target;
-  const rect = img.getBoundingClientRect();
-  const clickX = event.clientX - rect.left;
-  const clickY = event.clientY - rect.top;
+    btnIniciar.onclick = () => {
+      pantallaSeleccion.classList.remove("activa");
+      pantallaJuego.classList.add("activa");
 
-  const offsetX = (clickX / rect.width) * 100;
-  const offsetY = (clickY / rect.height) * 100;
+      seleccionadas.forEach(id => {
+        const contenedor = document.createElement("div");
+        contenedor.classList.add("carta-juego");
+        contenedor.innerHTML = `<img src="${id}.jpg" alt="Carta ${id}">`;
+        contenedor.onclick = e => marcarFicha(e, contenedor);
+        juegoCartas.appendChild(contenedor);
+      });
+    };
 
-  const ficha = document.createElement("img");
-  ficha.src = "ficha.PNG";
-  ficha.className = "ficha";
-  ficha.style.left = `${offsetX}%`;
-  ficha.style.top = `${offsetY}%`;
+    function marcarFicha(event, contenedor) {
+      const imgCarta = contenedor.querySelector("img");
+      const bounds = imgCarta.getBoundingClientRect();
+      const x = event.clientX - bounds.left;
+      const y = event.clientY - bounds.top;
 
-  const contenedor = document.getElementById(`carta${cartaNum}Container`);
-  contenedor.appendChild(ficha);
-}
+      const porcentajeX = (x / bounds.width) * 100;
+      const porcentajeY = (y / bounds.height) * 100;
 
-function limpiarFichas() {
-  document.querySelectorAll(".ficha").forEach(f => f.remove());
-}
+      const ficha = document.createElement("img");
+      ficha.src = "ficha.PNG";
+      ficha.classList.add("ficha");
+      ficha.style.left = `${porcentajeX}%`;
+      ficha.style.top = `${porcentajeY}%`;
 
-crearPantallaInicio();
-</script>
+      contenedor.appendChild(ficha);
+    }
+
+    function limpiarFichas() {
+      document.querySelectorAll(".ficha").forEach(f => f.remove());
+    }
+  </script>
 
 </body>
 </html>
