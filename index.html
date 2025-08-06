@@ -3,24 +3,152 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>La Lotería</title>
-  <link rel="stylesheet" href="style.css" />
-  <link rel="icon" href="icon.png" type="image/png">
+  <title>Lotería WebApp</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: sans-serif;
+      background: #222;
+      color: #fff;
+      text-align: center;
+    }
+
+    h1 {
+      margin: 1rem 0;
+    }
+
+    #selector {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+
+    .carta-option {
+      position: relative;
+      width: 120px;
+      cursor: pointer;
+      border: 2px solid gold;
+    }
+
+    .carta-option img {
+      width: 100%;
+    }
+
+    .tachada {
+      opacity: 0.4;
+      pointer-events: none;
+    }
+
+    .tachada::after {
+      content: "🚫";
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      font-size: 2rem;
+      color: red;
+    }
+
+    #tablero {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 30px;
+      margin-top: 20px;
+    }
+
+    .carta {
+      position: relative;
+      width: 300px;
+      height: 400px;
+      background-size: cover;
+      border: 3px solid gold;
+    }
+
+    .cuadro {
+      position: absolute;
+      width: 25%;
+      height: 25%;
+      box-sizing: border-box;
+    }
+
+    .ficha {
+      width: 100%;
+      height: 100%;
+      background: url('ficha.png') no-repeat center center;
+      background-size: contain;
+      pointer-events: none;
+    }
+  </style>
 </head>
 <body>
-  <div id="pantalla-carga">
-    <img src="carga.gif" alt="Cargando..." />
-    <h2>Que la suerte esté con vosotros</h2>
-  </div>
+  <h1>🎴 Selecciona tu carta</h1>
+  <div id="selector"></div>
+  <h2 id="jugadoresContador">Jugadores: 0 / 5</h2>
+  <div id="tablero"></div>
 
-  <div id="contenedor-cartas" class="oculto">
-    <div id="cartas-seleccionadas"></div>
-    <div id="botones-controles">
-      <button onclick="cambiarCarta()">Cambiar Carta</button>
-      <button onclick="limpiarCartas()">Limpiar Cartas</button>
-    </div>
-  </div>
+  <script>
+    const maxJugadores = 5;
+    let cartasUsadas = new Set();
+    let jugadores = 0;
 
-  <script src="script.js"></script>
+    const coordenadas = [];
+    for (let i = 0; i < 4; i++) {
+      for (let j = 0; j < 4; j++) {
+        coordenadas.push({ top: `${i * 25}%`, left: `${j * 25}%` });
+      }
+    }
+
+    function cargarSelector() {
+      const contenedor = document.getElementById("selector");
+      for (let i = 1; i <= 10; i++) {
+        const numero = String(i).padStart(2, '0');
+        const div = document.createElement("div");
+        div.classList.add("carta-option");
+        div.dataset.carta = numero;
+        div.innerHTML = `<img src="${numero}.jpg" alt="Carta ${numero}" />`;
+        div.addEventListener("click", () => seleccionarCarta(numero, div));
+        contenedor.appendChild(div);
+      }
+    }
+
+    function seleccionarCarta(numero, elemento) {
+      if (jugadores >= maxJugadores || cartasUsadas.has(numero)) return;
+
+      jugadores++;
+      cartasUsadas.add(numero);
+      elemento.classList.add("tachada");
+      document.getElementById("jugadoresContador").textContent = `Jugadores: ${jugadores} / ${maxJugadores}`;
+
+      const carta = document.createElement("div");
+      carta.classList.add("carta");
+      carta.style.backgroundImage = `url('${numero}.jpg')`;
+      carta.dataset.carta = numero;
+
+      coordenadas.forEach((coord, index) => {
+        const cuadro = document.createElement("div");
+        cuadro.classList.add("cuadro");
+        cuadro.style.top = coord.top;
+        cuadro.style.left = coord.left;
+        cuadro.dataset.seleccionado = "false";
+        cuadro.addEventListener("click", () => {
+          if (cuadro.dataset.seleccionado === "false") {
+            const ficha = document.createElement("div");
+            ficha.classList.add("ficha");
+            cuadro.appendChild(ficha);
+            cuadro.dataset.seleccionado = "true";
+          }
+        });
+        carta.appendChild(cuadro);
+      });
+
+      document.getElementById("tablero").appendChild(carta);
+    }
+
+    window.onload = () => {
+      cargarSelector();
+    };
+  </script>
 </body>
 </html>
