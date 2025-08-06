@@ -34,11 +34,19 @@
       position: relative;
     }
 
+    #pantallaSeleccion {
+      background-image: url("fondo_seleccion.jpg");
+    }
+
+    #pantallaJuego {
+      background-image: url("fondo_juego.jpg");
+    }
+
     #loader {
       position: absolute;
-      bottom: 3%;
-      width: 30px;
-      height: 30px;
+      bottom: 5%;
+      width: 40px;
+      height: 40px;
       border: 4px solid #fff;
       border-top: 4px solid gold;
       border-radius: 50%;
@@ -62,7 +70,7 @@
       border: 3px solid #fff;
       border-radius: 10px;
       cursor: pointer;
-      transition: transform 0.3s;
+      transition: transform 0.3s, box-shadow 0.3s;
       position: relative;
     }
 
@@ -106,14 +114,16 @@
     .carta-juego {
       position: relative;
       width: 250px;
-      box-shadow: 0 0 20px 5px gold;
+      border: 4px solid gold;
+      box-shadow: 0 0 20px gold;
       border-radius: 10px;
     }
 
     .carta-juego img {
       width: 100%;
       border-radius: 10px;
-}
+    }
+
     .ficha {
       position: absolute;
       pointer-events: none;
@@ -124,48 +134,48 @@
       transform: translate(-50%, -50%);
     }
 
-    #historialContainer {
-      width: 90%;
-      overflow-x: auto;
-      overflow-y: hidden;
-      white-space: nowrap;
-      margin-top: 1rem;
-      padding: 0.5rem;
-      border: 1px solid #fff;
-      border-radius: 10px;
-      background-color: rgba(0, 0, 0, 0.5);
-    }
-
     #historial {
       display: flex;
+      overflow-x: auto;
       gap: 5px;
+      margin-top: 1rem;
+      padding: 0.5rem;
+      background: rgba(0, 0, 0, 0.4);
+      max-width: 90%;
+      border: 2px solid gold;
+      border-radius: 10px;
+      scroll-behavior: smooth;
     }
 
     #historial img {
       width: 40px;
-      height: auto;
       border-radius: 5px;
+      flex-shrink: 0;
     }
   </style>
 </head>
 <body>
+  <!-- Splash -->
   <div id="pantallaSplash" class="pantalla activa">
     <div id="loader"></div>
   </div>
 
+  <!-- Nickname -->
   <div id="pantallaNickname" class="pantalla">
     <h2>Ingresa tu nickname</h2>
     <input type="text" id="nicknameInput" placeholder="Tu nombre..." />
     <button onclick="entrarJuego()">Entrar</button>
   </div>
 
-  <div id="pantallaSeleccion" class="pantalla" style="background-image: url('fondo-seleccion.PNG');">
+  <!-- Selección -->
+  <div id="pantallaSeleccion" class="pantalla">
     <h1>Selecciona tus 2 cartas</h1>
     <div class="cartas-container" id="contenedorCartas"></div>
     <button id="btnIniciar" style="display:none">Continuar</button>
   </div>
 
-  <div id="pantallaJuego" class="pantalla" style="background-image: url('fondo-juego.PNG');">
+  <!-- Juego -->
+  <div id="pantallaJuego" class="pantalla">
     <h2>Tu juego</h2>
     <div class="juego-cartas" id="juegoCartas"></div>
     <div>
@@ -173,22 +183,19 @@
       <button id="btnBarajear" onclick="emitirBarajear()">Barajear</button>
       <button id="btnIniciarJuego" onclick="emitirIniciarJuego()">Iniciar juego</button>
       <button id="btnDetenerJuego" onclick="emitirDetenerJuego()">Detener juego</button>
-      <button onclick="emitirLoteria()">Lotería</button>
       <button id="btnReiniciar" onclick="emitirReiniciar()">Reiniciar partida</button>
+      <button onclick="emitirLoteria()">Lotería</button>
     </div>
-    <div id="historialContainer">
-      <div id="historial"></div>
-    </div>
+    <div id="historial"></div>
   </div>
 
   <script src="https://loteria-backend-3nde.onrender.com/socket.io/socket.io.js"></script>
   <script>
     const socket = io("https://loteria-backend-3nde.onrender.com");
-
     let nickname = "";
     let soyHost = false;
     let seleccionadas = [];
-    const cartasDisponibles = Array.from({ length: 54 }, (_, i) => String(i + 1).padStart(2, '0'));
+    const cartasDisponibles = Array.from({ length: 10 }, (_, i) => String(i + 1).padStart(2, '0'));
 
     const splash = document.getElementById("pantallaSplash");
     const nicknameDiv = document.getElementById("pantallaNickname");
@@ -198,6 +205,10 @@
     const juegoCartas = document.getElementById("juegoCartas");
     const btnIniciar = document.getElementById("btnIniciar");
     const historial = document.getElementById("historial");
+    const btnBarajear = document.getElementById("btnBarajear");
+    const btnIniciarJuego = document.getElementById("btnIniciarJuego");
+    const btnDetenerJuego = document.getElementById("btnDetenerJuego");
+    const btnReiniciar = document.getElementById("btnReiniciar");
 
     window.onload = () => {
       setTimeout(() => {
@@ -217,12 +228,21 @@
       nicknameDiv.classList.remove("activa");
       pantallaSeleccion.classList.add("activa");
       generarCartas();
-      if (!soyHost) {
-        document.getElementById("btnBarajear").style.display = "none";
-        document.getElementById("btnIniciarJuego").style.display = "none";
-        document.getElementById("btnDetenerJuego").style.display = "none";
-        document.getElementById("btnReiniciar").style.display = "none";
-      }
+
+      // Mostrar botones solo al host
+      btnBarajear.style.display = soyHost ? "inline-block" : "none";
+      btnIniciarJuego.style.display = soyHost ? "inline-block" : "none";
+      btnDetenerJuego.style.display = soyHost ? "inline-block" : "none";
+      btnReiniciar.style.display = soyHost ? "inline-block" : "none";
+    });
+
+    socket.on("cartas-desactivadas", (cartas) => {
+      document.querySelectorAll(".carta-img").forEach(img => {
+        if (cartas.includes(img.dataset.id)) {
+          img.classList.add("tachada");
+          img.onclick = null;
+        }
+      });
     });
 
     function generarCartas() {
@@ -237,18 +257,9 @@
       });
     }
 
-    socket.on("cartas-desactivadas", (desactivadas) => {
-      document.querySelectorAll(".carta-img").forEach(img => {
-        if (desactivadas.includes(img.dataset.id)) {
-          img.style.opacity = "0.3";
-          img.style.pointerEvents = "none";
-        }
-      });
-    });
-
     function seleccionarCarta(img) {
       const id = img.dataset.id;
-      if (seleccionadas.includes(id)) return;
+      if (seleccionadas.includes(id) || img.classList.contains("tachada")) return;
       if (seleccionadas.length < 2) {
         img.classList.add("seleccionada");
         seleccionadas.push(id);
@@ -298,19 +309,21 @@
     }
 
     function emitirIniciarJuego() {
-      socket.emit("iniciar-juego");
+      reproducirSonido("campana.mp3");
+      setTimeout(() => reproducirSonido("corre.mp3"), 1200);
+      setTimeout(() => socket.emit("iniciarJuego"), 2500);
     }
 
     function emitirDetenerJuego() {
-      socket.emit("detener-juego");
+      socket.emit("detenerJuego");
+    }
+
+    function emitirReiniciar() {
+      socket.emit("reiniciarPartida");
     }
 
     function emitirLoteria() {
       socket.emit("loteria", nickname);
-    }
-
-    function emitirReiniciar() {
-      location.reload(); // Reinicia todo desde el inicio
     }
 
     socket.on("barajear", () => {
@@ -318,14 +331,22 @@
       reproducirSonido("barajar.mp3");
     });
 
-    socket.on("carta-cantada", (nombre) => {
+    socket.on("cartaCantada", nombre => {
       const img = document.createElement("img");
       img.src = `${nombre}.png`;
       historial.appendChild(img);
       reproducirSonido(`${nombre}.mp3`);
     });
 
-    socket.on("historial-actualizado", (historialCartas) => {
+    socket.on("juegoDetenido", () => {
+      reproducirSonido("aplausos.mp3");
+    });
+
+    socket.on("loteria-anunciada", ganador => {
+      alert(`¡${ganador} ha cantado LOTERÍA!`);
+    });
+
+    socket.on("historial-actualizado", historialCartas => {
       historial.innerHTML = "";
       historialCartas.forEach(nombre => {
         const img = document.createElement("img");
@@ -334,12 +355,8 @@
       });
     });
 
-    socket.on("juego-detenido", () => {
-      reproducirSonido("aplausos.mp3");
-    });
-
-    socket.on("loteria-anunciada", (ganador) => {
-      alert(`¡${ganador} ha cantado LOTERÍA!`);
+    socket.on("partidaReiniciada", () => {
+      window.location.reload();
     });
   </script>
 </body>
