@@ -95,7 +95,10 @@
     .ficha {
       position: absolute;
       pointer-events: none;
-      width: 10px; /* Tamaño ultra pequeño */
+      width: 3px;       /* Súper pequeño */
+      height: auto;     /* Mantiene proporción */
+      max-width: 3px;   /* No crezca */
+      max-height: 3px;  /* No crezca */
       transform: translate(-50%, -50%);
     }
   </style>
