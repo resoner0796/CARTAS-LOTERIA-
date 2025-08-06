@@ -1,154 +1,168 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Lotería WebApp</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lotería Mexicana</title>
   <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
-      margin: 0;
       font-family: sans-serif;
-      background: #222;
+      background-color: #111;
       color: #fff;
-      text-align: center;
     }
-
-    h1 {
-      margin: 1rem 0;
+    .pantalla {
+      display: none;
+      padding: 20px;
     }
-
-    #selector {
+    .activa {
+      display: block;
+    }
+    .cartas-container {
       display: flex;
       flex-wrap: wrap;
       justify-content: center;
-      gap: 10px;
-      margin-bottom: 20px;
+      gap: 15px;
     }
-
-    .carta-option {
-      position: relative;
-      width: 120px;
-      cursor: pointer;
-      border: 2px solid gold;
-    }
-
-    .carta-option img {
-      width: 100%;
-    }
-
-    .tachada {
-      opacity: 0.4;
-      pointer-events: none;
-    }
-
-    .tachada::after {
-      content: "🚫";
-      position: absolute;
-      top: 10px;
-      left: 10px;
-      font-size: 2rem;
-      color: red;
-    }
-
-    #tablero {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
-      gap: 30px;
-      margin-top: 20px;
-    }
-
     .carta {
+      width: 150px;
+      border: 4px solid gold;
+      border-radius: 8px;
+      cursor: pointer;
       position: relative;
-      width: 300px;
-      height: 400px;
-      background-size: cover;
-      border: 3px solid gold;
+      transition: transform 0.2s;
     }
-
-    .cuadro {
+    .carta:hover {
+      transform: scale(1.05);
+    }
+    .carta.tachada::after {
+      content: "";
       position: absolute;
-      width: 25%;
-      height: 25%;
-      box-sizing: border-box;
-    }
-
-    .ficha {
-      width: 100%;
-      height: 100%;
-      background: url('ficha.png') no-repeat center center;
-      background-size: contain;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(255, 0, 0, 0.5);
       pointer-events: none;
+    }
+    #botonIniciar {
+      margin-top: 20px;
+      padding: 10px 20px;
+      font-size: 1rem;
+      background-color: gold;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    .juego-cartas {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 15px;
+    }
+    .juego-carta {
+      width: 180px;
+      position: relative;
+    }
+    .ficha {
+      width: 25px;
+      height: 25px;
+      position: absolute;
+      pointer-events: none;
+    }
+    #limpiar {
+      margin-top: 20px;
+      padding: 10px 20px;
+      background-color: crimson;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
     }
   </style>
 </head>
 <body>
-  <h1>🎴 Selecciona tu carta</h1>
-  <div id="selector"></div>
-  <h2 id="jugadoresContador">Jugadores: 0 / 5</h2>
-  <div id="tablero"></div>
 
-  <script>
-    const maxJugadores = 5;
-    let cartasUsadas = new Set();
-    let jugadores = 0;
+<!-- Pantalla 1 -->
+<div id="pantallaSeleccion" class="pantalla activa">
+  <h2>Selecciona tus 2 cartas:</h2>
+  <div class="cartas-container" id="cartasDisponibles"></div>
+  <button id="botonIniciar" style="display:none">Iniciar Juego</button>
+</div>
 
-    const coordenadas = [];
-    for (let i = 0; i < 4; i++) {
-      for (let j = 0; j < 4; j++) {
-        coordenadas.push({ top: `${i * 25}%`, left: `${j * 25}%` });
+<!-- Pantalla 2 -->
+<div id="pantallaJuego" class="pantalla">
+  <h2>¡A jugar!</h2>
+  <div class="juego-cartas" id="cartasJuego"></div>
+  <button id="limpiar">Limpiar fichas</button>
+</div>
+
+<script>
+  const MAX_CARTAS = 2;
+  const fichas = [];
+  let cartasSeleccionadas = [];
+
+  const contenedorCartas = document.getElementById('cartasDisponibles');
+  const contenedorJuego = document.getElementById('cartasJuego');
+  const botonIniciar = document.getElementById('botonIniciar');
+  const btnLimpiar = document.getElementById('limpiar');
+
+  // Generar cartas para seleccionar
+  for (let i = 1; i <= 10; i++) {
+    const carta = document.createElement('img');
+    carta.src = `${String(i).padStart(2, '0')}.jpg`;
+    carta.classList.add('carta');
+    carta.dataset.id = i;
+    carta.addEventListener('click', () => seleccionarCarta(carta));
+    contenedorCartas.appendChild(carta);
+  }
+
+  function seleccionarCarta(carta) {
+    if (carta.classList.contains('tachada')) return;
+
+    if (cartasSeleccionadas.length < MAX_CARTAS) {
+      carta.classList.add('tachada');
+      cartasSeleccionadas.push(carta.dataset.id);
+      if (cartasSeleccionadas.length === MAX_CARTAS) {
+        botonIniciar.style.display = 'inline-block';
       }
     }
+  }
 
-    function cargarSelector() {
-      const contenedor = document.getElementById("selector");
-      for (let i = 1; i <= 10; i++) {
-        const numero = String(i).padStart(2, '0');
-        const div = document.createElement("div");
-        div.classList.add("carta-option");
-        div.dataset.carta = numero;
-        div.innerHTML = `<img src="${numero}.jpg" alt="Carta ${numero}" />`;
-        div.addEventListener("click", () => seleccionarCarta(numero, div));
-        contenedor.appendChild(div);
-      }
-    }
+  botonIniciar.addEventListener('click', () => {
+    document.getElementById('pantallaSeleccion').classList.remove('activa');
+    document.getElementById('pantallaJuego').classList.add('activa');
+    cargarCartasDeJuego();
+  });
 
-    function seleccionarCarta(numero, elemento) {
-      if (jugadores >= maxJugadores || cartasUsadas.has(numero)) return;
+  function cargarCartasDeJuego() {
+    cartasSeleccionadas.forEach(id => {
+      const contenedor = document.createElement('div');
+      contenedor.classList.add('juego-carta');
 
-      jugadores++;
-      cartasUsadas.add(numero);
-      elemento.classList.add("tachada");
-      document.getElementById("jugadoresContador").textContent = `Jugadores: ${jugadores} / ${maxJugadores}`;
+      const img = document.createElement('img');
+      img.src = `${String(id).padStart(2, '0')}.jpg`;
+      img.style.width = '100%';
+      img.addEventListener('click', (e) => colocarFicha(e, contenedor));
 
-      const carta = document.createElement("div");
-      carta.classList.add("carta");
-      carta.style.backgroundImage = `url('${numero}.jpg')`;
-      carta.dataset.carta = numero;
+      contenedor.appendChild(img);
+      contenedorJuego.appendChild(contenedor);
+    });
+  }
 
-      coordenadas.forEach((coord, index) => {
-        const cuadro = document.createElement("div");
-        cuadro.classList.add("cuadro");
-        cuadro.style.top = coord.top;
-        cuadro.style.left = coord.left;
-        cuadro.dataset.seleccionado = "false";
-        cuadro.addEventListener("click", () => {
-          if (cuadro.dataset.seleccionado === "false") {
-            const ficha = document.createElement("div");
-            ficha.classList.add("ficha");
-            cuadro.appendChild(ficha);
-            cuadro.dataset.seleccionado = "true";
-          }
-        });
-        carta.appendChild(cuadro);
-      });
+  function colocarFicha(e, contenedor) {
+    const ficha = document.createElement('img');
+    ficha.src = 'ficha.png';
+    ficha.classList.add('ficha');
+    ficha.style.left = (e.offsetX - 12) + 'px';
+    ficha.style.top = (e.offsetY - 12) + 'px';
+    contenedor.appendChild(ficha);
+    fichas.push(ficha);
+  }
 
-      document.getElementById("tablero").appendChild(carta);
-    }
+  btnLimpiar.addEventListener('click', () => {
+    fichas.forEach(f => f.remove());
+    fichas.length = 0;
+  });
+</script>
 
-    window.onload = () => {
-      cargarSelector();
-    };
-  </script>
 </body>
 </html>
