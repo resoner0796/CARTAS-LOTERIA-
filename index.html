@@ -7,29 +7,32 @@
   <style>
     body {
       margin: 0;
-      background-color: #111;
-      color: #fff;
       font-family: sans-serif;
+      background-color: #000;
+      color: white;
     }
+
     .pantalla {
       display: none;
       flex-direction: column;
       align-items: center;
       justify-content: flex-start;
       min-height: 100vh;
-      overflow-y: auto;
-      padding: 1rem;
       background-size: cover;
       background-position: center;
+      padding: 1rem;
     }
+
     .pantalla.activa {
       display: flex;
     }
+
     #pantallaSplash {
       background-image: url("splash.PNG");
       justify-content: center;
       position: relative;
     }
+
     #loader {
       position: absolute;
       bottom: 3%;
@@ -40,29 +43,52 @@
       border-radius: 50%;
       animation: girar 1s linear infinite;
     }
+
     @keyframes girar {
       0% { transform: rotate(0deg); }
       100% { transform: rotate(360deg); }
     }
+
+    input {
+      padding: 0.6rem;
+      font-size: 1rem;
+      border-radius: 5px;
+      margin: 0.5rem 0;
+      border: none;
+    }
+
+    button {
+      padding: 0.6rem 1.2rem;
+      font-size: 1rem;
+      border-radius: 10px;
+      margin: 0.5rem;
+      border: none;
+      background-color: gold;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
     .cartas-container {
       display: flex;
       flex-wrap: wrap;
       justify-content: center;
       gap: 1rem;
     }
+
     .carta-img {
-      width: 180px;
-      border: 3px solid #fff;
+      width: 160px;
+      border: 2px solid #fff;
       border-radius: 10px;
+      transition: transform 0.2s;
       cursor: pointer;
-      transition: transform 0.3s;
-      position: relative;
     }
+
     .carta-img.seleccionada {
-      transform: scale(1.05);
-      box-shadow: 0 0 15px gold;
+      transform: scale(1.1);
       border-color: gold;
+      box-shadow: 0 0 15px gold;
     }
+
     .carta-img.tachada::after {
       content: "❌";
       font-size: 4rem;
@@ -71,83 +97,81 @@
       top: 30%;
       left: 50%;
       transform: translate(-50%, -50%);
-      pointer-events: none;
     }
-    button {
-      padding: 0.6rem 1.2rem;
-      font-size: 1rem;
-      margin: 0.5rem;
-      border-radius: 10px;
-      border: none;
-      background-color: gold;
-      color: black;
-      cursor: pointer;
-      font-weight: bold;
-    }
+
     .juego-cartas {
       display: flex;
+      gap: 1rem;
       flex-wrap: wrap;
-      gap: 2rem;
       justify-content: center;
-      align-items: center;
     }
+
     .carta-juego {
       position: relative;
-      width: 250px;
-      box-shadow: 0 0 15px gold;
+      width: 200px;
     }
+
     .carta-juego img {
       width: 100%;
     }
+
     .ficha {
       position: absolute;
       pointer-events: none;
       width: 40px;
-      height: auto;
-      max-width: 40px;
-      max-height: 40px;
       transform: translate(-50%, -50%);
     }
+
     #historial {
       display: flex;
       overflow-x: auto;
-      gap: 5px;
+      max-width: 90vw;
+      padding: 10px;
       margin-top: 1rem;
-      padding: 0 1rem;
+      gap: 5px;
+      border: 1px solid gold;
+      border-radius: 10px;
+      background: rgba(255, 215, 0, 0.1);
     }
+
     #historial img {
-      width: 40px;
+      width: 50px;
       border-radius: 5px;
     }
   </style>
 </head>
 <body>
+
+  <!-- Splash -->
   <div id="pantallaSplash" class="pantalla activa">
     <div id="loader"></div>
   </div>
 
+  <!-- Nickname -->
   <div id="pantallaNickname" class="pantalla">
     <h2>Ingresa tu nickname</h2>
-    <input type="text" id="nicknameInput" placeholder="Tu nombre..." />
+    <input id="nicknameInput" placeholder="Tu nombre..." />
     <button onclick="entrarJuego()">Entrar</button>
   </div>
 
-  <div id="pantallaSeleccion" class="pantalla">
-    <h1>Selecciona tus 2 cartas</h1>
+  <!-- Selección -->
+  <div id="pantallaSeleccion" class="pantalla" style="background-image: url('fondo-seleccion.PNG');">
+    <h2>Selecciona tus 2 cartas</h2>
     <div class="cartas-container" id="contenedorCartas"></div>
-    <button id="btnIniciar" style="display:none">Continuar</button>
+    <button id="btnContinuar" style="display:none;">Continuar</button>
   </div>
 
-  <div id="pantallaJuego" class="pantalla">
+  <!-- Juego -->
+  <div id="pantallaJuego" class="pantalla" style="background-image: url('fondo-juego.PNG');">
     <h2>Tu juego</h2>
     <div class="juego-cartas" id="juegoCartas"></div>
     <div>
       <button onclick="limpiarFichas()">Limpiar cartas</button>
-      <button id="btnBarajear" onclick="emitirBarajear()">Barajear</button>
-      <button id="btnIniciarJuego" onclick="emitirIniciarJuego()">Iniciar juego</button>
-      <button id="btnDetenerJuego" onclick="emitirDetenerJuego()">Detener juego</button>
       <button onclick="emitirLoteria()">Lotería</button>
-      <button onclick="emitirReiniciarJuego()">Reiniciar partida</button>
+      <button id="btnBarajear" onclick="socket.emit('barajear')">Barajear</button>
+      <button id="btnIniciarJuego" onclick="socket.emit('iniciar-juego')">Iniciar juego</button>
+      <button id="btnDetenerJuego" onclick="socket.emit('detener-juego')">Detener</button>
+      <button id="btnReiniciar" onclick="socket.emit('reiniciar-partida')">Reiniciar partida</button>
     </div>
     <div id="historial"></div>
   </div>
@@ -158,53 +182,56 @@
 
     let nickname = "";
     let soyHost = false;
-    let seleccionadas = [];
+    const seleccionadas = [];
     const cartasDisponibles = Array.from({ length: 10 }, (_, i) => String(i + 1).padStart(2, '0'));
 
     const splash = document.getElementById("pantallaSplash");
     const nicknameDiv = document.getElementById("pantallaNickname");
-    const pantallaSeleccion = document.getElementById("pantallaSeleccion");
-    const pantallaJuego = document.getElementById("pantallaJuego");
+    const seleccionDiv = document.getElementById("pantallaSeleccion");
+    const juegoDiv = document.getElementById("pantallaJuego");
     const contenedorCartas = document.getElementById("contenedorCartas");
     const juegoCartas = document.getElementById("juegoCartas");
-    const btnIniciar = document.getElementById("btnIniciar");
+    const btnContinuar = document.getElementById("btnContinuar");
     const historial = document.getElementById("historial");
     const btnBarajear = document.getElementById("btnBarajear");
     const btnIniciarJuego = document.getElementById("btnIniciarJuego");
     const btnDetenerJuego = document.getElementById("btnDetenerJuego");
+    const btnReiniciar = document.getElementById("btnReiniciar");
 
     window.onload = () => {
       setTimeout(() => {
         splash.classList.remove("activa");
         nicknameDiv.classList.add("activa");
-      }, 2000);
+      }, 1500);
     };
 
     function entrarJuego() {
-      nickname = document.getElementById("nicknameInput").value.trim();
-      if (!nickname) return alert("Escribe tu nombre");
+      const input = document.getElementById("nicknameInput");
+      if (!input.value.trim()) return alert("Escribe tu nombre");
+      nickname = input.value.trim();
       socket.emit("registrar-nickname", nickname);
     }
 
     socket.on("rol-asignado", ({ host }) => {
       soyHost = host;
       nicknameDiv.classList.remove("activa");
-      pantallaSeleccion.classList.add("activa");
-      generarCartas();
+      seleccionDiv.classList.add("activa");
       if (!soyHost) {
         btnBarajear.style.display = "none";
         btnIniciarJuego.style.display = "none";
         btnDetenerJuego.style.display = "none";
+        btnReiniciar.style.display = "none";
       }
+      generarCartas();
     });
 
     function generarCartas() {
       contenedorCartas.innerHTML = "";
-      cartasDisponibles.forEach(carta => {
+      cartasDisponibles.forEach(id => {
         const img = document.createElement("img");
-        img.src = `${carta}.jpg`;
-        img.classList.add("carta-img");
-        img.dataset.id = carta;
+        img.src = `${id}.jpg`;
+        img.className = "carta-img";
+        img.dataset.id = id;
         img.onclick = () => seleccionarCarta(img);
         contenedorCartas.appendChild(img);
       });
@@ -212,24 +239,23 @@
 
     function seleccionarCarta(img) {
       const id = img.dataset.id;
-      if (seleccionadas.includes(id)) return;
-      if (seleccionadas.length < 2) {
-        img.classList.add("seleccionada");
-        seleccionadas.push(id);
-        socket.emit("seleccionar-carta", id);
-        if (seleccionadas.length === 2) btnIniciar.style.display = "block";
-      }
+      if (seleccionadas.includes(id) || seleccionadas.length >= 2) return;
+      seleccionadas.push(id);
+      img.classList.add("seleccionada");
+      img.onclick = null;
+      socket.emit("seleccionar-carta", id);
+      if (seleccionadas.length === 2) btnContinuar.style.display = "block";
     }
 
-    btnIniciar.onclick = () => {
-      pantallaSeleccion.classList.remove("activa");
-      pantallaJuego.classList.add("activa");
+    btnContinuar.onclick = () => {
+      seleccionDiv.classList.remove("activa");
+      juegoDiv.classList.add("activa");
       seleccionadas.forEach(id => {
-        const contenedor = document.createElement("div");
-        contenedor.classList.add("carta-juego");
-        contenedor.innerHTML = `<img src="${id}.jpg">`;
-        contenedor.onclick = e => marcarFicha(e, contenedor);
-        juegoCartas.appendChild(contenedor);
+        const cont = document.createElement("div");
+        cont.className = "carta-juego";
+        cont.innerHTML = `<img src="${id}.jpg">`;
+        cont.onclick = e => marcarFicha(e, cont);
+        juegoCartas.appendChild(cont);
       });
     };
 
@@ -252,30 +278,25 @@
       document.querySelectorAll(".ficha").forEach(f => f.remove());
     }
 
-    function emitirBarajear() {
-      socket.emit("barajear");
-    }
-
-    function emitirIniciarJuego() {
-      socket.emit("iniciar-juego");
-    }
-
-    function emitirDetenerJuego() {
-      socket.emit("detener-juego");
-    }
-
     function emitirLoteria() {
       socket.emit("loteria", nickname);
-    }
-
-    function emitirReiniciarJuego() {
-      location.reload();
     }
 
     function reproducirSonido(nombre) {
       const audio = new Audio(nombre);
       audio.play();
     }
+
+    // SOCKET LISTENERS
+
+    socket.on("cartas-desactivadas", cartas => {
+      document.querySelectorAll(".carta-img").forEach(img => {
+        if (cartas.includes(img.dataset.id)) {
+          img.style.opacity = 0.3;
+          img.onclick = null;
+        }
+      });
+    });
 
     socket.on("barajear", () => {
       historial.innerHTML = "";
@@ -289,30 +310,23 @@
       reproducirSonido(`${nombre}.mp3`);
     });
 
+    socket.on("iniciar-cantada", () => {
+      reproducirSonido("campana.mp3");
+      setTimeout(() => {
+        reproducirSonido("corre.mp3");
+      }, 1500);
+    });
+
     socket.on("juego-detenido", () => {
       reproducirSonido("aplausos.mp3");
     });
 
     socket.on("loteria-anunciada", ganador => {
-      alert(`¡${ganador} ha cantado LOTERÍA!`);
+      alert(`¡${ganador} ha cantado Lotería!`);
     });
 
-    socket.on("cartas-desactivadas", ids => {
-      document.querySelectorAll(".carta-img").forEach(img => {
-        if (ids.includes(img.dataset.id)) {
-          img.style.pointerEvents = "none";
-          img.style.opacity = 0.3;
-        }
-      });
-    });
-
-    socket.on("historial-actualizado", lista => {
-      historial.innerHTML = "";
-      lista.forEach(nombre => {
-        const img = document.createElement("img");
-        img.src = `${nombre}.png`;
-        historial.appendChild(img);
-      });
+    socket.on("reiniciar-cliente", () => {
+      location.reload();
     });
   </script>
 </body>
