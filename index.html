@@ -5,21 +5,29 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Lotería Interactiva</title>
   <style>
+    * {
+      box-sizing: border-box;
+    }
+
     body {
       margin: 0;
       font-family: sans-serif;
       background-color: #111;
       color: white;
-      overflow: hidden;
       text-align: center;
+    }
+
+    html, body {
+      scroll-behavior: smooth;
     }
 
     #pantallaInicio, #pantallaJuego {
       display: none;
       flex-direction: column;
       align-items: center;
-      justify-content: center;
-      height: 100vh;
+      justify-content: flex-start;
+      min-height: 100vh;
+      padding: 20px;
     }
 
     #pantallaInicio.active, #pantallaJuego.active {
@@ -103,7 +111,7 @@
 </div>
 
 <div id="pantallaJuego">
-  <div style="display: flex; justify-content: center; gap: 20px;">
+  <div style="display: flex; justify-content: center; gap: 20px; flex-wrap: wrap;">
     <div class="cartaJuego" id="carta1Container">
       <div class="tituloCarta">Carta 1</div>
       <img id="carta1" src="" onclick="colocarFicha(event, 1)">
@@ -118,13 +126,6 @@
 
 <script>
 let cartasSeleccionadas = [];
-
-const coordenadas = [
-  [35, 55], [205, 55], [375, 55], [545, 55],
-  [35, 270], [205, 270], [375, 270], [545, 270],
-  [35, 500], [205, 500], [375, 500], [545, 500],
-  [35, 730], [205, 730], [375, 730], [545, 730],
-];
 
 function crearPantallaInicio() {
   const contenedor = document.getElementById("seleccionCartas");
@@ -151,6 +152,8 @@ function seleccionarCarta(img, num) {
 }
 
 function iniciarJuego() {
+  window.scrollTo(0, 0); // Fuerza el scroll al tope
+
   document.getElementById("pantallaInicio").classList.remove("active");
   document.getElementById("pantallaJuego").classList.add("active");
 
@@ -179,5 +182,6 @@ function limpiarFichas() {
 
 crearPantallaInicio();
 </script>
+
 </body>
 </html>
