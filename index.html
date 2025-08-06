@@ -10,15 +10,14 @@
       background-color: #111;
       color: #fff;
       font-family: sans-serif;
-      overflow: hidden;
     }
 
     .pantalla {
       display: none;
       flex-direction: column;
       align-items: center;
-      justify-content: center;
-      height: 100vh;
+      justify-content: flex-start;
+      min-height: 100vh;
       overflow-y: auto;
       padding: 1rem;
     }
@@ -70,6 +69,10 @@
       color: black;
       cursor: pointer;
       font-weight: bold;
+    }
+
+    #btnIniciar {
+      margin-bottom: 4rem;
     }
 
     .juego-cartas {
