@@ -80,7 +80,7 @@
     .ficha {
       position: absolute;
       pointer-events: none;
-      width: 30px;
+      width: 40px; /* ✅ tamaño ideal */
       height: auto;
       transform: translate(-50%, -50%);
     }
@@ -128,10 +128,9 @@
   const btnIniciar = document.getElementById("btnIniciar");
   const historial = document.getElementById("historial");
 
-  // Cargar cartas de jugador (.jpg)
   cartasDisponibles.forEach(carta => {
     const img = document.createElement("img");
-    img.src = `${carta}.jpg`; // Cartas del jugador
+    img.src = `${carta}.jpg`;
     img.classList.add("carta-img");
     img.dataset.id = carta;
     img.onclick = () => seleccionarCarta(img);
@@ -172,7 +171,7 @@
     const porcentajeY = (y / bounds.height) * 100;
 
     const ficha = document.createElement("img");
-    ficha.src = "ficha.PNG"; // mantén esto en mayúsculas si tu archivo está así
+    ficha.src = "ficha.PNG";
     ficha.classList.add("ficha");
     ficha.style.left = `${porcentajeX}%`;
     ficha.style.top = `${porcentajeY}%`;
@@ -184,7 +183,6 @@
     document.querySelectorAll(".ficha").forEach(f => f.remove());
   }
 
-  // Barajitas: 01.png a 54.png
   const barajas = Array.from({ length: 54 }, (_, i) => i + 1);
   let mezcladas = [];
   let index = 0;
@@ -211,7 +209,7 @@
       const nombre = String(numero).padStart(2, '0');
 
       const img = document.createElement("img");
-      img.src = `${nombre}.png`; // barajita cantada
+      img.src = `${nombre}.png`;
       img.alt = `Carta ${nombre}`;
       historial.appendChild(img);
 
