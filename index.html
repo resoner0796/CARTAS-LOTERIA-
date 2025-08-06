@@ -95,11 +95,12 @@
     .ficha {
       position: absolute;
       pointer-events: none;
-      width: 3px;       /* Súper pequeño */
-      height: auto;     /* Mantiene proporción */
-      max-width: 3px;   /* No crezca */
-      max-height: 3px;  /* No crezca */
+      width: 8px;
+      height: auto;
+      max-width: 8px;
+      max-height: 8px;
       transform: translate(-50%, -50%);
+      border: 1px solid red; /* TEMPORAL para que puedas verla */
     }
   </style>
 </head>
@@ -177,7 +178,7 @@
       const porcentajeY = (y / bounds.height) * 100;
 
       const ficha = document.createElement("img");
-      ficha.src = "ficha.PNG"; // importante respetar el nombre exacto
+      ficha.src = "ficha.PNG"; // respetar el nombre exacto
       ficha.classList.add("ficha");
       ficha.style.left = `${porcentajeX}%`;
       ficha.style.top = `${porcentajeY}%`;
