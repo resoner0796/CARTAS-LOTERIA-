@@ -29,9 +29,17 @@
     }
 
     #pantallaSplash {
-      background-image: url("splash.PNG");
+      background-image: url("fondo_splash.jpg");
       justify-content: center;
       position: relative;
+    }
+
+    #pantallaSeleccion {
+      background-image: url("fondo_seleccion.jpg");
+    }
+
+    #pantallaJuego {
+      background-image: url("fondo_juego.jpg");
     }
 
     #loader {
@@ -72,14 +80,8 @@
       border-color: gold;
     }
 
-    .carta-img.tachada::after {
-      content: "\274C";
-      font-size: 4rem;
-      color: red;
-      position: absolute;
-      top: 30%;
-      left: 50%;
-      transform: translate(-50%, -50%);
+    .carta-img.inactiva {
+      filter: grayscale(1) brightness(0.5);
       pointer-events: none;
     }
 
@@ -107,10 +109,13 @@
       position: relative;
       width: 250px;
       box-shadow: 0 0 15px gold;
+      border: 3px solid gold;
+      border-radius: 12px;
     }
 
     .carta-juego img {
       width: 100%;
+      border-radius: 12px;
     }
 
     .ficha {
@@ -129,7 +134,7 @@
       gap: 5px;
       margin-top: 1rem;
       padding: 0 1rem;
-      max-width: 100vw;
+      max-width: 90vw;
     }
 
     #historial img {
@@ -173,173 +178,180 @@
     <div id="historial"></div>
   </div>
 
-  <script src="https://loteria-backend-3nde.onrender.com/socket.io/socket.io.js"></script>
-  <script>
-    const socket = io("https://loteria-backend-3nde.onrender.com");
-    let nickname = "";
-    let soyHost = false;
-    let seleccionadas = [];
-    const cartasDisponibles = Array.from({ length: 10 }, (_, i) => String(i + 1).padStart(2, '0'));
+<script src="https://loteria-backend-3nde.onrender.com/socket.io/socket.io.js"></script>
+<script>
+const socket = io("https://loteria-backend-3nde.onrender.com");
 
-    const splash = document.getElementById("pantallaSplash");
-    const nicknameDiv = document.getElementById("pantallaNickname");
-    const pantallaSeleccion = document.getElementById("pantallaSeleccion");
-    const pantallaJuego = document.getElementById("pantallaJuego");
-    const contenedorCartas = document.getElementById("contenedorCartas");
-    const juegoCartas = document.getElementById("juegoCartas");
-    const btnIniciar = document.getElementById("btnIniciar");
-    const historial = document.getElementById("historial");
-    const btnBarajear = document.getElementById("btnBarajear");
-    const btnIniciarJuego = document.getElementById("btnIniciarJuego");
-    const btnDetenerJuego = document.getElementById("btnDetenerJuego");
-    const btnReiniciar = document.getElementById("btnReiniciar");
+let nickname = "";
+let soyHost = false;
+let seleccionadas = [];
+const cartasDisponibles = Array.from({ length: 10 }, (_, i) => String(i + 1).padStart(2, '0'));
 
-    window.onload = () => {
-      setTimeout(() => {
-        splash.classList.remove("activa");
-        nicknameDiv.classList.add("activa");
-      }, 2000);
-    };
+const splash = document.getElementById("pantallaSplash");
+const nicknameDiv = document.getElementById("pantallaNickname");
+const pantallaSeleccion = document.getElementById("pantallaSeleccion");
+const pantallaJuego = document.getElementById("pantallaJuego");
+const contenedorCartas = document.getElementById("contenedorCartas");
+const juegoCartas = document.getElementById("juegoCartas");
+const btnIniciar = document.getElementById("btnIniciar");
+const historial = document.getElementById("historial");
+const btnBarajear = document.getElementById("btnBarajear");
+const btnIniciarJuego = document.getElementById("btnIniciarJuego");
+const btnDetenerJuego = document.getElementById("btnDetenerJuego");
+const btnReiniciar = document.getElementById("btnReiniciar");
 
-    function entrarJuego() {
-      nickname = document.getElementById("nicknameInput").value.trim();
-      if (!nickname) return alert("Escribe tu nombre");
-      socket.emit("registrar-nickname", nickname);
+window.onload = () => {
+  setTimeout(() => {
+    splash.classList.remove("activa");
+    nicknameDiv.classList.add("activa");
+  }, 2000);
+};
+
+function entrarJuego() {
+  nickname = document.getElementById("nicknameInput").value.trim();
+  if (!nickname) return alert("Escribe tu nombre");
+  socket.emit("registrar-nickname", nickname);
+}
+
+socket.on("rol-asignado", ({ host }) => {
+  soyHost = host;
+  nicknameDiv.classList.remove("activa");
+  pantallaSeleccion.classList.add("activa");
+  generarCartas();
+
+  if (!soyHost) {
+    btnBarajear.style.display = "none";
+    btnIniciarJuego.style.display = "none";
+    btnDetenerJuego.style.display = "none";
+    btnReiniciar.style.display = "none";
+  }
+});
+
+function generarCartas() {
+  contenedorCartas.innerHTML = "";
+  cartasDisponibles.forEach(carta => {
+    const img = document.createElement("img");
+    img.src = `${carta}.jpg`;
+    img.classList.add("carta-img");
+    img.dataset.id = carta;
+    img.onclick = () => seleccionarCarta(img);
+    contenedorCartas.appendChild(img);
+  });
+}
+
+function seleccionarCarta(img) {
+  const id = img.dataset.id;
+  if (seleccionadas.includes(id)) return;
+  if (seleccionadas.length < 2) {
+    img.classList.add("seleccionada");
+    seleccionadas.push(id);
+    socket.emit("seleccionar-carta", id);
+    if (seleccionadas.length === 2) btnIniciar.style.display = "block";
+  }
+}
+
+btnIniciar.onclick = () => {
+  pantallaSeleccion.classList.remove("activa");
+  pantallaJuego.classList.add("activa");
+  seleccionadas.forEach(id => {
+    const contenedor = document.createElement("div");
+    contenedor.classList.add("carta-juego");
+    contenedor.innerHTML = `<img src="${id}.jpg">`;
+    contenedor.onclick = e => marcarFicha(e, contenedor);
+    juegoCartas.appendChild(contenedor);
+  });
+};
+
+function marcarFicha(e, contenedor) {
+  const img = contenedor.querySelector("img");
+  const bounds = img.getBoundingClientRect();
+  const x = e.clientX - bounds.left;
+  const y = e.clientY - bounds.top;
+  const px = (x / bounds.width) * 100;
+  const py = (y / bounds.height) * 100;
+  const ficha = document.createElement("img");
+  ficha.src = "ficha.PNG";
+  ficha.classList.add("ficha");
+  ficha.style.left = `${px}%`;
+  ficha.style.top = `${py}%`;
+  contenedor.appendChild(ficha);
+}
+
+function limpiarFichas() {
+  document.querySelectorAll(".ficha").forEach(f => f.remove());
+}
+
+function reproducirSonido(nombre) {
+  const audio = new Audio(nombre);
+  audio.play();
+}
+
+function emitirBarajear() {
+  socket.emit("barajear");
+}
+function emitirIniciarJuego() {
+  socket.emit("iniciar-juego");
+}
+function emitirDetenerJuego() {
+  socket.emit("detener-juego");
+}
+function emitirLoteria() {
+  socket.emit("loteria", nickname);
+}
+function emitirReiniciar() {
+  socket.emit("reiniciar-partida");
+}
+
+socket.on("cartas-desactivadas", lista => {
+  document.querySelectorAll(".carta-img").forEach(img => {
+    if (lista.includes(img.dataset.id)) {
+      img.classList.add("inactiva");
+      img.onclick = null;
     }
+  });
+});
 
-    socket.on("rol-asignado", ({ host }) => {
-      soyHost = host;
-      nicknameDiv.classList.remove("activa");
-      pantallaSeleccion.classList.add("activa");
-      generarCartas();
-      if (!soyHost) {
-        btnBarajear.style.display = "none";
-        btnIniciarJuego.style.display = "none";
-        btnDetenerJuego.style.display = "none";
-        btnReiniciar.style.display = "none";
-      }
-    });
+socket.on("historial-actualizado", historialData => {
+  historial.innerHTML = "";
+  historialData.forEach(carta => {
+    const img = document.createElement("img");
+    img.src = `${carta}.png`;
+    historial.appendChild(img);
+  });
+});
 
-    function generarCartas() {
-      contenedorCartas.innerHTML = "";
-      cartasDisponibles.forEach(carta => {
-        const img = document.createElement("img");
-        img.src = `${carta}.jpg`;
-        img.classList.add("carta-img");
-        img.dataset.id = carta;
-        img.onclick = () => seleccionarCarta(img);
-        contenedorCartas.appendChild(img);
-      });
-    }
+socket.on("barajear", () => {
+  historial.innerHTML = "";
+  reproducirSonido("barajar.mp3");
+});
 
-    function seleccionarCarta(img) {
-      const id = img.dataset.id;
-      if (seleccionadas.includes(id)) return;
-      if (seleccionadas.length < 2) {
-        img.classList.add("seleccionada");
-        seleccionadas.push(id);
-        socket.emit("seleccionar-carta", id);
-        if (seleccionadas.length === 2) btnIniciar.style.display = "block";
-      }
-    }
+socket.on("campana", () => {
+  reproducirSonido("campana.mp3");
+});
 
-    btnIniciar.onclick = () => {
-      pantallaSeleccion.classList.remove("activa");
-      pantallaJuego.classList.add("activa");
-      seleccionadas.forEach(id => {
-        const contenedor = document.createElement("div");
-        contenedor.classList.add("carta-juego");
-        contenedor.innerHTML = `<img src="${id}.jpg">`;
-        contenedor.onclick = e => marcarFicha(e, contenedor);
-        juegoCartas.appendChild(contenedor);
-      });
-    };
+socket.on("corre", () => {
+  reproducirSonido("corre.mp3");
+});
 
-    function marcarFicha(e, contenedor) {
-      const img = contenedor.querySelector("img");
-      const bounds = img.getBoundingClientRect();
-      const x = e.clientX - bounds.left;
-      const y = e.clientY - bounds.top;
-      const px = (x / bounds.width) * 100;
-      const py = (y / bounds.height) * 100;
-      const ficha = document.createElement("img");
-      ficha.src = "ficha.PNG";
-      ficha.classList.add("ficha");
-      ficha.style.left = `${px}%`;
-      ficha.style.top = `${py}%`;
-      contenedor.appendChild(ficha);
-    }
+socket.on("carta-cantada", nombre => {
+  const img = document.createElement("img");
+  img.src = `${nombre}.png`;
+  historial.appendChild(img);
+  historial.scrollLeft = historial.scrollWidth;
+  reproducirSonido(`${nombre}.mp3`);
+});
 
-    function limpiarFichas() {
-      document.querySelectorAll(".ficha").forEach(f => f.remove());
-    }
+socket.on("juego-detenido", () => {
+  reproducirSonido("aplausos.mp3");
+});
 
-    function reproducirSonido(nombre) {
-      const audio = new Audio(nombre);
-      audio.play();
-    }
+socket.on("loteria-anunciada", ganador => {
+  alert(`¡${ganador} ha cantado LOTERÍA!`);
+});
 
-    function emitirBarajear() {
-      socket.emit("barajear");
-    }
-
-    function emitirIniciarJuego() {
-      socket.emit("iniciar-juego");
-    }
-
-    function emitirDetenerJuego() {
-      socket.emit("detener-juego");
-    }
-
-    function emitirLoteria() {
-      socket.emit("loteria", nickname);
-    }
-
-    function emitirReiniciar() {
-      socket.emit("reiniciar-partida");
-    }
-
-    socket.on("cartas-desactivadas", desactivadas => {
-      document.querySelectorAll(".carta-img").forEach(img => {
-        if (desactivadas.includes(img.dataset.id)) {
-          img.classList.add("tachada");
-          img.onclick = null;
-        }
-      });
-    });
-
-    socket.on("historial-actualizado", historialCartas => {
-      historial.innerHTML = "";
-      historialCartas.forEach(nombre => {
-        const img = document.createElement("img");
-        img.src = `${nombre}.png`;
-        historial.appendChild(img);
-      });
-    });
-
-    socket.on("barajear", () => {
-      historial.innerHTML = "";
-      reproducirSonido("barajar.mp3");
-    });
-
-    socket.on("carta-cantada", nombre => {
-      const img = document.createElement("img");
-      img.src = `${nombre}.png`;
-      historial.appendChild(img);
-      reproducirSonido(`${nombre}.mp3`);
-    });
-
-    socket.on("juego-detenido", () => {
-      reproducirSonido("aplausos.mp3");
-    });
-
-    socket.on("loteria-anunciada", ganador => {
-      alert(`¡${ganador} ha cantado LOTERÍA!`);
-    });
-
-    socket.on("reiniciar-pantalla", () => {
-      location.reload();
-    });
-  </script>
+socket.on("partida-reiniciada", () => {
+  location.reload();
+});
+</script>
 </body>
 </html>
