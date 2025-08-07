@@ -84,6 +84,7 @@
       position: absolute;
       pointer-events: none;
       width: 40px;
+      height: auto;
       transform: translate(-50%, -50%);
     }
 
@@ -120,7 +121,45 @@
   </style>
 </head>
 <body>
-  <!-- Contenido oculto aquí para brevedad -->
+  <div id="pantallaSplash" class="pantalla activa"><h1>Cargando...</h1></div>
+  <div id="pantallaSala" class="pantalla">
+    <h2>Selecciona una sala</h2>
+    <select id="salaSelect">
+      <option value="Amigos">Amigos</option>
+      <option value="Familia">Familia</option>
+      <option value="Oficina">Oficina</option>
+    </select>
+    <button onclick="irANickname()">Continuar</button>
+  </div>
+  <div id="pantallaNickname" class="pantalla">
+    <h2>Ingresa tu nickname</h2>
+    <input type="text" id="nicknameInput" placeholder="Tu nombre..." />
+    <button onclick="entrarJuego()">Entrar</button>
+  </div>
+  <div id="pantallaSeleccion" class="pantalla">
+    <h1>Selecciona tus 2 cartas</h1>
+    <div class="cartas-container" id="contenedorCartas"></div>
+    <button id="btnIniciar" style="display:none">Continuar</button>
+  </div>
+  <div id="pantallaJuego" class="pantalla">
+    <h2>Tu juego</h2>
+    <div class="juego-cartas" id="juegoCartas"></div>
+    <div>
+      <button onclick="limpiarFichas()">Limpiar cartas</button>
+      <button id="btnBarajear" onclick="socket.emit('barajear', salaActual)">Barajear</button>
+      <button id="btnIniciarJuego" onclick="socket.emit('iniciar-juego', salaActual)">Iniciar juego</button>
+      <button id="btnDetenerJuego" onclick="socket.emit('detener-juego', salaActual)">Detener juego</button>
+      <button id="btnReiniciar" onclick="socket.emit('reiniciar-partida', salaActual)">Reiniciar partida</button>
+      <button onclick="emitirLoteria()">Lotería</button>
+    </div>
+    <div id="historial"></div>
+    <div id="jugadoresLista"></div>
+  </div>
+
+  <audio id="audioBarajear" src="barajear.mp3"></audio>
+  <audio id="audioCampana" src="campana.mp3"></audio>
+  <audio id="audioCorre" src="corre.mp3"></audio>
+
   <script src="https://loteria-backend-3nde.onrender.com/socket.io/socket.io.js"></script>
   <script>
     const socket = io("https://loteria-backend-3nde.onrender.com");
@@ -129,7 +168,7 @@
     let soyHost = false;
     let seleccionadas = [];
     let salaActual = "";
-    const cartasDisponibles = Array.from({ length: 20 }, (_, i) => String(i + 1).padStart(2, '0'));
+    const cartasDisponibles = Array.from({ length: 10 }, (_, i) => String(i + 1).padStart(2, '0'));
 
     const pantallas = {
       splash: document.getElementById("pantallaSplash"),
@@ -145,14 +184,11 @@
     const historial = document.getElementById("historial");
     const jugadoresLista = document.getElementById("jugadoresLista");
 
-    const audioCampana = new Audio("campana.mp3");
-    const audioCorre = new Audio("corre.mp3");
-    const audioAplausos = new Audio("aplausos.mp3");
-    const audioCarta = new Audio("carta.mp3");
+    const audioBarajear = document.getElementById("audioBarajear");
+    const audioCampana = document.getElementById("audioCampana");
+    const audioCorre = document.getElementById("audioCorre");
 
-    window.onload = () => {
-      setTimeout(() => cambiarPantalla("sala"), 1000);
-    };
+    window.onload = () => setTimeout(() => cambiarPantalla("sala"), 1000);
 
     function cambiarPantalla(nombre) {
       Object.values(pantallas).forEach(p => p.classList.remove("activa"));
@@ -179,6 +215,18 @@
           document.getElementById(id).style.display = "none";
         });
       }
+    });
+
+    socket.on("barajear", () => soyHost && audioBarajear.play());
+    socket.on("campana", () => soyHost && audioCampana.play());
+    socket.on("corre", () => soyHost && audioCorre.play());
+
+    socket.on("partida-reiniciada", () => {
+      seleccionadas = [];
+      juegoCartas.innerHTML = "";
+      btnIniciar.style.display = "none";
+      cambiarPantalla("seleccion");
+      generarCartas();
     });
 
     function generarCartas() {
@@ -259,28 +307,6 @@
     socket.on("jugadores-actualizados", jugadores => {
       jugadoresLista.innerHTML = "<h3>Jugadores conectados:</h3>" +
         Object.values(jugadores).map(j => `<div>${j.nickname}</div>`).join("");
-    });
-
-    // Sonidos sincronizados con eventos del host
-    socket.on("campana", () => {
-      if (soyHost) audioCampana.play();
-    });
-
-    socket.on("corre", () => {
-      if (soyHost) audioCorre.play();
-    });
-
-    socket.on("carta-cantada", () => {
-      if (soyHost) audioCarta.play();
-    });
-
-    socket.on("loteria-anunciada", nombre => {
-      if (soyHost) audioAplausos.play();
-      alert(`${nombre} ha cantado ¡Lotería!`);
-    });
-
-    socket.on("partida-reiniciada", () => {
-      location.reload();
     });
   </script>
 </body>
