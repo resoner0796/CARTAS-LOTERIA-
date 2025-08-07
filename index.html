@@ -219,10 +219,9 @@
     });
 
     socket.on("barajear", () => {
-  if (soyHost) {
-    audioBarajear.play();
-  }
-  historial.innerHTML = ""; // Limpiar historial para todos
+  audioBarajear.currentTime = 0; // Reinicia por si estaba a medias
+  audioBarajear.play();
+  historial.innerHTML = "";
 });
     socket.on("campana", () => soyHost && audioCampana.play());
     socket.on("corre", () => soyHost && audioCorre.play());
