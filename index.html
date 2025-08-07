@@ -443,11 +443,12 @@ juegoCartas.appendChild(monedaContainer);
     });
 
     socket.on("jugadores-actualizados", jugadores => {
-    jugadoresLista.innerHTML = "<h3>Jugadores conectados:</h3>" +
-  Object.values(jugadores).map(j => {
-    const check = j.haApostado ? "✅" : "";
-    return `<div>${j.nickname} ${check}</div>`;
-  }).join("");
+  jugadoresLista.innerHTML = "<h3>Jugadores conectados:</h3>" +
+    Object.values(jugadores).map(j => {
+      const check = j.haApostado ? "✅" : "";
+      return `<div>${j.nickname} ${check}</div>`;
+    }).join("");
+}); // ✅ cierre correcto del socket.on
 
     socket.on("carta-cantada", (cartaId) => {
       const img = document.createElement("img");
