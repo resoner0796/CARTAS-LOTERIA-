@@ -194,9 +194,14 @@
     window.onload = () => setTimeout(() => cambiarPantalla("sala"), 1000);
 
     function cambiarPantalla(nombre) {
-      Object.values(pantallas).forEach(p => p.classList.remove("activa"));
-      pantallas[nombre].classList.add("activa");
-    }
+  Object.values(pantallas).forEach(p => p.classList.remove("activa"));
+  pantallas[nombre].classList.add("activa");
+
+  // Forzar scroll al tope cuando se muestra la pantalla de selección
+  if (nombre === "seleccion") {
+    pantallas["seleccion"].scrollTo(0, 0);
+  }
+}
 
     function irANickname() {
       salaActual = document.getElementById("salaSelect").value;
@@ -312,13 +317,13 @@ socket.on("corre", () => {
     });
 
     socket.on("historial-actualizado", historialRecibido => {
-      historial.innerHTML = "";
-      historialRecibido.forEach(id => {
-        const img = document.createElement("img");
-        img.src = `${id}.png`;
-        historial.appendChild(img);
-      });
-    });
+  historial.innerHTML = "";
+  historialRecibido.forEach(id => {
+    const img = document.createElement("img");
+    img.src = `${id}.png`;
+    historial.prepend(img); // ⬅ Aquí está el cambio clave
+  });
+});
 
     socket.on("jugadores-actualizados", jugadores => {
       jugadoresLista.innerHTML = "<h3>Jugadores conectados:</h3>" +
@@ -330,7 +335,7 @@ socket.on("carta-cantada", (cartaId) => {
   // Mostrar la carta en historial
   const img = document.createElement("img");
   img.src = `${cartaId}.png`;
-  historial.appendChild(img);
+  historial.prepend(img);
 
   // Reproducir la voz de la carta
   const audioVoz = new Audio(`${cartaId}.mp3`);
