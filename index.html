@@ -219,7 +219,7 @@
 
     socket.on("rol-asignado", ({ host }) => {
       soyHost = host;
-      cambiarPantalla("seleccion");
+      cambiarPantalla("pantallaSeleccion");
       generarCartas();
       if (!soyHost) {
         ["btnBarajear", "btnIniciarJuego", "btnDetenerJuego", "btnReiniciar"].forEach(id => {
