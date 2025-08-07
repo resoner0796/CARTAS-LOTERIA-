@@ -156,10 +156,10 @@
     <div id="jugadoresLista"></div>
   </div>
 
-  <audio id="audioBarajear" src="barajear.mp3"></audio>
-  <audio id="audioCampana" src="campana.mp3"></audio>
-  <audio id="audioCorre" src="corre.mp3"></audio>
-  <audio id="audioAplausos" src="aplausos.mp3"></audio>
+<audio id="audioBarajear" src="barajear.mp3"></audio>
+<audio id="audioCampana" src="campana.mp3"></audio>
+<audio id="audioCorre" src="corre.mp3"></audio>
+<audio id="audioAplausos" src="aplausos.mp3"></audio>
 
   <script src="https://loteria-backend-3nde.onrender.com/socket.io/socket.io.js"></script>
   <script>
@@ -218,7 +218,12 @@
       }
     });
 
-    socket.on("barajear", () => soyHost && audioBarajear.play());
+    socket.on("barajear", () => {
+  if (soyHost) {
+    audioBarajear.play();
+  }
+  historial.innerHTML = ""; // Limpiar historial para todos
+});
     socket.on("campana", () => soyHost && audioCampana.play());
     socket.on("corre", () => soyHost && audioCorre.play());
 
@@ -312,12 +317,19 @@
     const audioAplausos = document.getElementById("audioAplausos");
 
 socket.on("carta-cantada", (cartaId) => {
-  // Mostrar la carta cantada en el historial
+  // Mostrar la carta en historial
   const img = document.createElement("img");
   img.src = `${cartaId}.png`;
   historial.appendChild(img);
+
+  // Reproducir la voz de la carta
+  const audioVoz = new Audio(`${cartaId}.mp3`);
+  audioVoz.play();
 });
 
+socket.on("loteria-anunciada", (quien) => {
+  alert(`¡${quien} ha cantado LOTERÍA!`);
+});
 socket.on("juego-detenido", () => {
   if (soyHost) {
     audioAplausos.play();
