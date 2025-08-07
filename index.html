@@ -214,7 +214,7 @@
     function entrarJuego() {
       nickname = document.getElementById("nicknameInput").value.trim();
       if (!nickname) return alert("Escribe tu nombre");
-      socket.emit("registrar-nickname", { nickname, sala: salaActual });
+      socket.emit("unirse-sala", { nickname, sala: salaActual });
     }
 
     socket.on("rol-asignado", ({ host }) => {
