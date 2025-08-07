@@ -108,6 +108,9 @@
     const btnDetenerJuego = document.getElementById("btnDetenerJuego");
     const btnReiniciar = document.getElementById("btnReiniciar");
 
+    // Guardamos el audio activo para evitar que el GC lo elimine antes de sonar
+    let audioActivo = null;
+
     window.onload = () => {
       setTimeout(() => {
         splash.classList.remove("activa");
@@ -186,8 +189,9 @@
     }
 
     function reproducirSonido(nombre) {
-      const audio = new Audio(nombre);
-      audio.play().catch(err => console.warn("Error al reproducir", nombre));
+      // Añadimos ./ para asegurar la ruta relativa a raíz
+      audioActivo = new Audio(`./${nombre}`);
+      audioActivo.play().catch(err => console.warn("Error al reproducir", nombre, err));
     }
 
     function emitirBarajear() {
