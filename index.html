@@ -202,7 +202,6 @@
     <div>
       <button onclick="limpiarFichas()">Limpiar cartas</button>
       <button id="btnBarajear" onclick="socket.emit('barajear', salaActual)">Barajear</button>
-      <button id="btnIniciarJuego" onclick="socket.emit('iniciar-juego', salaActual)">Iniciar juego</button>
       <button id="btnApostar" onclick="apostar()">Apostar</button>
       <button id="btnDetenerJuego" onclick="socket.emit('detener-juego', salaActual)">Detener juego</button>
       <button id="btnReiniciar" onclick="socket.emit('reiniciar-partida', salaActual)">Reiniciar partida</button>
@@ -455,6 +454,29 @@ function apostar() {
         audioAplausos.play();
       }
     });
+    socket.on("iniciar-juego-cliente", (cartas) => {
+  // Puedes usar "cartas" si quieres mostrar las seleccionadas
+  juegoCartas.innerHTML = "";
+  cartas.forEach(id => {
+    const contenedor = document.createElement("div");
+    contenedor.classList.add("carta-juego");
+    contenedor.onclick = (e) => marcarFicha(e, contenedor);
+    const img = document.createElement("img");
+    img.src = `${id}.jpg`;
+    contenedor.appendChild(img);
+    juegoCartas.appendChild(contenedor);
+  });
+
+  cambiarPantalla("juego");
+});
+    function confirmarSeleccion() {
+  if (seleccionadas.length < 2) {
+    alert("Selecciona al menos 2 cartas para continuar.");
+    return;
+  }
+
+  socket.emit("cartas-listas", { sala: salaActual, cartas: seleccionadas });
+}
     // ✅ Registrar Service Worker para PWA
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {
