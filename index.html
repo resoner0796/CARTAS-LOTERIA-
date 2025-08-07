@@ -139,7 +139,7 @@
     <button onclick="entrarJuego()">Entrar</button>
   </div>
   <div id="pantallaSeleccion" class="pantalla">
-    <h1>Selecciona tus 2 cartas</h1>
+    <h1>Selecciona tus cartas</h1>
     <div class="cartas-container" id="contenedorCartas"></div>
     <button id="btnIniciar" style="display:none">Continuar</button>
   </div>
@@ -263,15 +263,15 @@ socket.on("corre", () => {
     }
 
     function seleccionarCarta(img) {
-      const id = img.dataset.id;
-      if (seleccionadas.includes(id)) return;
-      if (seleccionadas.length < 2) {
-        img.classList.add("seleccionada");
-        seleccionadas.push(id);
-        socket.emit("seleccionar-carta", { carta: id, sala: salaActual });
-        if (seleccionadas.length === 2) btnIniciar.style.display = "block";
-      }
-    }
+  const id = img.dataset.id;
+  if (seleccionadas.includes(id)) return;
+  if (seleccionadas.length < 3) { // hasta 3 cartas
+    img.classList.add("seleccionada");
+    seleccionadas.push(id);
+    socket.emit("seleccionar-carta", { carta: id, sala: salaActual });
+    if (seleccionadas.length >= 2) btnIniciar.style.display = "block"; // activa desde 2 cartas
+  }
+}
 
     btnIniciar.onclick = () => {
   cambiarPantalla("juego");
