@@ -218,15 +218,15 @@
     }
 
     socket.on("rol-asignado", ({ host }) => {
-      soyHost = host;
-      cambiarPantalla("pantallaSeleccion");
-      generarCartas();
-      if (!soyHost) {
-        ["btnBarajear", "btnIniciarJuego", "btnDetenerJuego", "btnReiniciar"].forEach(id => {
-          document.getElementById(id).style.display = "none";
-        });
-      }
+  soyHost = host;
+  cambiarPantalla("seleccion"); // <-- aquí estaba el error
+  generarCartas();
+  if (!soyHost) {
+    ["btnBarajear", "btnIniciarJuego", "btnDetenerJuego", "btnReiniciar"].forEach(id => {
+      document.getElementById(id).style.display = "none";
     });
+  }
+});
 
     function generarCartas() {
       contenedorCartas.innerHTML = "";
