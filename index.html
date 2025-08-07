@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
   <title>Lotería WebApp</title>
   <style>
     body {
@@ -221,8 +221,10 @@
     });
 
     socket.on("barajear", () => {
-  audioBarajear.currentTime = 0; // Reinicia por si estaba a medias
-  audioBarajear.play();
+  audioBarajear.currentTime = 0;
+  audioBarajear.play().catch(e => {
+    console.warn("El audio barajear fue bloqueado por el navegador:", e);
+  });
   historial.innerHTML = "";
 });
 
