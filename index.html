@@ -258,15 +258,15 @@
     }
 
     btnIniciar.onclick = () => {
-      cambiarPantalla("juego");
-      seleccionadas.forEach(id => {
-        const contenedor = document.createElement("div");
-        contenedor.classList.add("carta-juego");
-        contenedor.innerHTML = `<img src="${id}.jpg">`;
-        contenedor.onclick = e => marcarFicha(e, contenedor);
-        juegoCartas.appendChild(contenedor);
-      });
-    };
+  cambiarPantalla("juego");
+  seleccionadas.forEach(id => {
+    const contenedor = document.createElement("div");
+    contenedor.classList.add("carta-juego");
+    contenedor.innerHTML = `<img src="${id}.jpg" class="carta-img seleccionada">`;
+    contenedor.onclick = e => marcarFicha(e, contenedor);
+    juegoCartas.appendChild(contenedor);
+  });
+};
 
     function marcarFicha(e, contenedor) {
       const img = contenedor.querySelector("img");
