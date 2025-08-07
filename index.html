@@ -38,11 +38,7 @@
       background-image: url("splash.PNG");
     }
 
-    #pantallaSala {
-      background-color: #222;
-    }
-
-    #pantallaNickname {
+    #pantallaSala, #pantallaNickname {
       background-color: #222;
     }
 
@@ -125,12 +121,7 @@
   </style>
 </head>
 <body>
-  <!-- Splash -->
-  <div id="pantallaSplash" class="pantalla activa">
-    <h1>Cargando...</h1>
-  </div>
-
-  <!-- Seleccion de Sala -->
+  <div id="pantallaSplash" class="pantalla activa"><h1>Cargando...</h1></div>
   <div id="pantallaSala" class="pantalla">
     <h2>Selecciona una sala</h2>
     <select id="salaSelect">
@@ -140,22 +131,16 @@
     </select>
     <button onclick="irANickname()">Continuar</button>
   </div>
-
-  <!-- Nickname -->
   <div id="pantallaNickname" class="pantalla">
     <h2>Ingresa tu nickname</h2>
     <input type="text" id="nicknameInput" placeholder="Tu nombre..." />
     <button onclick="entrarJuego()">Entrar</button>
   </div>
-
-  <!-- Selección de Cartas -->
   <div id="pantallaSeleccion" class="pantalla">
     <h1>Selecciona tus 2 cartas</h1>
     <div class="cartas-container" id="contenedorCartas"></div>
     <button id="btnIniciar" style="display:none">Continuar</button>
   </div>
-
-  <!-- Pantalla de Juego -->
   <div id="pantallaJuego" class="pantalla">
     <h2>Tu juego</h2>
     <div class="juego-cartas" id="juegoCartas"></div>
@@ -170,6 +155,10 @@
     <div id="historial"></div>
     <div id="jugadoresLista"></div>
   </div>
+
+  <audio id="audioBarajear" src="barajear.mp3"></audio>
+  <audio id="audioCampana" src="campana.mp3"></audio>
+  <audio id="audioCorre" src="corre.mp3"></audio>
 
   <script src="https://loteria-backend-3nde.onrender.com/socket.io/socket.io.js"></script>
   <script>
@@ -195,11 +184,11 @@
     const historial = document.getElementById("historial");
     const jugadoresLista = document.getElementById("jugadoresLista");
 
-    window.onload = () => {
-      setTimeout(() => {
-        cambiarPantalla("sala");
-      }, 1000);
-    };
+    const audioBarajear = document.getElementById("audioBarajear");
+    const audioCampana = document.getElementById("audioCampana");
+    const audioCorre = document.getElementById("audioCorre");
+
+    window.onload = () => setTimeout(() => cambiarPantalla("sala"), 1000);
 
     function cambiarPantalla(nombre) {
       Object.values(pantallas).forEach(p => p.classList.remove("activa"));
@@ -218,15 +207,27 @@
     }
 
     socket.on("rol-asignado", ({ host }) => {
-  soyHost = host;
-  cambiarPantalla("seleccion"); // <-- aquí estaba el error
-  generarCartas();
-  if (!soyHost) {
-    ["btnBarajear", "btnIniciarJuego", "btnDetenerJuego", "btnReiniciar"].forEach(id => {
-      document.getElementById(id).style.display = "none";
+      soyHost = host;
+      cambiarPantalla("seleccion");
+      generarCartas();
+      if (!soyHost) {
+        ["btnBarajear", "btnIniciarJuego", "btnDetenerJuego", "btnReiniciar"].forEach(id => {
+          document.getElementById(id).style.display = "none";
+        });
+      }
     });
-  }
-});
+
+    socket.on("barajear", () => soyHost && audioBarajear.play());
+    socket.on("campana", () => soyHost && audioCampana.play());
+    socket.on("corre", () => soyHost && audioCorre.play());
+
+    socket.on("partida-reiniciada", () => {
+      seleccionadas = [];
+      juegoCartas.innerHTML = "";
+      btnIniciar.style.display = "none";
+      cambiarPantalla("seleccion");
+      generarCartas();
+    });
 
     function generarCartas() {
       contenedorCartas.innerHTML = "";
