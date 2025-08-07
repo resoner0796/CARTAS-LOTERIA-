@@ -338,38 +338,28 @@ function apostar() {
     return alert("Ya apostaste en esta ronda.");
   }
 
-  monedasJugador = seleccionadas.length; // 1 moneda por carta
+  monedasJugador = seleccionadas.length;
   socket.emit("apostar", { sala: salaActual, cantidad: monedasJugador });
   haApostado = true;
   document.getElementById("btnApostar").disabled = true;
-  actualizarListaJugadores(); // Mostrar ✅ en ti mismo
-}
-    btnIniciar.onclick = () => {
-      cambiarPantalla("juego");
-      juegoCartas.innerHTML = "";
-      // Mostrar las monedas apostadas del jugador
-const monedaContainer = document.createElement("div");
-monedaContainer.style.display = "flex";
-monedaContainer.style.justifyContent = "center";
-monedaContainer.style.gap = "5px";
-monedaContainer.style.margin = "1rem";
 
-for (let i = 0; i < monedasJugador; i++) {
-  const moneda = document.createElement("img");
-  moneda.src = "peso.png";
-  moneda.style.width = "30px";
-  moneda.style.height = "30px";
-  monedaContainer.appendChild(moneda);
-}
+  // Mostrar monedas en pantalla
+  const monedaContainer = document.createElement("div");
+  monedaContainer.style.display = "flex";
+  monedaContainer.style.justifyContent = "center";
+  monedaContainer.style.gap = "5px";
+  monedaContainer.style.margin = "1rem";
 
-juegoCartas.appendChild(monedaContainer);
-      seleccionadas.forEach(id => {
-        const contenedor = document.createElement("div");
-        contenedor.classList.add("carta-juego");
-        contenedor.innerHTML = `<img src="${id}.jpg" class="carta-img seleccionada">`;
-        contenedor.onclick = e => marcarFicha(e, contenedor);
-        juegoCartas.appendChild(contenedor);
-      });
+  for (let i = 0; i < monedasJugador; i++) {
+    const moneda = document.createElement("img");
+    moneda.src = "peso.png";
+    moneda.style.width = "30px";
+    moneda.style.height = "30px";
+    monedaContainer.appendChild(moneda);
+  }
+
+  juegoCartas.prepend(monedaContainer);
+  }
     };
 
     function marcarFicha(e, contenedor) {
@@ -448,8 +438,7 @@ juegoCartas.appendChild(monedaContainer);
       const check = j.haApostado ? "✅" : "";
       return `<div>${j.nickname} ${check}</div>`;
     }).join("");
-}); // ✅ cierre correcto del socket.on
-
+});
     socket.on("carta-cantada", (cartaId) => {
       const img = document.createElement("img");
       img.src = `${cartaId}.png`;
