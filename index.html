@@ -11,7 +11,6 @@
       color: #fff;
       font-family: sans-serif;
     }
-
     .pantalla {
       display: none;
       flex-direction: column;
@@ -23,25 +22,20 @@
       background-size: cover;
       background-position: center;
     }
-
     .pantalla.activa {
       display: flex;
     }
-
     #pantallaSplash {
       background-image: url("splash.PNG");
       justify-content: center;
       position: relative;
     }
-
     #pantallaSeleccion {
       background-image: url("fondo-seleccion.PNG");
     }
-
     #pantallaJuego {
       background-image: url("fondo-juego.PNG");
     }
-
     #loader {
       position: absolute;
       bottom: 5%;
@@ -52,19 +46,16 @@
       border-radius: 50%;
       animation: girar 1s linear infinite;
     }
-
     @keyframes girar {
       0% { transform: rotate(0deg); }
       100% { transform: rotate(360deg); }
     }
-
     .cartas-container {
       display: flex;
       flex-wrap: wrap;
       justify-content: center;
       gap: 1rem;
     }
-
     .carta-img {
       width: 180px;
       border: 3px solid #fff;
@@ -73,13 +64,11 @@
       transition: transform 0.3s;
       position: relative;
     }
-
     .carta-img.seleccionada {
       transform: scale(1.05);
       box-shadow: 0 0 15px gold;
       border-color: gold;
     }
-
     .carta-img.tachada::after {
       content: "❌";
       font-size: 4rem;
@@ -90,7 +79,6 @@
       transform: translate(-50%, -50%);
       pointer-events: none;
     }
-
     button {
       padding: 0.6rem 1.2rem;
       font-size: 1rem;
@@ -102,7 +90,6 @@
       cursor: pointer;
       font-weight: bold;
     }
-
     .juego-cartas {
       display: flex;
       flex-wrap: wrap;
@@ -110,17 +97,14 @@
       justify-content: center;
       align-items: center;
     }
-
     .carta-juego {
       position: relative;
       width: 250px;
       box-shadow: 0 0 15px gold;
     }
-
     .carta-juego img {
       width: 100%;
     }
-    
     .ficha {
       position: absolute;
       pointer-events: none;
@@ -130,7 +114,6 @@
       max-height: 40px;
       transform: translate(-50%, -50%);
     }
-
     #historial {
       display: flex;
       overflow-x: auto;
@@ -142,7 +125,6 @@
       white-space: nowrap;
       scroll-behavior: smooth;
     }
-
     #historial img {
       width: 40px;
       border-radius: 5px;
@@ -331,6 +313,14 @@
         historial.appendChild(img);
       });
     });
+
+    // ✅ FUNCIÓN AGREGADA para reproducir sonidos
+    function reproducirSonido(nombreArchivo) {
+      const audio = new Audio(nombreArchivo);
+      audio.play().catch(err => {
+        console.warn("No se pudo reproducir el audio:", nombreArchivo, err);
+      });
+    }
   </script>
 </body>
 </html>
