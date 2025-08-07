@@ -5,24 +5,140 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Lotería WebApp</title>
   <style>
-    /* Estilos omitidos por brevedad, se asume que ya los tienes correctamente */
+    body {
+      margin: 0;
+      background-color: #111;
+      color: #fff;
+      font-family: sans-serif;
+    }
+
+    .pantalla {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      overflow-y: auto;
+      padding: 1rem;
+      background-size: cover;
+      background-position: center;
+      animation: fadein 0.5s ease-in;
+    }
+
+    .pantalla.activa {
+      display: flex;
+    }
+
+    @keyframes fadein {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    #pantallaSplash {
+      background-image: url("splash.PNG");
+    }
+
+    #pantallaSala {
+      background-color: #222;
+    }
+
+    #pantallaNickname {
+      background-color: #222;
+    }
+
+    #pantallaSeleccion {
+      background-image: url("fondo-seleccion.PNG");
+    }
+
+    #pantallaJuego {
+      background-image: url("fondo-juego.PNG");
+    }
+
+    .cartas-container, .juego-cartas {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 1rem;
+    }
+
+    .carta-img {
+      width: 180px;
+      border: 3px solid #fff;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: transform 0.3s;
+    }
+
+    .carta-img.seleccionada {
+      transform: scale(1.05);
+      box-shadow: 0 0 15px gold;
+      border-color: gold;
+    }
+
+    .carta-juego {
+      position: relative;
+      width: 250px;
+    }
+
+    .carta-juego img {
+      width: 100%;
+    }
+
+    .ficha {
+      position: absolute;
+      pointer-events: none;
+      width: 40px;
+      height: auto;
+      transform: translate(-50%, -50%);
+    }
+
+    button {
+      padding: 0.6rem 1.2rem;
+      font-size: 1rem;
+      margin: 0.5rem;
+      border-radius: 10px;
+      border: none;
+      background-color: gold;
+      color: black;
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    #historial {
+      display: flex;
+      overflow-x: auto;
+      gap: 5px;
+      padding: 0 1rem;
+      max-width: 90vw;
+      white-space: nowrap;
+    }
+
+    #historial img {
+      width: 40px;
+      border-radius: 5px;
+    }
+
+    #jugadoresLista {
+      margin-top: 1rem;
+      font-size: 1rem;
+    }
   </style>
 </head>
 <body>
   <!-- Splash -->
   <div id="pantallaSplash" class="pantalla activa">
-    <div id="loader"></div>
+    <h1>Cargando...</h1>
   </div>
 
-  <!-- Selección de Sala -->
+  <!-- Seleccion de Sala -->
   <div id="pantallaSala" class="pantalla">
     <h2>Selecciona una sala</h2>
-    <select id="selectSala">
-      <option value="amigos">Amigos</option>
-      <option value="familia">Familia</option>
-      <option value="trabajo">Trabajo</option>
+    <select id="salaSelect">
+      <option value="Amigos">Amigos</option>
+      <option value="Familia">Familia</option>
+      <option value="Oficina">Oficina</option>
     </select>
-    <button onclick="irANickname()">Siguiente</button>
+    <button onclick="irANickname()">Continuar</button>
   </div>
 
   <!-- Nickname -->
@@ -45,14 +161,14 @@
     <div class="juego-cartas" id="juegoCartas"></div>
     <div>
       <button onclick="limpiarFichas()">Limpiar cartas</button>
-      <button id="btnBarajear" onclick="socket.emit('barajear')">Barajear</button>
-      <button id="btnIniciarJuego" onclick="socket.emit('iniciar-juego')">Iniciar juego</button>
-      <button id="btnDetenerJuego" onclick="socket.emit('detener-juego')">Detener juego</button>
-      <button id="btnReiniciar" onclick="socket.emit('reiniciar-partida')">Reiniciar partida</button>
+      <button id="btnBarajear" onclick="socket.emit('barajear', salaActual)">Barajear</button>
+      <button id="btnIniciarJuego" onclick="socket.emit('iniciar-juego', salaActual)">Iniciar juego</button>
+      <button id="btnDetenerJuego" onclick="socket.emit('detener-juego', salaActual)">Detener juego</button>
+      <button id="btnReiniciar" onclick="socket.emit('reiniciar-partida', salaActual)">Reiniciar partida</button>
       <button onclick="emitirLoteria()">Lotería</button>
     </div>
     <div id="historial"></div>
-    <div id="listaJugadores"></div>
+    <div id="jugadoresLista"></div>
   </div>
 
   <script src="https://loteria-backend-3nde.onrender.com/socket.io/socket.io.js"></script>
@@ -60,56 +176,55 @@
     const socket = io("https://loteria-backend-3nde.onrender.com");
 
     let nickname = "";
-    let sala = "";
     let soyHost = false;
     let seleccionadas = [];
+    let salaActual = "";
     const cartasDisponibles = Array.from({ length: 10 }, (_, i) => String(i + 1).padStart(2, '0'));
 
-    const splash = document.getElementById("pantallaSplash");
-    const pantallaSala = document.getElementById("pantallaSala");
-    const nicknameDiv = document.getElementById("pantallaNickname");
-    const pantallaSeleccion = document.getElementById("pantallaSeleccion");
-    const pantallaJuego = document.getElementById("pantallaJuego");
+    const pantallas = {
+      splash: document.getElementById("pantallaSplash"),
+      sala: document.getElementById("pantallaSala"),
+      nickname: document.getElementById("pantallaNickname"),
+      seleccion: document.getElementById("pantallaSeleccion"),
+      juego: document.getElementById("pantallaJuego")
+    };
+
     const contenedorCartas = document.getElementById("contenedorCartas");
     const juegoCartas = document.getElementById("juegoCartas");
     const btnIniciar = document.getElementById("btnIniciar");
     const historial = document.getElementById("historial");
-    const btnBarajear = document.getElementById("btnBarajear");
-    const btnIniciarJuego = document.getElementById("btnIniciarJuego");
-    const btnDetenerJuego = document.getElementById("btnDetenerJuego");
-    const btnReiniciar = document.getElementById("btnReiniciar");
-    const listaJugadores = document.getElementById("listaJugadores");
+    const jugadoresLista = document.getElementById("jugadoresLista");
 
     window.onload = () => {
       setTimeout(() => {
-        splash.classList.remove("activa");
-        pantallaSala.classList.add("activa");
-      }, 2000);
+        cambiarPantalla("sala");
+      }, 1000);
     };
 
+    function cambiarPantalla(nombre) {
+      Object.values(pantallas).forEach(p => p.classList.remove("activa"));
+      pantallas[nombre].classList.add("activa");
+    }
+
     function irANickname() {
-      sala = document.getElementById("selectSala").value;
-      pantallaSala.classList.remove("activa");
-      nicknameDiv.classList.add("activa");
+      salaActual = document.getElementById("salaSelect").value;
+      cambiarPantalla("nickname");
     }
 
     function entrarJuego() {
       nickname = document.getElementById("nicknameInput").value.trim();
       if (!nickname) return alert("Escribe tu nombre");
-      socket.emit("unirse-sala", { sala, nickname });
+      socket.emit("registrar-nickname", { nickname, sala: salaActual });
     }
 
     socket.on("rol-asignado", ({ host }) => {
       soyHost = host;
-      nicknameDiv.classList.remove("activa");
-      pantallaSeleccion.classList.add("activa");
+      cambiarPantalla("seleccion");
       generarCartas();
-
       if (!soyHost) {
-        btnBarajear.style.display = "none";
-        btnIniciarJuego.style.display = "none";
-        btnDetenerJuego.style.display = "none";
-        btnReiniciar.style.display = "none";
+        ["btnBarajear", "btnIniciarJuego", "btnDetenerJuego", "btnReiniciar"].forEach(id => {
+          document.getElementById(id).style.display = "none";
+        });
       }
     });
 
@@ -131,14 +246,13 @@
       if (seleccionadas.length < 2) {
         img.classList.add("seleccionada");
         seleccionadas.push(id);
-        socket.emit("seleccionar-carta", { sala, carta: id });
+        socket.emit("seleccionar-carta", { carta: id, sala: salaActual });
         if (seleccionadas.length === 2) btnIniciar.style.display = "block";
       }
     }
 
     btnIniciar.onclick = () => {
-      pantallaSeleccion.classList.remove("activa");
-      pantallaJuego.classList.add("activa");
+      cambiarPantalla("juego");
       seleccionadas.forEach(id => {
         const contenedor = document.createElement("div");
         contenedor.classList.add("carta-juego");
@@ -168,16 +282,30 @@
     }
 
     function emitirLoteria() {
-      socket.emit("loteria", { sala, nickname });
+      socket.emit("loteria", { nickname, sala: salaActual });
     }
 
-    socket.on("jugadores-actualizados", jugadores => {
-      listaJugadores.innerHTML = '<h3>Jugadores:</h3>';
-      Object.values(jugadores).forEach(j => {
-        const p = document.createElement("p");
-        p.textContent = j.nickname;
-        listaJugadores.appendChild(p);
+    socket.on("cartas-desactivadas", ids => {
+      document.querySelectorAll(".carta-img").forEach(img => {
+        if (ids.includes(img.dataset.id)) {
+          img.style.opacity = 0.3;
+          img.style.pointerEvents = "none";
+        }
       });
+    });
+
+    socket.on("historial-actualizado", historialRecibido => {
+      historial.innerHTML = "";
+      historialRecibido.forEach(id => {
+        const img = document.createElement("img");
+        img.src = `${id}.png`;
+        historial.appendChild(img);
+      });
+    });
+
+    socket.on("jugadores-actualizados", jugadores => {
+      jugadoresLista.innerHTML = "<h3>Jugadores conectados:</h3>" +
+        Object.values(jugadores).map(j => `<div>${j.nickname}</div>`).join("");
     });
   </script>
 </body>
