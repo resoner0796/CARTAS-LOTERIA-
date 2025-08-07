@@ -217,22 +217,16 @@
       socket.emit("registrar-nickname", { nickname, sala: salaActual });
     }
 
-   socket.on("rol-asignado", ({ host }) => {
-  soyHost = host;
-
-  // Ocultamos nickname y mostramos selección
-  document.getElementById("pantallaNickname").classList.remove("activa");
-  document.getElementById("pantallaSeleccion").classList.add("activa");
-
-  generarCartas();
-
-  if (!soyHost) {
-    btnBarajear.style.display = "none";
-    btnIniciarJuego.style.display = "none";
-    btnDetenerJuego.style.display = "none";
-    btnReiniciar.style.display = "none";
-  }
-});
+    socket.on("rol-asignado", ({ host }) => {
+      soyHost = host;
+      cambiarPantalla("seleccion");
+      generarCartas();
+      if (!soyHost) {
+        ["btnBarajear", "btnIniciarJuego", "btnDetenerJuego", "btnReiniciar"].forEach(id => {
+          document.getElementById(id).style.display = "none";
+        });
+      }
+    });
 
     function generarCartas() {
       contenedorCartas.innerHTML = "";
