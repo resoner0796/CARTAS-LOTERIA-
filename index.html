@@ -159,6 +159,7 @@
   <audio id="audioBarajear" src="barajear.mp3"></audio>
   <audio id="audioCampana" src="campana.mp3"></audio>
   <audio id="audioCorre" src="corre.mp3"></audio>
+  <audio id="audioAplausos" src="aplausos.mp3"></audio>
 
   <script src="https://loteria-backend-3nde.onrender.com/socket.io/socket.io.js"></script>
   <script>
@@ -308,6 +309,20 @@
       jugadoresLista.innerHTML = "<h3>Jugadores conectados:</h3>" +
         Object.values(jugadores).map(j => `<div>${j.nickname}</div>`).join("");
     });
+    const audioAplausos = document.getElementById("audioAplausos");
+
+socket.on("carta-cantada", (cartaId) => {
+  // Mostrar la carta cantada en el historial
+  const img = document.createElement("img");
+  img.src = `${cartaId}.png`;
+  historial.appendChild(img);
+});
+
+socket.on("juego-detenido", () => {
+  if (soyHost) {
+    audioAplausos.play();
+  }
+});
   </script>
 </body>
 </html>
