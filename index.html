@@ -203,6 +203,7 @@
       <button onclick="limpiarFichas()">Limpiar cartas</button>
       <button id="btnBarajear" onclick="socket.emit('barajear', salaActual)">Barajear</button>
       <button id="btnIniciarJuego" onclick="socket.emit('iniciar-juego', salaActual)">Iniciar juego</button>
+      <button id="btnApostar" onclick="apostar()">Apostar</button>
       <button id="btnDetenerJuego" onclick="socket.emit('detener-juego', salaActual)">Detener juego</button>
       <button id="btnReiniciar" onclick="socket.emit('reiniciar-partida', salaActual)">Reiniciar partida</button>
       <button onclick="emitirLoteria()">Lotería</button>
@@ -222,6 +223,9 @@
   <script>
     const socket = io("https://loteria-backend-3nde.onrender.com");
 
+    let haApostado = false;
+    let monedasJugador = 0;
+    let boteTotal = 0;
     let nickname = "";
     let soyHost = false;
     let seleccionadas = [];
@@ -325,10 +329,40 @@
         if (seleccionadas.length >= 2) btnIniciar.style.display = "block"; // activa desde 2 cartas
       }
     }
+function apostar() {
+  if (seleccionadas.length === 0) {
+    return alert("Primero selecciona al menos una carta para apostar.");
+  }
 
+  if (haApostado) {
+    return alert("Ya apostaste en esta ronda.");
+  }
+
+  monedasJugador = seleccionadas.length; // 1 moneda por carta
+  socket.emit("apostar", { sala: salaActual, cantidad: monedasJugador });
+  haApostado = true;
+  document.getElementById("btnApostar").disabled = true;
+  actualizarListaJugadores(); // Mostrar ✅ en ti mismo
+}
     btnIniciar.onclick = () => {
       cambiarPantalla("juego");
       juegoCartas.innerHTML = "";
+      // Mostrar las monedas apostadas del jugador
+const monedaContainer = document.createElement("div");
+monedaContainer.style.display = "flex";
+monedaContainer.style.justifyContent = "center";
+monedaContainer.style.gap = "5px";
+monedaContainer.style.margin = "1rem";
+
+for (let i = 0; i < monedasJugador; i++) {
+  const moneda = document.createElement("img");
+  moneda.src = "peso.png";
+  moneda.style.width = "30px";
+  moneda.style.height = "30px";
+  monedaContainer.appendChild(moneda);
+}
+
+juegoCartas.appendChild(monedaContainer);
       seleccionadas.forEach(id => {
         const contenedor = document.createElement("div");
         contenedor.classList.add("carta-juego");
@@ -409,9 +443,11 @@
     });
 
     socket.on("jugadores-actualizados", jugadores => {
-      jugadoresLista.innerHTML = "<h3>Jugadores conectados:</h3>" +
-        Object.values(jugadores).map(j => `<div>${j.nickname}</div>`).join("");
-    });
+    jugadoresLista.innerHTML = "<h3>Jugadores conectados:</h3>" +
+  Object.values(jugadores).map(j => {
+    const check = j.haApostado ? "✅" : "";
+    return `<div>${j.nickname} ${check}</div>`;
+  }).join("");
 
     socket.on("carta-cantada", (cartaId) => {
       const img = document.createElement("img");
@@ -422,7 +458,7 @@
     });
 
     socket.on("loteria-anunciada", (quien) => {
-      alert(`¡${quien} ha cantado LOTERÍA!`);
+      alert(`¡${quien} ha cantado LOTERÍA! Vamos a verificar si había apostado...`);
     });
 
     socket.on("juego-detenido", () => {
