@@ -2,10 +2,7 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
-  <meta name="theme-color" content="#111111" /> <!-- ✅ Esto controla el color del navegador -->
-  <link rel="manifest" href="manifest.json" /> <!-- ✅ Esto enlaza el manifest -->
-  <link rel="apple-touch-icon" href="icon-192.png"> <!-- ✅ Para iPhone/iPad -->
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
   <title>Lotería WebApp</title>
   <style>
     body {
@@ -14,15 +11,7 @@
       color: #fff;
       font-family: sans-serif;
     }
-.texto-cargando {
-  position: absolute;
-  bottom: 30px;
-  width: 100%;
-  text-align: center;
-  font-size: 1.5rem;
-  color: white;
-  text-shadow: 1px 1px 3px black;
-}
+
     .pantalla {
       display: none;
       flex-direction: column;
@@ -45,12 +34,9 @@
       to { opacity: 1; }
     }
 
-#pantallaSplash {
-  background-image: url("splash.PNG");
-  background-position: center center;
-  background-repeat: no-repeat;
-  background-size: cover;
-}
+    #pantallaSplash {
+      background-image: url("splash.PNG");
+    }
 
     #pantallaSala, #pantallaNickname {
       background-color: #222;
@@ -134,47 +120,11 @@
       margin-top: 1rem;
       font-size: 1rem;
     }
-
-    #loteriaMensaje {
-      position: fixed;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      font-size: 4rem;
-      color: gold;
-      font-weight: bold;
-      background-color: rgba(0,0,0,0.7);
-      padding: 20px 40px;
-      border-radius: 20px;
-      z-index: 9999;
-      display: none;
-      user-select: none;
-    }
-
-    .confeti {
-      position: fixed;
-      width: 10px;
-      height: 10px;
-      background-color: gold;
-      z-index: 9998;
-      animation: caer 2s linear forwards;
-      border-radius: 50%;
-    }
-
-    @keyframes caer {
-      to {
-        transform: translateY(100vh) rotate(360deg);
-        opacity: 0;
-      }
-    }
   </style>
 </head>
 <body>
-<div id="pantallaSplash" class="pantalla activa">
-  <h1 class="texto-cargando">Cargando...</h1>
-</div> <!-- ← Aquí cierras bien el splash -->
-
-<div id="pantallaSala" class="pantalla">
+  <div id="pantallaSplash" class="pantalla activa"><h1>Cargando...</h1></div>
+  <div id="pantallaSala" class="pantalla">
     <h2>Selecciona una sala</h2>
     <select id="salaSelect">
       <option value="Amigos">Amigos</option>
@@ -208,12 +158,10 @@
     <div id="jugadoresLista"></div>
   </div>
 
-  <div id="loteriaMensaje">¡LOTERÍA!</div>
-
-  <audio id="audioBarajear" src="barajar.mp3"></audio>
-  <audio id="audioCampana" src="campana.mp3"></audio>
-  <audio id="audioCorre" src="corre.mp3"></audio>
-  <audio id="audioAplausos" src="aplausos.mp3"></audio>
+<audio id="audioBarajear" src="barajar.mp3"></audio>
+<audio id="audioCampana" src="campana.mp3"></audio>
+<audio id="audioCorre" src="corre.mp3"></audio>
+<audio id="audioAplausos" src="aplausos.mp3"></audio>
 
   <script src="https://loteria-backend-3nde.onrender.com/socket.io/socket.io.js"></script>
   <script>
@@ -242,17 +190,18 @@
     const audioBarajear = document.getElementById("audioBarajear");
     const audioCampana = document.getElementById("audioCampana");
     const audioCorre = document.getElementById("audioCorre");
-    const audioAplausos = document.getElementById("audioAplausos");
-
-    const loteriaMensaje = document.getElementById("loteriaMensaje");
 
     window.onload = () => setTimeout(() => cambiarPantalla("sala"), 1000);
 
     function cambiarPantalla(nombre) {
-      Object.values(pantallas).forEach(p => p.classList.remove("activa"));
-      pantallas[nombre].classList.add("activa");
-      if (nombre === "seleccion") pantallas["seleccion"].scrollTo(0, 0);
-    }
+  Object.values(pantallas).forEach(p => p.classList.remove("activa"));
+  pantallas[nombre].classList.add("activa");
+
+  // Forzar scroll al tope cuando se muestra la pantalla de selección
+  if (nombre === "seleccion") {
+    pantallas["seleccion"].scrollTo(0, 0);
+  }
+}
 
     function irANickname() {
       salaActual = document.getElementById("salaSelect").value;
@@ -277,21 +226,22 @@
     });
 
     socket.on("barajear", () => {
-      audioBarajear.currentTime = 0;
-      audioBarajear.play().catch(e => console.warn("Audio bloqueado:", e));
-      historial.innerHTML = "";
-    });
+  audioBarajear.currentTime = 0;
+  audioBarajear.play().catch(e => {
+    console.warn("El audio barajear fue bloqueado por el navegador:", e);
+  });
+  historial.innerHTML = "";
+});
 
-    socket.on("campana", () => {
-      audioCampana.currentTime = 0;
-      audioCampana.play().catch(() => {});
-    });
+socket.on("campana", () => {
+  audioCampana.currentTime = 0;
+  audioCampana.play().catch(() => {});
+});
 
-    socket.on("corre", () => {
-      audioCorre.currentTime = 0;
-      audioCorre.play().catch(() => {});
-    });
-
+socket.on("corre", () => {
+  audioCorre.currentTime = 0;
+  audioCorre.play().catch(() => {});
+});
     socket.on("partida-reiniciada", () => {
       seleccionadas = [];
       juegoCartas.innerHTML = "";
@@ -313,27 +263,26 @@
     }
 
     function seleccionarCarta(img) {
-      const id = img.dataset.id;
-      if (seleccionadas.includes(id)) return;
-      if (seleccionadas.length < 3) { // hasta 3 cartas
-        img.classList.add("seleccionada");
-        seleccionadas.push(id);
-        socket.emit("seleccionar-carta", { carta: id, sala: salaActual });
-        if (seleccionadas.length >= 2) btnIniciar.style.display = "block"; // activa desde 2 cartas
-      }
-    }
+  const id = img.dataset.id;
+  if (seleccionadas.includes(id)) return;
+  if (seleccionadas.length < 3) { // hasta 3 cartas
+    img.classList.add("seleccionada");
+    seleccionadas.push(id);
+    socket.emit("seleccionar-carta", { carta: id, sala: salaActual });
+    if (seleccionadas.length >= 2) btnIniciar.style.display = "block"; // activa desde 2 cartas
+  }
+}
 
     btnIniciar.onclick = () => {
-      cambiarPantalla("juego");
-      juegoCartas.innerHTML = "";
-      seleccionadas.forEach(id => {
-        const contenedor = document.createElement("div");
-        contenedor.classList.add("carta-juego");
-        contenedor.innerHTML = `<img src="${id}.jpg" class="carta-img seleccionada">`;
-        contenedor.onclick = e => marcarFicha(e, contenedor);
-        juegoCartas.appendChild(contenedor);
-      });
-    };
+  cambiarPantalla("juego");
+  seleccionadas.forEach(id => {
+    const contenedor = document.createElement("div");
+    contenedor.classList.add("carta-juego");
+    contenedor.innerHTML = `<img src="${id}.jpg" class="carta-img seleccionada">`;
+    contenedor.onclick = e => marcarFicha(e, contenedor);
+    juegoCartas.appendChild(contenedor);
+  });
+};
 
     function marcarFicha(e, contenedor) {
       const img = contenedor.querySelector("img");
@@ -355,36 +304,7 @@
     }
 
     function emitirLoteria() {
-      // Pausar audio de canto
-      audioCorre.pause();
-      audioCampana.pause();
-      audioBarajear.pause();
-
-      // Mostrar mensaje y confeti
-      mostrarLoteriaMensaje();
-
       socket.emit("loteria", { nickname, sala: salaActual });
-    }
-
-    function mostrarLoteriaMensaje() {
-      loteriaMensaje.style.display = "block";
-
-      // Crear confeti
-      for (let i = 0; i < 100; i++) {
-        const confeti = document.createElement("div");
-        confeti.classList.add("confeti");
-        confeti.style.left = Math.random() * 100 + "vw";
-        confeti.style.top = "-10px";
-        confeti.style.backgroundColor = `hsl(${Math.random()*360}, 100%, 50%)`;
-        confeti.style.animationDelay = (Math.random() * 2) + "s";
-        document.body.appendChild(confeti);
-        confeti.addEventListener("animationend", () => confeti.remove());
-      }
-
-      // Ocultar mensaje después de 4 segundos
-      setTimeout(() => {
-        loteriaMensaje.style.display = "none";
-      }, 4000);
     }
 
     socket.on("cartas-desactivadas", ids => {
@@ -397,46 +317,39 @@
     });
 
     socket.on("historial-actualizado", historialRecibido => {
-      historial.innerHTML = "";
-      historialRecibido.forEach(id => {
-        const img = document.createElement("img");
-        img.src = `${id}.png`;
-        historial.prepend(img);
-      });
-    });
+  historial.innerHTML = "";
+  historialRecibido.forEach(id => {
+    const img = document.createElement("img");
+    img.src = `${id}.png`;
+    historial.prepend(img); // ⬅ Aquí está el cambio clave
+  });
+});
 
     socket.on("jugadores-actualizados", jugadores => {
       jugadoresLista.innerHTML = "<h3>Jugadores conectados:</h3>" +
         Object.values(jugadores).map(j => `<div>${j.nickname}</div>`).join("");
     });
+    const audioAplausos = document.getElementById("audioAplausos");
 
-    socket.on("carta-cantada", (cartaId) => {
-      const img = document.createElement("img");
-      img.src = `${cartaId}.png`;
-      historial.prepend(img);
-      const audioVoz = new Audio(`${cartaId}.mp3`);
-      audioVoz.play();
-    });
+socket.on("carta-cantada", (cartaId) => {
+  // Mostrar la carta en historial
+  const img = document.createElement("img");
+  img.src = `${cartaId}.png`;
+  historial.prepend(img);
 
-    socket.on("loteria-anunciada", (quien) => {
-      alert(`¡${quien} ha cantado LOTERÍA!`);
-    });
+  // Reproducir la voz de la carta
+  const audioVoz = new Audio(`${cartaId}.mp3`);
+  audioVoz.play();
+});
 
-    socket.on("juego-detenido", () => {
-      if (soyHost) {
-        audioAplausos.play();
-      }
-    });
-    // ✅ Registrar Service Worker para PWA
-if ("serviceWorker" in navigator) {
-  window.addEventListener("load", () => {
-    navigator.serviceWorker.register("service-worker.js").then(reg => {
-      console.log("✅ Service Worker registrado:", reg);
-    }).catch(err => {
-      console.error("❌ Error al registrar Service Worker:", err);
-    });
-  });
-}
+socket.on("loteria-anunciada", (quien) => {
+  alert(`¡${quien} ha cantado LOTERÍA!`);
+});
+socket.on("juego-detenido", () => {
+  if (soyHost) {
+    audioAplausos.play();
+  }
+});
   </script>
 </body>
 </html>
