@@ -14,7 +14,15 @@
       color: #fff;
       font-family: sans-serif;
     }
-
+.texto-cargando {
+  position: absolute;
+  bottom: 30px;
+  width: 100%;
+  text-align: center;
+  font-size: 1.5rem;
+  color: white;
+  text-shadow: 1px 1px 3px black;
+}
     .pantalla {
       display: none;
       flex-direction: column;
@@ -162,7 +170,8 @@
   </style>
 </head>
 <body>
-  <div id="pantallaSplash" class="pantalla activa"><h1>Cargando...</h1></div>
+<div id="pantallaSplash" class="pantalla activa">
+  <h1 class="texto-cargando">Cargando...</h1>
   <div id="pantallaSala" class="pantalla">
     <h2>Selecciona una sala</h2>
     <select id="salaSelect">
