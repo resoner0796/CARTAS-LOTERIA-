@@ -184,187 +184,151 @@
 
   <script src="https://loteria-backend-3nde.onrender.com/socket.io/socket.io.js"></script>
   <script>
-    <script>
-  const socket = io("https://loteria-backend-3nde.onrender.com");
+    const socket = io("https://loteria-backend-3nde.onrender.com");
 
-  let nickname = "";
-  let soyHost = false;
-  let seleccionadas = [];
-  const cartasDisponibles = Array.from({ length: 10 }, (_, i) => String(i + 1).padStart(2, '0'));
+    let nickname = "";
+    let soyHost = false;
+    let seleccionadas = [];
+    const cartasDisponibles = Array.from({ length: 10 }, (_, i) => String(i + 1).padStart(2, '0'));
 
-  const splash = document.getElementById("pantallaSplash");
-  const nicknameDiv = document.getElementById("pantallaNickname");
-  const pantallaSeleccion = document.getElementById("pantallaSeleccion");
-  const pantallaJuego = document.getElementById("pantallaJuego");
-  const contenedorCartas = document.getElementById("contenedorCartas");
-  const juegoCartas = document.getElementById("juegoCartas");
-  const btnIniciar = document.getElementById("btnIniciar");
-  const historial = document.getElementById("historial");
-  const btnBarajear = document.getElementById("btnBarajear");
-  const btnIniciarJuego = document.getElementById("btnIniciarJuego");
-  const btnDetenerJuego = document.getElementById("btnDetenerJuego");
-  const btnReiniciar = document.getElementById("btnReiniciar");
+    const splash = document.getElementById("pantallaSplash");
+    const nicknameDiv = document.getElementById("pantallaNickname");
+    const pantallaSeleccion = document.getElementById("pantallaSeleccion");
+    const pantallaJuego = document.getElementById("pantallaJuego");
+    const contenedorCartas = document.getElementById("contenedorCartas");
+    const juegoCartas = document.getElementById("juegoCartas");
+    const btnIniciar = document.getElementById("btnIniciar");
+    const historial = document.getElementById("historial");
+    const btnBarajear = document.getElementById("btnBarajear");
+    const btnIniciarJuego = document.getElementById("btnIniciarJuego");
+    const btnDetenerJuego = document.getElementById("btnDetenerJuego");
+    const btnReiniciar = document.getElementById("btnReiniciar");
 
-  window.onload = () => {
-    setTimeout(() => {
-      splash.classList.remove("activa");
-      nicknameDiv.classList.add("activa");
-    }, 2000);
-  };
+    window.onload = () => {
+      setTimeout(() => {
+        splash.classList.remove("activa");
+        nicknameDiv.classList.add("activa");
+      }, 2000);
+    };
 
-  function entrarJuego() {
-    nickname = document.getElementById("nicknameInput").value.trim();
-    if (!nickname) return alert("Escribe tu nombre");
-    socket.emit("registrar-nickname", nickname);
-  }
-
-  socket.on("rol-asignado", ({ host }) => {
-    soyHost = host;
-    nicknameDiv.classList.remove("activa");
-    pantallaSeleccion.classList.add("activa");
-    generarCartas();
-    if (!soyHost) {
-      btnBarajear.style.display = "none";
-      btnIniciarJuego.style.display = "none";
-      btnDetenerJuego.style.display = "none";
-      btnReiniciar.style.display = "none";
+    function entrarJuego() {
+      nickname = document.getElementById("nicknameInput").value.trim();
+      if (!nickname) return alert("Escribe tu nombre");
+      socket.emit("registrar-nickname", nickname);
     }
-  });
 
-  function generarCartas() {
-    contenedorCartas.innerHTML = "";
-    cartasDisponibles.forEach(carta => {
-      const img = document.createElement("img");
-      img.src = `${carta}.jpg`;
-      img.classList.add("carta-img");
-      img.dataset.id = carta;
-      img.onclick = () => seleccionarCarta(img);
-      contenedorCartas.appendChild(img);
-    });
-  }
-
-  function seleccionarCarta(img) {
-    const id = img.dataset.id;
-    if (seleccionadas.includes(id)) return;
-    if (seleccionadas.length < 2) {
-      img.classList.add("seleccionada");
-      seleccionadas.push(id);
-      socket.emit("seleccionar-carta", id);
-      if (seleccionadas.length === 2) btnIniciar.style.display = "block";
-    }
-  }
-
-  btnIniciar.onclick = () => {
-    pantallaSeleccion.classList.remove("activa");
-    pantallaJuego.classList.add("activa");
-    juegoCartas.innerHTML = "";
-    seleccionadas.forEach(id => {
-      const contenedor = document.createElement("div");
-      contenedor.classList.add("carta-juego");
-      contenedor.innerHTML = `<img src="${id}.jpg">`;
-      contenedor.onclick = e => marcarFicha(e, contenedor);
-      juegoCartas.appendChild(contenedor);
-    });
-  };
-
-  function marcarFicha(e, contenedor) {
-    const img = contenedor.querySelector("img");
-    const bounds = img.getBoundingClientRect();
-    const x = e.clientX - bounds.left;
-    const y = e.clientY - bounds.top;
-    const px = (x / bounds.width) * 100;
-    const py = (y / bounds.height) * 100;
-    const ficha = document.createElement("img");
-    ficha.src = "ficha.PNG";
-    ficha.classList.add("ficha");
-    ficha.style.left = `${px}%`;
-    ficha.style.top = `${py}%`;
-    contenedor.appendChild(ficha);
-  }
-
-  function limpiarFichas() {
-    document.querySelectorAll(".ficha").forEach(f => f.remove());
-  }
-
-  function reproducirSonido(nombre) {
-    const audio = new Audio(nombre);
-    audio.play().catch(err => {
-      console.warn(`No se pudo reproducir el sonido ${nombre}`, err);
-    });
-  }
-
-  function emitirBarajear() {
-    socket.emit("barajear");
-  }
-
-  function emitirIniciarJuego() {
-    socket.emit("iniciar-juego");
-  }
-
-  function emitirDetenerJuego() {
-    socket.emit("detener-juego");
-  }
-
-  function emitirReiniciar() {
-    socket.emit("reiniciar-partida");
-  }
-
-  function emitirLoteria() {
-    socket.emit("loteria", nickname);
-  }
-
-  // SOCKET.ON ⬇️⬇️⬇️
-
-  socket.on("barajear", () => {
-    historial.innerHTML = "";
-    reproducirSonido("barajar.mp3");
-  });
-
-  socket.on("campana", () => {
-    reproducirSonido("campana.mp3");
-  });
-
-  socket.on("corre", () => {
-    reproducirSonido("corre.mp3");
-  });
-
-  socket.on("carta-cantada", (nombre) => {
-    const img = document.createElement("img");
-    img.src = `${nombre}.png`;
-    historial.appendChild(img);
-    reproducirSonido(`${nombre}.mp3`);
-  });
-
-  socket.on("juego-detenido", () => {
-    reproducirSonido("aplausos.mp3");
-  });
-
-  socket.on("loteria-anunciada", (ganador) => {
-    alert(`¡${ganador} ha cantado LOTERÍA!`);
-  });
-
-  socket.on("cartas-desactivadas", (desactivadas) => {
-    document.querySelectorAll(".carta-img").forEach(img => {
-      if (desactivadas.includes(img.dataset.id)) {
-        img.classList.add("tachada");
-        img.onclick = null;
+    socket.on("rol-asignado", ({ host }) => {
+      soyHost = host;
+      nicknameDiv.classList.remove("activa");
+      pantallaSeleccion.classList.add("activa");
+      generarCartas();
+      if (!soyHost) {
+        btnBarajear.style.display = "none";
+        btnIniciarJuego.style.display = "none";
+        btnDetenerJuego.style.display = "none";
+        btnReiniciar.style.display = "none";
       }
     });
-  });
 
-  socket.on("partida-reiniciada", () => {
-    location.reload();
-  });
+    function generarCartas() {
+      cartasDisponibles.forEach(id => {
+        const img = document.createElement("img");
+        img.src = `${id}.jpg`;
+        img.classList.add("carta-img");
+        img.dataset.id = id;
+        img.onclick = () => seleccionarCarta(img);
+        contenedorCartas.appendChild(img);
+      });
+    }
 
-  socket.on("historial-actualizado", (historialData) => {
-    historial.innerHTML = "";
-    historialData.forEach(nombre => {
-      const img = document.createElement("img");
-      img.src = `${nombre}.png`;
-      historial.appendChild(img);
+    function seleccionarCarta(img) {
+      const id = img.dataset.id;
+      if (seleccionadas.includes(id)) return;
+      if (seleccionadas.length < 2) {
+        img.classList.add("seleccionada");
+        seleccionadas.push(id);
+        socket.emit("seleccionar-carta", id);
+        if (seleccionadas.length === 2) btnIniciar.style.display = "block";
+      }
+    }
+
+    btnIniciar.onclick = () => {
+      pantallaSeleccion.classList.remove("activa");
+      pantallaJuego.classList.add("activa");
+      seleccionadas.forEach(id => {
+        const contenedor = document.createElement("div");
+        contenedor.classList.add("carta-juego");
+        contenedor.innerHTML = `<img src="${id}.jpg">`;
+        contenedor.onclick = e => marcarFicha(e, contenedor);
+        juegoCartas.appendChild(contenedor);
+      });
+    };
+
+    function marcarFicha(e, contenedor) {
+      const img = contenedor.querySelector("img");
+      const bounds = img.getBoundingClientRect();
+      const x = e.clientX - bounds.left;
+      const y = e.clientY - bounds.top;
+      const px = (x / bounds.width) * 100;
+      const py = (y / bounds.height) * 100;
+      const ficha = document.createElement("img");
+      ficha.src = "ficha.PNG";
+      ficha.classList.add("ficha");
+      ficha.style.left = `${px}%`;
+      ficha.style.top = `${py}%`;
+      contenedor.appendChild(ficha);
+    }
+
+    function limpiarFichas() {
+      document.querySelectorAll(".ficha").forEach(f => f.remove());
+    }
+
+    function emitirLoteria() {
+      socket.emit("loteria", nickname);
+    }
+
+    socket.on("barajear", () => {
+      historial.innerHTML = "";
+      reproducirSonido("barajar.mp3");
     });
-  });
 
-</script>
+    socket.on("campana", () => reproducirSonido("campana.mp3"));
+    socket.on("corre", () => reproducirSonido("corre.mp3"));
+
+    socket.on("carta-cantada", id => {
+      const img = document.createElement("img");
+      img.src = `${id}.png`;
+      historial.appendChild(img);
+      reproducirSonido(`${id}.mp3`);
+    });
+
+    socket.on("juego-detenido", () => reproducirSonido("aplausos.mp3"));
+
+    socket.on("loteria-anunciada", ganador => {
+      alert(`¡${ganador} ha cantado LOTERÍA!`);
+    });
+
+    socket.on("partida-reiniciada", () => {
+      location.reload();
+    });
+
+    socket.on("cartas-desactivadas", ids => {
+      document.querySelectorAll(".carta-img").forEach(img => {
+        if (ids.includes(img.dataset.id)) {
+          img.style.opacity = 0.3;
+          img.style.pointerEvents = "none";
+        }
+      });
+    });
+
+    socket.on("historial-actualizado", historialRecibido => {
+      historial.innerHTML = "";
+      historialRecibido.forEach(id => {
+        const img = document.createElement("img");
+        img.src = `${id}.png`;
+        historial.appendChild(img);
+      });
+    });
+  </script>
 </body>
 </html>
