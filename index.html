@@ -223,9 +223,16 @@
   audioBarajear.play();
   historial.innerHTML = "";
 });
-    socket.on("campana", () => soyHost && audioCampana.play());
-    socket.on("corre", () => soyHost && audioCorre.play());
 
+socket.on("campana", () => {
+  audioCampana.currentTime = 0;
+  audioCampana.play().catch(() => {});
+});
+
+socket.on("corre", () => {
+  audioCorre.currentTime = 0;
+  audioCorre.play().catch(() => {});
+});
     socket.on("partida-reiniciada", () => {
       seleccionadas = [];
       juegoCartas.innerHTML = "";
