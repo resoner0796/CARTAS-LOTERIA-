@@ -495,7 +495,7 @@
       historialRecibido.forEach(id => {
         const img = document.createElement("img");
         img.src = `${id}.png`;
-        historial.append(img);
+        historial.prepend(img);
       });
     });
 
@@ -528,7 +528,7 @@ socket.on('monedas-actualizado', (monedas) => {
     socket.on("carta-cantada", (cartaId) => {
       const img = document.createElement("img");
       img.src = `${cartaId}.png`;
-      historial.append(img);
+      historial.prepend(img);
       const audioVoz = new Audio(`${cartaId}.mp3`);
       audioVoz.play();
     });
