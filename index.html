@@ -470,7 +470,12 @@
         btnApostar.disabled = false;
       }
     });
-
+    
+socket.on('monedas-actualizado', (monedas) => {
+    if (monedasEl) {
+        monedasEl.textContent = monedas;
+    }
+});    
     socket.on('bote-actualizado', (bote) => {
       boteEl.textContent = bote;
     });
