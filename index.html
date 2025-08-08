@@ -208,8 +208,7 @@
       }
     }
     
-    @media screen and (orientation: landscape) {
-  /* Contenedor principal para organizar las cartas y los botones */
+@media screen and (orientation: landscape) {
   .juego-horizontal-wrapper {
     display: flex;
     align-items: center;
@@ -217,28 +216,31 @@
     width: 100%;
   }
 
-  .juego-cartas {
-    flex: 1; /* Permite que las cartas ocupen el espacio restante */
-  }
-  
-  /* Estilos para los botones de los lados */
   .botones-izquierda, .botones-derecha {
     display: flex;
     flex-direction: column;
-    gap: 10px;
-    margin: 0 10px;
+    gap: 5px; /* ✅ Reduce el espacio entre botones */
+  }
+
+  .botones-izquierda button,
+  .botones-derecha button {
+    padding: 0.4rem 0.8rem; /* ✅ Reduce el padding de los botones */
+    font-size: 0.8rem; /* ✅ Reduce el tamaño de la fuente */
   }
   
+  .juego-cartas {
+    flex: 1; 
+  }
+
   .juego-cartas .carta-juego {
     width: 30vw;
-    max-width: 200px;
+    max-width: 250px;
   }
   .juego-cartas .carta-juego img {
     width: 100%;
     height: auto;
   }
   
-  /* Esconde los botones originales en vertical para que no aparezcan duplicados */
   .juego-horizontal-wrapper + div {
     display: none;
   }
