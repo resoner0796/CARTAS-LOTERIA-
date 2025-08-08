@@ -511,8 +511,6 @@ socket.on("loteria-anunciada", quien => {
     });
 
     socket.on("jugadores-actualizados", jugadores => {
-      if (jugadores[miId]) {
-        document.getElementById('monedas-valor').textContent = jugadores[miId].monedas;
         jugadoresLista.innerHTML = "<h3>Jugadores conectados:</h3>" +
         Object.values(jugadores).map(j => `<div>${j.nickname}</div>`).join("");
     });
