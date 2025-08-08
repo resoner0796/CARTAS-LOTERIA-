@@ -209,22 +209,40 @@
     }
     
     @media screen and (orientation: landscape) {
-      .juego-cartas {
-        flex-wrap: nowrap;
-        flex-direction: row;
-        justify-content: center;
-      }
+  /* Contenedor principal para organizar las cartas y los botones */
+  .juego-horizontal-wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+  }
 
-      .juego-cartas .carta-juego {
-        width: 30vw;
-        max-width: 230px;
-      }
-
-      .juego-cartas .carta-juego img {
-        width: 100%;
-        height: auto;
-      }
-    }
+  .juego-cartas {
+    flex: 1; /* Permite que las cartas ocupen el espacio restante */
+  }
+  
+  /* Estilos para los botones de los lados */
+  .botones-izquierda, .botones-derecha {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin: 0 10px;
+  }
+  
+  .juego-cartas .carta-juego {
+    width: 30vw;
+    max-width: 200px;
+  }
+  .juego-cartas .carta-juego img {
+    width: 100%;
+    height: auto;
+  }
+  
+  /* Esconde los botones originales en vertical para que no aparezcan duplicados */
+  .juego-horizontal-wrapper + div {
+    display: none;
+  }
+}
 
     /* ===== estilos para apuestas ===== */
     #apuestasUI { gap: 14px; flex-wrap: wrap; }
@@ -257,14 +275,19 @@
   </div>
   <div id="pantallaJuego" class="pantalla">
     <div class="juego-cartas" id="juegoCartas"></div>
-    <div>
-      <button onclick="limpiarFichas()">Limpiar cartas</button>
-      <button id="btnBarajear" onclick="socket.emit('barajear', salaActual)">Barajear</button>
-      <button id="btnIniciarJuego" onclick="socket.emit('iniciar-juego', salaActual)">Iniciar juego</button>
-      <button id="btnDetenerJuego" onclick="socket.emit('detener-juego', salaActual)">Detener juego</button>
-      <button id="btnReiniciar" onclick="socket.emit('reiniciar-partida', salaActual)">Reiniciar partida</button>
-      <button onclick="emitirLoteria()">Lotería</button>
-    </div>
+    <div class="juego-horizontal-wrapper">
+  <div class="botones-izquierda">
+    <button id="btnBarajear" onclick="socket.emit('barajear', salaActual)">Barajear</button>
+    <button onclick="limpiarFichas()">Limpiar cartas</button>
+    <button id="btnReiniciar" onclick="socket.emit('reiniciar-partida', salaActual)">Reiniciar partida</button>
+  </div>
+  <div class="juego-cartas" id="juegoCartas"></div>
+  <div class="botones-derecha">
+    <button id="btnIniciarJuego" onclick="socket.emit('iniciar-juego', salaActual)">Iniciar juego</button>
+    <button onclick="emitirLoteria()">Lotería</button>
+    <button id="btnDetenerJuego" onclick="socket.emit('detener-juego', salaActual)">Detener juego</button>
+  </div>
+</div>
     <div id="apuestasUI" style="display:flex;align-items:center;gap:12px;margin-top:8px;">
 <div id="monedasDisplay" style="display:flex;align-items:center;gap:16px;">
 <div class="monedas-apiladas">
