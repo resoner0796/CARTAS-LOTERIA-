@@ -234,7 +234,7 @@
    <audio id="audioCampana" src="campana.mp3"></audio> 
    <audio id="audioCorre" src="corre.mp3"></audio> 
    <audio id="audioAplausos" src="aplausos.mp3"></audio> 
-
+   
    <script src="https://loteria-backend-3nde.onrender.com/socket.io/socket.io.js"></script> 
    <script> 
      // Declaración de variables globales
@@ -321,8 +321,9 @@
        cambiarPantalla("seleccion"); 
        generarCartas(); 
        if (!soyHost) { 
-         ["btnBarajear", "btnIniciarJuego", "btnDetenerJuego", "btnReiniciar"].forEach(id => { 
-           document.getElementById(id).style.display = "none"; 
+         ["btnBarajear", "btnIniciarJuego", "btnDetenerJuego", "btnReiniciar", "confirmarGanadorBtn"].forEach(id => { 
+           const el = document.getElementById(id);
+           if (el) el.style.display = "none";
          }); 
        } 
      }); 
@@ -489,8 +490,14 @@
        audioVoz.play(); 
      }); 
 
-     socket.on("loteria-anunciada", (quien) => { 
+     socket.on("loteria-anunciada", (quien, ganadorId) => { 
        alert(`¡${quien} ha cantado LOTERÍA!`); 
+       if (soyHost) {
+         const confirmar = confirm(`¿${quien} es el ganador?`);
+         if (confirmar) {
+           socket.emit('confirmar-ganador', { sala: salaActual, ganadorId });
+         }
+       }
      }); 
 
      socket.on("juego-detenido", () => { 
