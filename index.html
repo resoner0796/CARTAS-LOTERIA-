@@ -154,10 +154,18 @@
   order: -1; /* Mueve el historial al principio visualmente */
 }
 
-    #historial img {
-      width: 40px;
-      border-radius: 5px;
-    }
+#historial img {
+  width: 40px;
+  border-radius: 5px;
+  animation: slideIn 0.3s ease-in-out;
+}
+
+    
+@keyframes slideIn {
+  from { transform: translateX(-50px); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
 
     #jugadoresLista {
       margin-top: 1rem;
