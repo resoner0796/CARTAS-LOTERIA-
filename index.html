@@ -3,510 +3,512 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
-  <meta name="theme-color" content="#111111" /> <!-- ✅ Esto controla el color del navegador -->
-  <link rel="manifest" href="manifest.json" /> <!-- ✅ Esto enlaza el manifest -->
-  <link rel="apple-touch-icon" href="icon-192.png"> <!-- ✅ Para iPhone/iPad -->
+  <meta name="theme-color" content="#111111" />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="apple-touch-icon" href="icon-192.png">
   <title>Lotería WebApp</title>
-  <style>  
-     body {  
-       margin: 0;  
-       background-color: #111;  
-       color: #fff;  
-       font-family: sans-serif;  
-     }  
+  <style>
+    body {
+      margin: 0;
+      background-color: #111;
+      color: #fff;
+      font-family: sans-serif;
+    }
 
-     .pantalla {  
-       display: none;  
-       flex-direction: column;  
-       align-items: center;  
-       justify-content: center;  
-       min-height: 100vh;  
-       overflow-y: auto;  
-       padding: 1rem;  
-       background-size: cover;  
-       background-position: center;  
-       animation: fadein 0.5s ease-in;  
-     }  
+    .pantalla {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      overflow-y: auto;
+      padding: 1rem;
+      background-size: cover;
+      background-position: center;
+      animation: fadein 0.5s ease-in;
+    }
 
-     .pantalla.activa {  
-       display: flex;  
-     }  
+    .pantalla.activa {
+      display: flex;
+    }
 
-     @keyframes fadein {  
-       from { opacity: 0; }  
-       to { opacity: 1; }  
-     }  
+    @keyframes fadein {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
 
-     #pantallaSplash {  
-       background-image: url("splash.PNG");  
-     }  
+    #pantallaSplash {
+      background-image: url("splash.PNG");
+    }
 
-     #pantallaSala, #pantallaNickname {  
-       background-color: #222;  
-     }  
+    #pantallaSala, #pantallaNickname {
+      background-color: #222;
+    }
 
-     #pantallaSeleccion {  
-       background-image: url("fondo-seleccion.PNG");  
-     }  
+    #pantallaSeleccion {
+      background-image: url("fondo-seleccion.PNG");
+    }
 
-     #pantallaJuego {  
-       background-image: url("fondo-juego.PNG");  
-     }  
+    #pantallaJuego {
+      background-image: url("fondo-juego.PNG");
+    }
 
-     .cartas-container, .juego-cartas {  
-       display: flex;  
-       flex-wrap: wrap;  
-       justify-content: center;  
-       gap: 1rem;  
-     }  
+    .cartas-container, .juego-cartas {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 1rem;
+    }
 
-     .carta-img {  
-       width: 180px;  
-       border: 3px solid #fff;  
-       border-radius: 10px;  
-       cursor: pointer;  
-       transition: transform 0.3s;  
-     }  
+    .carta-img {
+      width: 180px;
+      border: 3px solid #fff;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: transform 0.3s;
+    }
 
-     .carta-img.seleccionada {  
-       transform: scale(1.05);  
-       box-shadow: 0 0 15px gold;  
-       border-color: gold;  
-     }  
+    .carta-img.seleccionada {
+      transform: scale(1.05);
+      box-shadow: 0 0 15px gold;
+      border-color: gold;
+    }
 
-     .carta-juego {  
-       position: relative;  
-       width: 250px;  
-     }  
+    .carta-juego {
+      position: relative;
+      width: 250px;
+    }
 
-     .carta-juego img {  
-       width: 100%;  
-     }  
+    .carta-juego img {
+      width: 100%;
+    }
 
-     .ficha {  
-       position: absolute;  
-       pointer-events: none;  
-       width: 40px;  
-       height: auto;  
-       max-width: 40px;  
-       max-height: 40px;  
-       transform: translate(-50%, -50%);  
-     }  
+    .ficha {
+      position: absolute;
+      pointer-events: none;
+      width: 40px;
+      height: auto;
+      max-width: 40px;
+      max-height: 40px;
+      transform: translate(-50%, -50%);
+    }
 
-     button {  
-       padding: 0.6rem 1.2rem;  
-       font-size: 1rem;  
-       margin: 0.5rem;  
-       border-radius: 10px;  
-       border: none;  
-       background-color: gold;  
-       color: black;  
-       cursor: pointer;  
-       font-weight: bold;  
-     }  
+    button {
+      padding: 0.6rem 1.2rem;
+      font-size: 1rem;
+      margin: 0.5rem;
+      border-radius: 10px;
+      border: none;
+      background-color: gold;
+      color: black;
+      cursor: pointer;
+      font-weight: bold;
+    }
 
-     #historial {  
-       display: flex;  
-       overflow-x: auto;  
-       gap: 5px;  
-       padding: 0 1rem;  
-       max-width: 90vw;  
-       white-space: nowrap;  
-     }  
+    #historial {
+      display: flex;
+      overflow-x: auto;
+      gap: 5px;
+      padding: 0 1rem;
+      max-width: 90vw;
+      white-space: nowrap;
+    }
 
-     #historial img {  
-       width: 40px;  
-       border-radius: 5px;  
-     }  
+    #historial img {
+      width: 40px;
+      border-radius: 5px;
+    }
 
-     #jugadoresLista {  
-       margin-top: 1rem;  
-       font-size: 1rem;  
-     }  
+    #jugadoresLista {
+      margin-top: 1rem;
+      font-size: 1rem;
+    }
 
-     #loteriaMensaje {  
-       position: fixed;  
-       top: 50%;  
-       left: 50%;  
-       transform: translate(-50%, -50%);  
-       font-size: 4rem;  
-       color: gold;  
-       font-weight: bold;  
-       background-color: rgba(0,0,0,0.7);  
-       padding: 20px 40px;  
-       border-radius: 20px;  
-       z-index: 9999;  
-       display: none;  
-       user-select: none;  
-     }  
+    #loteriaMensaje {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 4rem;
+      color: gold;
+      font-weight: bold;
+      background-color: rgba(0,0,0,0.7);
+      padding: 20px 40px;
+      border-radius: 20px;
+      z-index: 9999;
+      display: none;
+      user-select: none;
+    }
 
-     .confeti {  
-       position: fixed;  
-       width: 10px;  
-       height: 10px;  
-       background-color: gold;  
-       z-index: 9998;  
-       animation: caer 2s linear forwards;  
-       border-radius: 50%;  
-     }  
+    .confeti {
+      position: fixed;
+      width: 10px;
+      height: 10px;
+      background-color: gold;
+      z-index: 9998;
+      animation: caer 2s linear forwards;
+      border-radius: 50%;
+    }
 
-     @keyframes caer {  
-       to {  
-         transform: translateY(100vh) rotate(360deg);  
-         opacity: 0;  
-       }  
-     }  
-       @media screen and (orientation: landscape) {  
-     .juego-cartas {  
-       flex-wrap: nowrap;  
-       flex-direction: row;  
-       justify-content: center;  
-     }  
+    @keyframes caer {
+      to {
+        transform: translateY(100vh) rotate(360deg);
+        opacity: 0;
+      }
+    }
+    
+    @media screen and (orientation: landscape) {
+      .juego-cartas {
+        flex-wrap: nowrap;
+        flex-direction: row;
+        justify-content: center;
+      }
 
-     .juego-cartas .carta-juego {  
-       width: 30vw;  
-       max-width: 180px;  
-     }  
+      .juego-cartas .carta-juego {
+        width: 30vw;
+        max-width: 180px;
+      }
 
-     .juego-cartas .carta-juego img {  
-       width: 100%;  
-       height: auto;  
-     }  
-   }  
-   /* ===== estilos para apuestas ===== */  
-  #apuestasUI { gap: 14px; flex-wrap: wrap; }  
-  #apuestasUI img { vertical-align: middle; }  
-  #monedas-valor, #bote-valor { color: gold; margin-left: 2px; }  
-  #btnApostar { background-color: #28a745; color: white; border-radius: 8px; padding: 0.4rem 0.8rem; }  
-  #btnApostar:disabled { opacity: 0.5; cursor: not-allowed; }  
-   </style>  
- </head>  
- <body>  
-   <div id="pantallaSplash" class="pantalla activa"><h1>Cargando...</h1></div>  
-   <div id="pantallaSala" class="pantalla">  
-     <h2>Selecciona una sala</h2>  
-     <select id="salaSelect">  
-       <option value="Amigos">Amigos</option>  
-       <option value="Familia">Familia</option>  
-       <option value="Oficina">Oficina</option>  
-     </select>  
-     <button onclick="irANickname()">Continuar</button>  
-   </div>  
-   <div id="pantallaNickname" class="pantalla">  
-     <h2>Ingresa tu nickname</h2>  
-     <input type="text" id="nicknameInput" placeholder="Tu nombre..." />  
-     <button onclick="entrarJuego()">Entrar</button>  
-   </div>  
-   <div id="pantallaSeleccion" class="pantalla">  
-     <h1>Selecciona tus cartas</h1>  
-     <div class="cartas-container" id="contenedorCartas"></div>  
-     <button id="btnIniciar" style="display:none">Continuar</button>  
-   </div>  
-   <div id="pantallaJuego" class="pantalla">  
-     <h2>Tu juego</h2>  
-     <div class="juego-cartas" id="juegoCartas"></div>  
-     <div>  
-       <button onclick="limpiarFichas()">Limpiar cartas</button>  
-       <button id="btnBarajear" onclick="socket.emit('barajear', salaActual)">Barajear</button>  
-       <button id="btnIniciarJuego" onclick="socket.emit('iniciar-juego', salaActual)">Iniciar juego</button>  
-       <button id="btnDetenerJuego" onclick="socket.emit('detener-juego', salaActual)">Detener juego</button>  
-       <button id="btnReiniciar" onclick="socket.emit('reiniciar-partida', salaActual)">Reiniciar partida</button>  
-       <button onclick="emitirLoteria()">Lotería</button>  
-     </div>  
-     <div id="apuestasUI" style="display:flex;align-items:center;gap:12px;margin-top:8px;">  
-    <div id="monedasDisplay" style="display:flex;align-items:center;gap:6px;">  
-      <img src="peso.png" alt="peso" style="width:22px;height:22px;display:inline-block;">  
-      <strong id="monedas-valor">30</strong>  
-    </div>  
+      .juego-cartas .carta-juego img {
+        width: 100%;
+        height: auto;
+      }
+    }
 
-    <div id="boteDisplay" style="display:flex;align-items:center;gap:6px;">  
-      <span style="font-weight:600">Bote</span>  
-      <img src="peso.png" alt="bote" style="width:18px;height:18px;display:inline-block;">  
-      <strong id="bote-valor">0</strong>  
-    </div>  
+    /* ===== estilos para apuestas ===== */
+    #apuestasUI { gap: 14px; flex-wrap: wrap; }
+    #apuestasUI img { vertical-align: middle; }
+    #monedas-valor, #bote-valor { color: gold; margin-left: 2px; }
+    #btnApostar { background-color: #28a745; color: white; border-radius: 8px; padding: 0.4rem 0.8rem; }
+    #btnApostar:disabled { opacity: 0.5; cursor: not-allowed; }
+  </style>
+</head>
+<body>
+  <div id="pantallaSplash" class="pantalla activa"><h1>Cargando...</h1></div>
+  <div id="pantallaSala" class="pantalla">
+    <h2>Selecciona una sala</h2>
+    <select id="salaSelect">
+      <option value="Amigos">Amigos</option>
+      <option value="Familia">Familia</option>
+      <option value="Oficina">Oficina</option>
+    </select>
+    <button onclick="irANickname()">Continuar</button>
+  </div>
+  <div id="pantallaNickname" class="pantalla">
+    <h2>Ingresa tu nickname</h2>
+    <input type="text" id="nicknameInput" placeholder="Tu nombre..." />
+    <button onclick="entrarJuego()">Entrar</button>
+  </div>
+  <div id="pantallaSeleccion" class="pantalla">
+    <h1>Selecciona tus cartas</h1>
+    <div class="cartas-container" id="contenedorCartas"></div>
+    <button id="btnIniciar" style="display:none">Continuar</button>
+  </div>
+  <div id="pantallaJuego" class="pantalla">
+    <h2>Tu juego</h2>
+    <div class="juego-cartas" id="juegoCartas"></div>
+    <div>
+      <button onclick="limpiarFichas()">Limpiar cartas</button>
+      <button id="btnBarajear" onclick="socket.emit('barajear', salaActual)">Barajear</button>
+      <button id="btnIniciarJuego" onclick="socket.emit('iniciar-juego', salaActual)">Iniciar juego</button>
+      <button id="btnDetenerJuego" onclick="socket.emit('detener-juego', salaActual)">Detener juego</button>
+      <button id="btnReiniciar" onclick="socket.emit('reiniciar-partida', salaActual)">Reiniciar partida</button>
+      <button onclick="emitirLoteria()">Lotería</button>
+    </div>
+    <div id="apuestasUI" style="display:flex;align-items:center;gap:12px;margin-top:8px;">
+  <div id="monedasDisplay" style="display:flex;align-items:center;gap:6px;">
+  <img src="peso.png" alt="peso" style="width:22px;height:22px;display:inline-block;">
+  <strong id="monedas-valor">30</strong>
+  </div>
 
-    <button id="btnApostar">Apostar</button>  
-  </div>  
-      <div id="historial"></div>  
-     <div id="jugadoresLista"></div>  
-   </div>  
+  <div id="boteDisplay" style="display:flex;align-items:center;gap:6px;">
+  <span style="font-weight:600">Bote</span>
+  <img src="peso.png" alt="bote" style="width:18px;height:18px;display:inline-block;">
+  <strong id="bote-valor">0</strong>
+  </div>
 
-   <div id="loteriaMensaje">¡LOTERÍA!</div>  
+  <button id="btnApostar">Apostar</button>
+  </div>
+  <div id="historial"></div>
+    <div id="jugadoresLista"></div>
+  </div>
 
-   <audio id="audioBarajear" src="barajar.mp3"></audio>  
-   <audio id="audioCampana" src="campana.mp3"></audio>  
-   <audio id="audioCorre" src="corre.mp3"></audio>  
-   <audio id="audioAplausos" src="aplausos.mp3"></audio>  
+  <div id="loteriaMensaje">¡LOTERÍA!</div>
 
-   <script src="https://loteria-backend-3nde.onrender.com/socket.io/socket.io.js"></script>  
-   <script>  
-     // Declaración de variables globales
-     let jugadoresGlobal = {};
-     let miId;
-     const socket = io("https://loteria-backend-3nde.onrender.com");
+  <audio id="audioBarajear" src="barajar.mp3"></audio>
+  <audio id="audioCampana" src="campana.mp3"></audio>
+  <audio id="audioCorre" src="corre.mp3"></audio>
+  <audio id="audioAplausos" src="aplausos.mp3"></audio>
 
-     let nickname = "";
-     let soyHost = false;
-     let seleccionadas = [];
-     let salaActual = "";
-     const cartasDisponibles = Array.from({ length: 16 }, (_, i) => String(i + 1).padStart(2, '0'));
+  <script src="https://loteria-backend-3nde.onrender.com/socket.io/socket.io.js"></script>
+  <script>
+    // Declaración de variables globales
+    let jugadoresGlobal = {};
+    let miId;
+    const socket = io("https://loteria-backend-3nde.onrender.com");
 
-     const pantallas = {
-       splash: document.getElementById("pantallaSplash"),
-       sala: document.getElementById("pantallaSala"),
-       nickname: document.getElementById("pantallaNickname"),
-       seleccion: document.getElementById("pantallaSeleccion"),
-       juego: document.getElementById("pantallaJuego")
-     };
+    let nickname = "";
+    let soyHost = false;
+    let seleccionadas = [];
+    let salaActual = "";
+    const cartasDisponibles = Array.from({ length: 16 }, (_, i) => String(i + 1).padStart(2, '0'));
 
-     const contenedorCartas = document.getElementById("contenedorCartas");
-     const juegoCartas = document.getElementById("juegoCartas");
-     const btnIniciar = document.getElementById("btnIniciar");
-     const historial = document.getElementById("historial");
-     const jugadoresLista = document.getElementById("jugadoresLista");
+    const pantallas = {
+      splash: document.getElementById("pantallaSplash"),
+      sala: document.getElementById("pantallaSala"),
+      nickname: document.getElementById("pantallaNickname"),
+      seleccion: document.getElementById("pantallaSeleccion"),
+      juego: document.getElementById("pantallaJuego")
+    };
 
-     const btnApostar = document.getElementById("btnApostar");
-     const monedasEl = document.getElementById("monedas-valor");
-     const boteEl = document.getElementById("bote-valor");
-     let haApostadoLocal = false;
+    const contenedorCartas = document.getElementById("contenedorCartas");
+    const juegoCartas = document.getElementById("juegoCartas");
+    const btnIniciar = document.getElementById("btnIniciar");
+    const historial = document.getElementById("historial");
+    const jugadoresLista = document.getElementById("jugadoresLista");
 
-     btnApostar && btnApostar.addEventListener("click", () => {
-       if (!salaActual) return alert("Únete a una sala primero.");
-       if (haApostadoLocal) return alert("Ya apostaste esta ronda.");
-       const cantidad = Math.max(1, seleccionadas.length || 1);
-       socket.emit("apostar", { sala: salaActual, cantidad });
-       haApostadoLocal = true;
-       btnApostar.disabled = true;
-     });
+    const btnApostar = document.getElementById("btnApostar");
+    const monedasEl = document.getElementById("monedas-valor");
+    const boteEl = document.getElementById("bote-valor");
+    let haApostadoLocal = false;
 
-     socket.on("error-apuesta", msg => {
-       alert(msg || "Error al apostar");
-       haApostadoLocal = false;
-       if (btnApostar) btnApostar.disabled = false;
-     });
+    btnApostar && btnApostar.addEventListener("click", () => {
+      if (!salaActual) return alert("Únete a una sala primero.");
+      if (haApostadoLocal) return alert("Ya apostaste esta ronda.");
+      const cantidad = Math.max(1, seleccionadas.length || 1);
+      socket.emit("apostar", { sala: salaActual, cantidad });
+      haApostadoLocal = true;
+      btnApostar.disabled = true;
+    });
 
-     const audioBarajear = document.getElementById("audioBarajear");
-     const audioCampana = document.getElementById("audioCampana");
-     const audioCorre = document.getElementById("audioCorre");
-     const audioAplausos = document.getElementById("audioAplausos");
+    socket.on("error-apuesta", msg => {
+      alert(msg || "Error al apostar");
+      haApostadoLocal = false;
+      if (btnApostar) btnApostar.disabled = false;
+    });
 
-     const loteriaMensaje = document.getElementById("loteriaMensaje");
+    const audioBarajear = document.getElementById("audioBarajear");
+    const audioCampana = document.getElementById("audioCampana");
+    const audioCorre = document.getElementById("audioCorre");
+    const audioAplausos = document.getElementById("audioAplausos");
 
-     window.onload = () => setTimeout(() => cambiarPantalla("sala"), 1000);
+    const loteriaMensaje = document.getElementById("loteriaMensaje");
 
-     function cambiarPantalla(nombre) {
-       Object.values(pantallas).forEach(p => p.classList.remove("activa"));
-       pantallas[nombre].classList.add("activa");
-       if (nombre === "seleccion") pantallas["seleccion"].scrollTo(0, 0);
-     }
+    window.onload = () => setTimeout(() => cambiarPantalla("sala"), 1000);
 
-     function irANickname() {
-       salaActual = document.getElementById("salaSelect").value;
-       cambiarPantalla("nickname");
-     }
+    function cambiarPantalla(nombre) {
+      Object.values(pantallas).forEach(p => p.classList.remove("activa"));
+      pantallas[nombre].classList.add("activa");
+      if (nombre === "seleccion") pantallas["seleccion"].scrollTo(0, 0);
+    }
 
-     function entrarJuego() {
-       nickname = document.getElementById("nicknameInput").value.trim();
-       if (!nickname) return alert("Escribe tu nombre");
-       socket.emit("unirse-sala", { nickname, sala: salaActual });
-     }
+    function irANickname() {
+      salaActual = document.getElementById("salaSelect").value;
+      cambiarPantalla("nickname");
+    }
 
-     socket.on('connect', () => {
-       miId = socket.id;
-     });
+    function entrarJuego() {
+      nickname = document.getElementById("nicknameInput").value.trim();
+      if (!nickname) return alert("Escribe tu nombre");
+      socket.emit("unirse-sala", { nickname, sala: salaActual });
+    }
 
-     socket.on("rol-asignado", ({ host }) => {
-       soyHost = host;
-       cambiarPantalla("seleccion");
-       generarCartas();
-       if (!soyHost) {
-         ["btnBarajear", "btnIniciarJuego", "btnDetenerJuego", "btnReiniciar"].forEach(id => {
-           const el = document.getElementById(id);
-           if (el) el.style.display = "none";
-         });
-       }
-     });
+    socket.on('connect', () => {
+      miId = socket.id;
+    });
 
-     socket.on("barajear", () => {
-       audioBarajear.currentTime = 0;
-       audioBarajear.play().catch(e => console.warn("Audio bloqueado:", e));
-       historial.innerHTML = "";
-     });
+    socket.on("rol-asignado", ({ host }) => {
+      soyHost = host;
+      cambiarPantalla("seleccion");
+      generarCartas();
+      if (!soyHost) {
+        ["btnBarajear", "btnIniciarJuego", "btnDetenerJuego", "btnReiniciar"].forEach(id => {
+          const el = document.getElementById(id);
+          if (el) el.style.display = "none";
+        });
+      }
+    });
 
-     socket.on("campana", () => {
-       audioCampana.currentTime = 0;
-       audioCampana.play().catch(() => {});
-     });
+    socket.on("barajear", () => {
+      audioBarajear.currentTime = 0;
+      audioBarajear.play().catch(e => console.warn("Audio bloqueado:", e));
+      historial.innerHTML = "";
+    });
 
-     socket.on("corre", () => {
-       audioCorre.currentTime = 0;
-       audioCorre.play().catch(() => {});
-     });
+    socket.on("campana", () => {
+      audioCampana.currentTime = 0;
+      audioCampana.play().catch(() => {});
+    });
 
-     socket.on("partida-reiniciada", () => {
-       seleccionadas = [];
-       juegoCartas.innerHTML = "";
-       btnIniciar.style.display = "none";
-       cambiarPantalla("seleccion");
-       generarCartas();
-       if (btnApostar) {
-         haApostadoLocal = false;
-         btnApostar.disabled = false;
-       }
-     });
+    socket.on("corre", () => {
+      audioCorre.currentTime = 0;
+      audioCorre.play().catch(() => {});
+    });
 
-     function generarCartas() {
-       contenedorCartas.innerHTML = "";
-       cartasDisponibles.forEach(id => {
-         const img = document.createElement("img");
-         img.src = `${id}.jpg`;
-         img.classList.add("carta-img");
-         img.dataset.id = id;
-         img.onclick = () => seleccionarCarta(img);
-         contenedorCartas.appendChild(img);
-       });
-     }
+    socket.on("partida-reiniciada", () => {
+      seleccionadas = [];
+      juegoCartas.innerHTML = "";
+      btnIniciar.style.display = "none";
+      cambiarPantalla("seleccion");
+      generarCartas();
+      if (btnApostar) {
+        haApostadoLocal = false;
+        btnApostar.disabled = false;
+      }
+    });
 
-     function seleccionarCarta(img) {
-       const id = img.dataset.id;
-       if (seleccionadas.includes(id)) return;
-       if (seleccionadas.length < 3) {
-         img.classList.add("seleccionada");
-         seleccionadas.push(id);
-         socket.emit("seleccionar-carta", { carta: id, sala: salaActual });
-         if (seleccionadas.length >= 2) btnIniciar.style.display = "block";
-       }
-     }
+    function generarCartas() {
+      contenedorCartas.innerHTML = "";
+      cartasDisponibles.forEach(id => {
+        const img = document.createElement("img");
+        img.src = `${id}.jpg`;
+        img.classList.add("carta-img");
+        img.dataset.id = id;
+        img.onclick = () => seleccionarCarta(img);
+        contenedorCartas.appendChild(img);
+      });
+    }
 
-     btnIniciar.onclick = () => {
-       cambiarPantalla("juego");
-       juegoCartas.innerHTML = "";
-       seleccionadas.forEach(id => {
-         const contenedor = document.createElement("div");
-         contenedor.classList.add("carta-juego");
-         contenedor.innerHTML = `<img src="${id}.jpg" class="carta-img seleccionada">`;
-         contenedor.onclick = e => marcarFicha(e, contenedor);
-         juegoCartas.appendChild(contenedor);
-       });
-     };
+    function seleccionarCarta(img) {
+      const id = img.dataset.id;
+      if (seleccionadas.includes(id)) return;
+      if (seleccionadas.length < 3) {
+        img.classList.add("seleccionada");
+        seleccionadas.push(id);
+        socket.emit("seleccionar-carta", { carta: id, sala: salaActual });
+        if (seleccionadas.length >= 2) btnIniciar.style.display = "block";
+      }
+    }
 
-     function marcarFicha(e, contenedor) {
-       const img = contenedor.querySelector("img");
-       const bounds = img.getBoundingClientRect();
-       const x = e.clientX - bounds.left;
-       const y = e.clientY - bounds.top;
-       const px = (x / bounds.width) * 100;
-       const py = (y / bounds.height) * 100;
-       const ficha = document.createElement("img");
-       ficha.src = "ficha.PNG";
-       ficha.classList.add("ficha");
-       ficha.style.left = `${px}%`;
-       ficha.style.top = `${py}%`;
-       contenedor.appendChild(ficha);
-     }
+    btnIniciar.onclick = () => {
+      cambiarPantalla("juego");
+      juegoCartas.innerHTML = "";
+      seleccionadas.forEach(id => {
+        const contenedor = document.createElement("div");
+        contenedor.classList.add("carta-juego");
+        contenedor.innerHTML = `<img src="${id}.jpg" class="carta-img seleccionada">`;
+        contenedor.onclick = e => marcarFicha(e, contenedor);
+        juegoCartas.appendChild(contenedor);
+      });
+    };
 
-     function limpiarFichas() {
-       document.querySelectorAll(".ficha").forEach(f => f.remove());
-     }
+    function marcarFicha(e, contenedor) {
+      const img = contenedor.querySelector("img");
+      const bounds = img.getBoundingClientRect();
+      const x = e.clientX - bounds.left;
+      const y = e.clientY - bounds.top;
+      const px = (x / bounds.width) * 100;
+      const py = (y / bounds.height) * 100;
+      const ficha = document.createElement("img");
+      ficha.src = "ficha.PNG";
+      ficha.classList.add("ficha");
+      ficha.style.left = `${px}%`;
+      ficha.style.top = `${py}%`;
+      contenedor.appendChild(ficha);
+    }
 
-     function emitirLoteria() {
-       audioCorre.pause();
-       audioCampana.pause();
-       audioBarajear.pause();
-       mostrarLoteriaMensaje();
-       socket.emit("loteria", { nickname, sala: salaActual });
-     }
+    function limpiarFichas() {
+      document.querySelectorAll(".ficha").forEach(f => f.remove());
+    }
 
-     function mostrarLoteriaMensaje() {
-       loteriaMensaje.style.display = "block";
-       for (let i = 0; i < 100; i++) {
-         const confeti = document.createElement("div");
-         confeti.classList.add("confeti");
-         confeti.style.left = Math.random() * 100 + "vw";
-         confeti.style.top = "-10px";
-         confeti.style.backgroundColor = `hsl(${Math.random()*360}, 100%, 50%)`;
-         confeti.style.animationDelay = (Math.random() * 2) + "s";
-         document.body.appendChild(confeti);
-         confeti.addEventListener("animationend", () => confeti.remove());
-       }
-       setTimeout(() => {
-         loteriaMensaje.style.display = "none";
-       }, 4000);
-     }
+    function emitirLoteria() {
+      audioCorre.pause();
+      audioCampana.pause();
+      audioBarajear.pause();
+      mostrarLoteriaMensaje();
+      socket.emit("loteria", { nickname, sala: salaActual });
+    }
 
-     socket.on("cartas-desactivadas", ids => {
-       document.querySelectorAll(".carta-img").forEach(img => {
-         if (ids.includes(img.dataset.id)) {
-           img.style.opacity = 0.3;
-           img.style.pointerEvents = "none";
-         }
-       });
-     });
+    function mostrarLoteriaMensaje() {
+      loteriaMensaje.style.display = "block";
+      for (let i = 0; i < 100; i++) {
+        const confeti = document.createElement("div");
+        confeti.classList.add("confeti");
+        confeti.style.left = Math.random() * 100 + "vw";
+        confeti.style.top = "-10px";
+        confeti.style.backgroundColor = `hsl(${Math.random()*360}, 100%, 50%)`;
+        confeti.style.animationDelay = (Math.random() * 2) + "s";
+        document.body.appendChild(confeti);
+        confeti.addEventListener("animationend", () => confeti.remove());
+      }
+      setTimeout(() => {
+        loteriaMensaje.style.display = "none";
+      }, 4000);
+    }
 
-     socket.on("historial-actualizado", historialRecibido => {
-       historial.innerHTML = "";
-       historialRecibido.forEach(id => {
-         const img = document.createElement("img");
-         img.src = `${id}.png`;
-         historial.prepend(img);
-       });
-     });
+    socket.on("cartas-desactivadas", ids => {
+      document.querySelectorAll(".carta-img").forEach(img => {
+        if (ids.includes(img.dataset.id)) {
+          img.style.opacity = 0.3;
+          img.style.pointerEvents = "none";
+        }
+      });
+    });
 
-     socket.on("jugadores-actualizados", jugadores => {
-       jugadoresGlobal = jugadores;
-       if (jugadores[miId]) {
-         monedasEl.textContent = jugadores[miId].monedas;
-       }
-       jugadoresLista.innerHTML = "<h3>Jugadores conectados:</h3>" +
-         Object.values(jugadores).map(j => {
-           const check = j.apostado ? "✅" : "";
-           const monedas = (typeof j.monedas !== "undefined") ? j.monedas : "-";
-           return `<div>${j.nickname} ${check} <span style="margin-left:8px">(${monedas})</span></div>`;
-         }).join("");
-       if (jugadores[miId] && !jugadores[miId].apostado && btnApostar) {
-         haApostadoLocal = false;
-         btnApostar.disabled = false;
-       }
-     });
+    socket.on("historial-actualizado", historialRecibido => {
+      historial.innerHTML = "";
+      historialRecibido.forEach(id => {
+        const img = document.createElement("img");
+        img.src = `${id}.png`;
+        historial.prepend(img);
+      });
+    });
 
-     socket.on('bote-actualizado', (bote) => {
-       boteEl.textContent = bote;
-     });
+    socket.on("jugadores-actualizados", jugadores => {
+      jugadoresGlobal = jugadores;
+      if (jugadores[miId]) {
+        monedasEl.textContent = jugadores[miId].monedas;
+      }
+      jugadoresLista.innerHTML = "<h3>Jugadores conectados:</h3>" +
+        Object.values(jugadores).map(j => {
+          const check = j.apostado ? "✅" : "";
+          const monedas = (typeof j.monedas !== "undefined") ? j.monedas : "-";
+          return `<div>${j.nickname} ${check} <span style="margin-left:8px">(${monedas})</span></div>`;
+        }).join("");
+      if (jugadores[miId] && !jugadores[miId].apostado && btnApostar) {
+        haApostadoLocal = false;
+        btnApostar.disabled = false;
+      }
+    });
 
-     socket.on("carta-cantada", (cartaId) => {
-       const img = document.createElement("img");
-       img.src = `${cartaId}.png`;
-       historial.prepend(img);
-       const audioVoz = new Audio(`${cartaId}.mp3`);
-       audioVoz.play();
-     });
+    socket.on('bote-actualizado', (bote) => {
+      boteEl.textContent = bote;
+    });
 
-     socket.on("loteria-anunciada", (quien, ganadorId) => {
-       alert(`¡${quien} ha cantado LOTERÍA!`);
-       if (soyHost) {
-         const confirmar = confirm(`¿${quien} es el ganador?`);
-         if (confirmar) {
-           socket.emit('confirmar-ganador', { sala: salaActual, ganadorId });
-         }
-       }
-     });
+    socket.on("carta-cantada", (cartaId) => {
+      const img = document.createElement("img");
+      img.src = `${cartaId}.png`;
+      historial.prepend(img);
+      const audioVoz = new Audio(`${cartaId}.mp3`);
+      audioVoz.play();
+    });
 
-     socket.on("juego-detenido", () => {
-       if (soyHost) {
-         audioAplausos.play();
-       }
-     });
+    socket.on("loteria-anunciada", (quien, ganadorId) => {
+      alert(`¡${quien} ha cantado LOTERÍA!`);
+      if (soyHost) {
+        const confirmar = confirm(`¿${quien} es el ganador?`);
+        if (confirmar) {
+          socket.emit('confirmar-ganador', { sala: salaActual, ganadorId });
+        }
+      }
+    });
 
-     // ✅ Registrar Service Worker para PWA
-     if ("serviceWorker" in navigator) {
-       window.addEventListener("load", () => {
-         navigator.serviceWorker.register("service-worker.js").then(reg => {
-           console.log("✅ Service Worker registrado:", reg);
-         }).catch(err => {
-           console.error("❌ Error al registrar Service Worker:", err);
-         });
-       });
-     }
-   </script>  
- </body>  
- </html>
+    socket.on("juego-detenido", () => {
+      if (soyHost) {
+        audioAplausos.play();
+      }
+    });
+
+    // ✅ Registrar Service Worker para PWA
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", () => {
+        navigator.serviceWorker.register("service-worker.js").then(reg => {
+          console.log("✅ Service Worker registrado:", reg);
+        }).catch(err => {
+          console.error("❌ Error al registrar Service Worker:", err);
+        });
+      });
+    }
+  </script>
+</body>
+</html>
