@@ -511,10 +511,17 @@ socket.on("loteria-anunciada", quien => {
     });
 
     socket.on("jugadores-actualizados", jugadores => {
-      jugadoresLista.innerHTML = "<h3>Jugadores conectados:</h3>" +
+      if (jugadores[miId]) {
+        document.getElementById('monedas-valor').textContent = jugadores[miId].monedas;
+        jugadoresLista.innerHTML = "<h3>Jugadores conectados:</h3>" +
         Object.values(jugadores).map(j => `<div>${j.nickname}</div>`).join("");
     });
 
+    // Actualizar bote
+    socket.on('bote-actualizado', (bote) => {
+      document.getElementById('bote-valor').textContent = bote;
+    });
+    
     socket.on("carta-cantada", (cartaId) => {
       const img = document.createElement("img");
       img.src = `${cartaId}.png`;
