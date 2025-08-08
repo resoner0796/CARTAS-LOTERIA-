@@ -141,14 +141,19 @@
       font-weight: bold;
     }
 
-    #historial {
-      display: flex;
-      overflow-x: auto;
-      gap: 5px;
-      padding: 0 1rem;
-      max-width: 90vw;
-      white-space: nowrap;
-    }
+#historial {
+  display: flex;
+  overflow-x: auto;
+  justify-content: center;
+  gap: 5px;
+  padding: 1rem 0;
+  max-width: 90vw;
+  white-space: nowrap;
+  margin: 0 auto;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Agrega un sombreado sutil */
+}
+
+
 
     #historial img {
       width: 40px;
@@ -240,16 +245,20 @@
     <div class="cartas-container" id="contenedorCartas"></div>
     <button id="btnIniciar" style="display:none">Continuar</button>
   </div>
-  <div id="pantallaJuego" class="pantalla">
-    <div class="juego-cartas" id="juegoCartas"></div>
-    <div>
-      <button onclick="limpiarFichas()">Limpiar cartas</button>
-      <button id="btnBarajear" onclick="socket.emit('barajear', salaActual)">Barajear</button>
-      <button id="btnIniciarJuego" onclick="socket.emit('iniciar-juego', salaActual)">Iniciar juego</button>
-      <button id="btnDetenerJuego" onclick="socket.emit('detener-juego', salaActual)">Detener juego</button>
-      <button id="btnReiniciar" onclick="socket.emit('reiniciar-partida', salaActual)">Reiniciar partida</button>
-      <button onclick="emitirLoteria()">Lotería</button>
-    </div>
+<div id="pantallaJuego" class="pantalla">
+  <div id="historial"></div>
+
+  <div class="juego-cartas" id="juegoCartas"></div>
+  <div>
+    <button onclick="limpiarFichas()">Limpiar cartas</button>
+    <button id="btnBarajear" onclick="socket.emit('barajear', salaActual)">Barajear</button>
+    <button id="btnIniciarJuego" onclick="socket.emit('iniciar-juego', salaActual)">Iniciar juego</button>
+    <button id="btnDetenerJuego" onclick="socket.emit('detener-juego', salaActual)">Detener juego</button>
+    <button id="btnReiniciar" onclick="socket.emit('reiniciar-partida', salaActual)">Reiniciar partida</button>
+    <button onclick="emitirLoteria()">Lotería</button>
+  </div>
+</div>
+
     <div id="apuestasUI" style="display:flex;align-items:center;gap:12px;margin-top:8px;">
 <div id="monedasDisplay" style="display:flex;align-items:center;gap:16px;">
 <div class="monedas-apiladas">
