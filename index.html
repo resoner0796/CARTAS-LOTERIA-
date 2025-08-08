@@ -235,286 +235,274 @@
    <audio id="audioCorre" src="corre.mp3"></audio> 
    <audio id="audioAplausos" src="aplausos.mp3"></audio> 
    
-   <script src="https://loteria-backend-3nde.onrender.com/socket.io/socket.io.js"></script> 
-   <script> 
-     // Declaración de variables globales
-     let jugadoresGlobal = {}; 
-     let miId; 
-     const socket = io("https://loteria-backend-3nde.onrender.com"); 
+   <script src="https://loteria-backend-3nde.onrender.com/socket.io/socket.io.js"></script>
+<script>
+    // Declaración de variables globales
+    let jugadoresGlobal = {};
+    let miId;
+    const socket = io("https://loteria-backend-3nde.onrender.com");
 
-     let nickname = ""; 
-     let soyHost = false; 
-     let seleccionadas = []; 
-     let salaActual = ""; 
-     const cartasDisponibles = Array.from({ length: 16 }, (_, i) => String(i + 1).padStart(2, '0')); 
+    let nickname = "";
+    let soyHost = false;
+    let seleccionadas = [];
+    let salaActual = "";
+    const cartasDisponibles = Array.from({ length: 16 }, (_, i) => String(i + 1).padStart(2, '0'));
 
-     const pantallas = { 
-       splash: document.getElementById("pantallaSplash"), 
-       sala: document.getElementById("pantallaSala"), 
-       nickname: document.getElementById("pantallaNickname"), 
-       seleccion: document.getElementById("pantallaSeleccion"), 
-       juego: document.getElementById("pantallaJuego") 
-     }; 
+    const pantallas = {
+        splash: document.getElementById("pantallaSplash"),
+        sala: document.getElementById("pantallaSala"),
+        nickname: document.getElementById("pantallaNickname"),
+        seleccion: document.getElementById("pantallaSeleccion"),
+        juego: document.getElementById("pantallaJuego")
+    };
 
-     const contenedorCartas = document.getElementById("contenedorCartas"); 
-     const juegoCartas = document.getElementById("juegoCartas"); 
-     const btnIniciar = document.getElementById("btnIniciar"); 
-     const historial = document.getElementById("historial"); 
-     const jugadoresLista = document.getElementById("jugadoresLista"); 
- 
-     const btnApostar = document.getElementById("btnApostar"); 
-     const monedasEl = document.getElementById("monedas-valor"); 
-     const boteEl = document.getElementById("bote-valor"); 
-     let haApostadoLocal = false; 
+    const contenedorCartas = document.getElementById("contenedorCartas");
+    const juegoCartas = document.getElementById("juegoCartas");
+    const btnIniciar = document.getElementById("btnIniciar");
+    const historial = document.getElementById("historial");
+    const jugadoresLista = document.getElementById("jugadoresLista");
 
-     btnApostar && btnApostar.addEventListener("click", () => {
-       if (!salaActual) return alert("Únete a una sala primero.");
-       if (haApostadoLocal) return alert("Ya apostaste esta ronda.");
-       const cantidad = seleccionadas.length;
-       if (cantidad === 0) {
-         alert("Selecciona al menos una carta para apostar.");
-         return;
-       }
-       socket.emit("apostar", { sala: salaActual, cantidad });
-       haApostadoLocal = true;
-       btnApostar.disabled = true;
-     });
+    const btnApostar = document.getElementById("btnApostar");
+    const monedasEl = document.getElementById("monedas-valor");
+    const boteEl = document.getElementById("bote-valor");
+    let haApostadoLocal = false;
 
-     socket.on("error-apuesta", msg => {
-       alert(msg || "Error al apostar");
-       haApostadoLocal = false;
-       if (btnApostar) btnApostar.disabled = false;
-     });
- 
-     const audioBarajear = document.getElementById("audioBarajear"); 
-     const audioCampana = document.getElementById("audioCampana"); 
-     const audioCorre = document.getElementById("audioCorre"); 
-     const audioAplausos = document.getElementById("audioAplausos"); 
+    btnApostar && btnApostar.addEventListener("click", () => {
+        if (!salaActual) return alert("Únete a una sala primero.");
+        if (haApostadoLocal) return alert("Ya apostaste esta ronda.");
+        const cantidad = Math.max(1, seleccionadas.length || 1);
+        socket.emit("apostar", { sala: salaActual, cantidad });
+        haApostadoLocal = true;
+        btnApostar.disabled = true;
+    });
 
-     const loteriaMensaje = document.getElementById("loteriaMensaje"); 
+    socket.on("error-apuesta", msg => {
+        alert(msg || "Error al apostar");
+        haApostadoLocal = false;
+        if (btnApostar) btnApostar.disabled = false;
+    });
 
-     window.onload = () => setTimeout(() => cambiarPantalla("sala"), 1000); 
+    const audioBarajear = document.getElementById("audioBarajear");
+    const audioCampana = document.getElementById("audioCampana");
+    const audioCorre = document.getElementById("audioCorre");
+    const audioAplausos = document.getElementById("audioAplausos");
 
-     function cambiarPantalla(nombre) { 
-       Object.values(pantallas).forEach(p => p.classList.remove("activa")); 
-       pantallas[nombre].classList.add("activa"); 
-       if (nombre === "seleccion") pantallas["seleccion"].scrollTo(0, 0); 
-     } 
+    const loteriaMensaje = document.getElementById("loteriaMensaje");
 
-     function irANickname() { 
-       salaActual = document.getElementById("salaSelect").value; 
-       cambiarPantalla("nickname"); 
-     } 
+    window.onload = () => setTimeout(() => cambiarPantalla("sala"), 1000);
 
-     function entrarJuego() { 
-       nickname = document.getElementById("nicknameInput").value.trim(); 
-       if (!nickname) return alert("Escribe tu nombre"); 
-       socket.emit("unirse-sala", { nickname, sala: salaActual }); 
-     } 
+    function cambiarPantalla(nombre) {
+        Object.values(pantallas).forEach(p => p.classList.remove("activa"));
+        pantallas[nombre].classList.add("activa");
+        if (nombre === "seleccion") pantallas["seleccion"].scrollTo(0, 0);
+    }
 
-     socket.on('connect', () => {
-       miId = socket.id;
-     });
+    function irANickname() {
+        salaActual = document.getElementById("salaSelect").value;
+        cambiarPantalla("nickname");
+    }
 
-     socket.on("rol-asignado", ({ host }) => { 
-       soyHost = host; 
-       cambiarPantalla("seleccion"); 
-       generarCartas(); 
-       if (!soyHost) { 
-         ["btnBarajear", "btnIniciarJuego", "btnDetenerJuego", "btnReiniciar", "confirmarGanadorBtn"].forEach(id => { 
-           const el = document.getElementById(id);
-           if (el) el.style.display = "none";
-         }); 
-       } 
-     }); 
+    function entrarJuego() {
+        nickname = document.getElementById("nicknameInput").value.trim();
+        if (!nickname) return alert("Escribe tu nombre");
+        socket.emit("unirse-sala", { nickname, sala: salaActual });
+    }
 
-     socket.on("barajear", () => { 
-       audioBarajear.currentTime = 0; 
-       audioBarajear.play().catch(e => console.warn("Audio bloqueado:", e)); 
-       historial.innerHTML = ""; 
-     }); 
+    socket.on('connect', () => {
+        miId = socket.id;
+    });
 
-     socket.on("campana", () => { 
-       audioCampana.currentTime = 0; 
-       audioCampana.play().catch(() => {}); 
-     }); 
+    socket.on("rol-asignado", ({ host }) => {
+        soyHost = host;
+        cambiarPantalla("seleccion");
+        generarCartas();
+        if (!soyHost) {
+            ["btnBarajear", "btnIniciarJuego", "btnDetenerJuego", "btnReiniciar"].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.style.display = "none";
+            });
+        }
+    });
 
-     socket.on("corre", () => { 
-       audioCorre.currentTime = 0; 
-       audioCorre.play().catch(() => {}); 
-     }); 
+    socket.on("barajear", () => {
+        audioBarajear.currentTime = 0;
+        audioBarajear.play().catch(e => console.warn("Audio bloqueado:", e));
+        historial.innerHTML = "";
+    });
 
-     socket.on("partida-reiniciada", () => { 
-       seleccionadas = []; 
-       juegoCartas.innerHTML = ""; 
-       btnIniciar.style.display = "none"; 
-       cambiarPantalla("seleccion"); 
-       generarCartas(); 
-       if (btnApostar) {
-         haApostadoLocal = false;
-         btnApostar.disabled = false;
-       }
-     }); 
+    socket.on("campana", () => {
+        audioCampana.currentTime = 0;
+        audioCampana.play().catch(() => {});
+    });
 
-     function generarCartas() { 
-       contenedorCartas.innerHTML = ""; 
-       cartasDisponibles.forEach(id => { 
-         const img = document.createElement("img"); 
-         img.src = `${id}.jpg`; 
-         img.classList.add("carta-img"); 
-         img.dataset.id = id; 
-         img.onclick = () => seleccionarCarta(img); 
-         contenedorCartas.appendChild(img); 
-       }); 
-     } 
+    socket.on("corre", () => {
+        audioCorre.currentTime = 0;
+        audioCorre.play().catch(() => {});
+    });
 
-     function seleccionarCarta(img) { 
-       const id = img.dataset.id; 
-       if (seleccionadas.includes(id)) return; 
-       if (seleccionadas.length < 3) { // hasta 3 cartas 
-         img.classList.add("seleccionada"); 
-         seleccionadas.push(id); 
-         socket.emit("seleccionar-carta", { carta: id, sala: salaActual }); 
-         if (seleccionadas.length >= 2) btnIniciar.style.display = "block"; // activa desde 2 cartas 
-       } 
-     } 
+    socket.on("partida-reiniciada", () => {
+        seleccionadas = [];
+        juegoCartas.innerHTML = "";
+        btnIniciar.style.display = "none";
+        cambiarPantalla("seleccion");
+        generarCartas();
+        if (btnApostar) {
+            haApostadoLocal = false;
+            btnApostar.disabled = false;
+        }
+    });
 
-     btnIniciar.onclick = () => { 
-       cambiarPantalla("juego"); 
-       juegoCartas.innerHTML = ""; 
-       seleccionadas.forEach(id => { 
-         const contenedor = document.createElement("div"); 
-         contenedor.classList.add("carta-juego"); 
-         contenedor.innerHTML = `<img src="${id}.jpg" class="carta-img seleccionada">`; 
-         contenedor.onclick = e => marcarFicha(e, contenedor); 
-         juegoCartas.appendChild(contenedor); 
-       }); 
-     }; 
+    function generarCartas() {
+        contenedorCartas.innerHTML = "";
+        cartasDisponibles.forEach(id => {
+            const img = document.createElement("img");
+            img.src = `${id}.jpg`;
+            img.classList.add("carta-img");
+            img.dataset.id = id;
+            img.onclick = () => seleccionarCarta(img);
+            contenedorCartas.appendChild(img);
+        });
+    }
 
-     function marcarFicha(e, contenedor) { 
-       const img = contenedor.querySelector("img"); 
-       const bounds = img.getBoundingClientRect(); 
-       const x = e.clientX - bounds.left; 
-       const y = e.clientY - bounds.top; 
-       const px = (x / bounds.width) * 100; 
-       const py = (y / bounds.height) * 100; 
-       const ficha = document.createElement("img"); 
-       ficha.src = "ficha.PNG"; 
-       ficha.classList.add("ficha"); 
-       ficha.style.left = `${px}%`; 
-       ficha.style.top = `${py}%`; 
-       contenedor.appendChild(ficha); 
-     } 
+    function seleccionarCarta(img) {
+        const id = img.dataset.id;
+        if (seleccionadas.includes(id)) return;
+        if (seleccionadas.length < 3) {
+            img.classList.add("seleccionada");
+            seleccionadas.push(id);
+            socket.emit("seleccionar-carta", { carta: id, sala: salaActual });
+            if (seleccionadas.length >= 2) btnIniciar.style.display = "block";
+        }
+    }
 
-     function limpiarFichas() { 
-       document.querySelectorAll(".ficha").forEach(f => f.remove()); 
-     } 
+    btnIniciar.onclick = () => {
+        cambiarPantalla("juego");
+        juegoCartas.innerHTML = "";
+        seleccionadas.forEach(id => {
+            const contenedor = document.createElement("div");
+            contenedor.classList.add("carta-juego");
+            contenedor.innerHTML = `<img src="${id}.jpg" class="carta-img seleccionada">`;
+            contenedor.onclick = e => marcarFicha(e, contenedor);
+            juegoCartas.appendChild(contenedor);
+        });
+    };
 
-     function emitirLoteria() { 
-       // Pausar audio de canto 
-       audioCorre.pause(); 
-       audioCampana.pause(); 
-       audioBarajear.pause(); 
+    function marcarFicha(e, contenedor) {
+        const img = contenedor.querySelector("img");
+        const bounds = img.getBoundingClientRect();
+        const x = e.clientX - bounds.left;
+        const y = e.clientY - bounds.top;
+        const px = (x / bounds.width) * 100;
+        const py = (y / bounds.height) * 100;
+        const ficha = document.createElement("img");
+        ficha.src = "ficha.PNG";
+        ficha.classList.add("ficha");
+        ficha.style.left = `${px}%`;
+        ficha.style.top = `${py}%`;
+        contenedor.appendChild(ficha);
+    }
 
-       // Mostrar mensaje y confeti 
-       mostrarLoteriaMensaje(); 
+    function limpiarFichas() {
+        document.querySelectorAll(".ficha").forEach(f => f.remove());
+    }
 
-       socket.emit("loteria", { nickname, sala: salaActual }); 
-     } 
+    function emitirLoteria() {
+        audioCorre.pause();
+        audioCampana.pause();
+        audioBarajear.pause();
+        mostrarLoteriaMensaje();
+        socket.emit("loteria", { nickname, sala: salaActual });
+    }
 
-     function mostrarLoteriaMensaje() { 
-       loteriaMensaje.style.display = "block"; 
+    function mostrarLoteriaMensaje() {
+        loteriaMensaje.style.display = "block";
+        for (let i = 0; i < 100; i++) {
+            const confeti = document.createElement("div");
+            confeti.classList.add("confeti");
+            confeti.style.left = Math.random() * 100 + "vw";
+            confeti.style.top = "-10px";
+            confeti.style.backgroundColor = `hsl(${Math.random()*360}, 100%, 50%)`;
+            confeti.style.animationDelay = (Math.random() * 2) + "s";
+            document.body.appendChild(confeti);
+            confeti.addEventListener("animationend", () => confeti.remove());
+        }
+        setTimeout(() => {
+            loteriaMensaje.style.display = "none";
+        }, 4000);
+    }
 
-       // Crear confeti 
-       for (let i = 0; i < 100; i++) { 
-         const confeti = document.createElement("div"); 
-         confeti.classList.add("confeti"); 
-         confeti.style.left = Math.random() * 100 + "vw"; 
-         confeti.style.top = "-10px"; 
-         confeti.style.backgroundColor = `hsl(${Math.random()*360}, 100%, 50%)`; 
-         confeti.style.animationDelay = (Math.random() * 2) + "s"; 
-         document.body.appendChild(confeti); 
-         confeti.addEventListener("animationend", () => confeti.remove()); 
-       } 
+    socket.on("cartas-desactivadas", ids => {
+        document.querySelectorAll(".carta-img").forEach(img => {
+            if (ids.includes(img.dataset.id)) {
+                img.style.opacity = 0.3;
+                img.style.pointerEvents = "none";
+            }
+        });
+    });
 
-       // Ocultar mensaje después de 4 segundos 
-       setTimeout(() => { 
-         loteriaMensaje.style.display = "none"; 
-       }, 4000); 
-     } 
+    socket.on("historial-actualizado", historialRecibido => {
+        historial.innerHTML = "";
+        historialRecibido.forEach(id => {
+            const img = document.createElement("img");
+            img.src = `${id}.png`;
+            historial.prepend(img);
+        });
+    });
 
-     socket.on("cartas-desactivadas", ids => { 
-       document.querySelectorAll(".carta-img").forEach(img => { 
-         if (ids.includes(img.dataset.id)) { 
-           img.style.opacity = 0.3; 
-           img.style.pointerEvents = "none"; 
-         } 
-       }); 
-     }); 
+    socket.on("jugadores-actualizados", jugadores => {
+        jugadoresGlobal = jugadores;
+        if (jugadores[miId]) {
+            monedasEl.textContent = jugadores[miId].monedas;
+        }
+        jugadoresLista.innerHTML = "<h3>Jugadores conectados:</h3>" +
+            Object.values(jugadores).map(j => {
+                const check = j.apostado ? "✅" : "";
+                const monedas = (typeof j.monedas !== "undefined") ? j.monedas : "-";
+                return `<div>${j.nickname} ${check} <span style="margin-left:8px">(${monedas})</span></div>`;
+            }).join("");
+        if (jugadores[miId] && !jugadores[miId].apostado && btnApostar) {
+            haApostadoLocal = false;
+            btnApostar.disabled = false;
+        }
+    });
 
-     socket.on("historial-actualizado", historialRecibido => { 
-       historial.innerHTML = ""; 
-       historialRecibido.forEach(id => { 
-         const img = document.createElement("img"); 
-         img.src = `${id}.png`; 
-         historial.prepend(img); 
-       }); 
-     }); 
+    socket.on('bote-actualizado', (bote) => {
+        boteEl.textContent = bote;
+    });
 
-     socket.on("jugadores-actualizados", jugadores => { 
-       jugadoresGlobal = jugadores;
-       if (jugadores[miId]) { 
-         monedasEl.textContent = jugadores[miId].monedas; 
-       }
-       jugadoresLista.innerHTML = "<h3>Jugadores conectados:</h3>" + 
-         Object.values(jugadores).map(j => {
-           const check = j.apostado ? "✅" : "";
-           const monedas = (typeof j.monedas !== "undefined") ? j.monedas : "-";
-           return `<div>${j.nickname} ${check} <span style="margin-left:8px">(${monedas})</span></div>`;
-         }).join("");
-       if (jugadores[miId] && !jugadores[miId].apostado && btnApostar) {
-         haApostadoLocal = false;
-         btnApostar.disabled = false;
-       }
-     }); 
-     
-     socket.on('bote-actualizado', (bote) => { 
-       boteEl.textContent = bote; 
-     }); 
-      
-     socket.on("carta-cantada", (cartaId) => { 
-       const img = document.createElement("img"); 
-       img.src = `${cartaId}.png`; 
-       historial.prepend(img); 
-       const audioVoz = new Audio(`${cartaId}.mp3`); 
-       audioVoz.play(); 
-     }); 
+    socket.on("carta-cantada", (cartaId) => {
+        const img = document.createElement("img");
+        img.src = `${cartaId}.png`;
+        historial.prepend(img);
+        const audioVoz = new Audio(`${cartaId}.mp3`);
+        audioVoz.play();
+    });
 
-     socket.on("loteria-anunciada", (quien, ganadorId) => { 
-       alert(`¡${quien} ha cantado LOTERÍA!`); 
-       if (soyHost) {
-         const confirmar = confirm(`¿${quien} es el ganador?`);
-         if (confirmar) {
-           socket.emit('confirmar-ganador', { sala: salaActual, ganadorId });
-         }
-       }
-     }); 
+    socket.on("loteria-anunciada", (quien, ganadorId) => {
+        alert(`¡${quien} ha cantado LOTERÍA!`);
+        // Lógica para que el host confirme el ganador
+        if (soyHost) {
+            const confirmar = confirm(`¿${quien} es el ganador?`);
+            if (confirmar) {
+                socket.emit('confirmar-ganador', { sala: salaActual, ganadorId });
+            }
+        }
+    });
 
-     socket.on("juego-detenido", () => { 
-       if (soyHost) { 
-         audioAplausos.play(); 
-       } 
-     }); 
-     // ✅ Registrar Service Worker para PWA 
- if ("serviceWorker" in navigator) { 
-   window.addEventListener("load", () => { 
-     navigator.serviceWorker.register("service-worker.js").then(reg => { 
-       console.log("✅ Service Worker registrado:", reg); 
-     }).catch(err => { 
-       console.error("❌ Error al registrar Service Worker:", err); 
-     }); 
-   }); 
- } 
-   </script> 
- </body> 
- </html>
+    socket.on("juego-detenido", () => {
+        if (soyHost) {
+            audioAplausos.play();
+        }
+    });
+
+    // ✅ Registrar Service Worker para PWA
+    if ("serviceWorker" in navigator) {
+        window.addEventListener("load", () => {
+            navigator.serviceWorker.register("service-worker.js").then(reg => {
+                console.log("✅ Service Worker registrado:", reg);
+            }).catch(err => {
+                console.error("❌ Error al registrar Service Worker:", err);
+            });
+        });
+    }
+</script>
