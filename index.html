@@ -217,7 +217,7 @@
 <div id="apuestasUI" style="display:flex;align-items:center;gap:12px;margin-top:8px;">
   <div id="monedasDisplay" style="display:flex;align-items:center;gap:6px;">
     <img src="peso.png" alt="peso" style="width:22px;height:22px;display:inline-block;">
-    <strong id="monedas-valor">15</strong>
+    <strong id="monedas-valor">30</strong>
   </div>
 
   <div id="boteDisplay" style="display:flex;align-items:center;gap:6px;">
@@ -271,7 +271,7 @@ const boteEl = document.getElementById("bote-valor");
 // Estado cliente
 let initialMonedas = {};      // snapshot de monedas al entrar para calcular bote
 let haApostadoLocal = false;  // si este cliente ya apostó esta ronda
-let monedasInicialesPorJugador = 15; // fallback si server no envía (ajusta si tu server usa 10)
+let monedasInicialesPorJugador = 30; // fallback si server no envía (ajusta si tu server usa 10)
 
 // Botón apostar -> envía la cantidad según cartas seleccionadas
 btnApostar && btnApostar.addEventListener("click", () => {
