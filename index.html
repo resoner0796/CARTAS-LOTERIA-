@@ -461,9 +461,9 @@
       }
       jugadoresLista.innerHTML = "<h3>Jugadores conectados:</h3>" +
         Object.values(jugadores).map(j => {
-          const check = j.apostado ? "✅" : "";
+          const check = j.apostado ? "💸" : "";
           const monedas = (typeof j.monedas !== "undefined") ? j.monedas : "-";
-          return `<div>${j.nickname} ${check} <span style="margin-left:8px">(${monedas})</span></div>`;
+          return `<div>${j.nickname} ${check}</div>`;
         }).join("");
       if (jugadores[miId] && !jugadores[miId].apostado && btnApostar) {
         haApostadoLocal = false;
