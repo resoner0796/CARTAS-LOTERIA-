@@ -3,7 +3,10 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
-  <meta name="theme-color" content="#111111" />   <link rel="manifest" href="manifest.json" />   <link rel="apple-touch-icon" href="icon-192.png">   <title>Lotería WebApp</title>
+  <meta name="theme-color" content="#111111" />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <title>Lotería WebApp</title>
   <style>
     body {
       margin: 0;
@@ -237,7 +240,8 @@
 
   <script src="https://loteria-backend-3nde.onrender.com/socket.io/socket.io.js"></script>
   <script>
-    let jugadoresGlobal = {}; // <-- Variable global para guardar el estado de los jugadores
+    // Declaración de la variable global de jugadores
+    let jugadoresGlobal = {};
 
     const socket = io("https://loteria-backend-3nde.onrender.com");
 
@@ -245,7 +249,7 @@
     let soyHost = false;
     let seleccionadas = [];
     let salaActual = "";
-    const cartasDisponibles = Array.from({ length: 16 }, (_, i) => String(i + 1).padStart(2, '0'));
+    const cartasDisponibles = Array.from({ length: 54 }, (_, i) => String(i + 1).padStart(2, '0'));
 
     const pantallas = {
       splash: document.getElementById("pantallaSplash"),
@@ -261,18 +265,16 @@
     const historial = document.getElementById("historial");
     const jugadoresLista = document.getElementById("jugadoresLista");
 
-    /* ===== LOGICA APUESTAS ===== */
+    // Lógica de Apuestas (corregida)
     const btnApostar = document.getElementById("btnApostar");
     const monedasEl = document.getElementById("monedas-valor");
     const boteEl = document.getElementById("bote-valor");
-    let initialMonedas = {};
     let haApostadoLocal = false;
-    const monedasInicialesPorJugador = 30;
 
     btnApostar && btnApostar.addEventListener("click", () => {
       if (!salaActual) return alert("Únete a una sala primero.");
       if (haApostadoLocal) return alert("Ya apostaste esta ronda.");
-      const cantidad = Math.max(1, seleccionadas.length);
+      const cantidad = seleccionadas.length;
       if (cantidad === 0) {
         alert("No puedes apostar sin cartas seleccionadas.");
         return;
@@ -287,61 +289,7 @@
       haApostadoLocal = false;
       if (btnApostar) btnApostar.disabled = false;
     });
-
-    socket.on("jugadores-actualizados", jugadores => {
-      jugadoresGlobal = jugadores;
-      jugadoresLista.innerHTML = "<h3>Jugadores conectados:</h3>" +
-        Object.values(jugadores).map(j => {
-          const check = j.apostado ? "✅" : "";
-          const monedas = (typeof j.monedas !== "undefined") ? j.monedas : "-";
-          return `<div>${j.nickname} ${check} <span style="margin-left:8px">(${monedas})</span></div>`;
-        }).join("");
-
-      Object.entries(jugadores).forEach(([id, info]) => {
-        if (initialMonedas[id] == null) {
-          initialMonedas[id] = (typeof info.monedas !== "undefined") ? info.monedas : monedasInicialesPorJugador;
-        }
-      });
-
-      const miInfo = jugadores[socket.id];
-      if (miInfo && typeof miInfo.monedas !== "undefined") {
-        monedasEl.textContent = miInfo.monedas;
-      }
-
-      let boteCalc = 0;
-      Object.entries(jugadores).forEach(([id, info]) => {
-        const init = initialMonedas[id] ?? ((typeof info.monedas !== "undefined") ? info.monedas : monedasInicialesPorJugador);
-        const curr = (typeof info.monedas !== "undefined") ? info.monedas : init;
-        const diff = init - curr;
-        if (diff > 0) boteCalc += diff;
-      });
-      boteEl.textContent = boteCalc;
-    });
-
-    socket.on("partida-reiniciada", () => {
-      initialMonedas = {};
-      haApostadoLocal = false;
-      if (btnApostar) btnApostar.disabled = false;
-      if (boteEl) boteEl.textContent = "0";
-    });
-
-    socket.on("loteria-anunciada", quien => {
-      haApostadoLocal = false;
-      if (btnApostar) btnApostar.disabled = false;
-
-      alert(`¡${quien} ha cantado LOTERÍA!`);
-      if (soyHost) {
-        const ganadorId = encontrarIdPorNickname(quien);
-        const btnConfirmar = document.createElement('button');
-        btnConfirmar.textContent = 'Confirmar ganador';
-        btnConfirmar.onclick = () => {
-          socket.emit('confirmar-ganador', { sala: salaActual, ganadorId });
-          btnConfirmar.remove();
-        };
-        document.body.appendChild(btnConfirmar);
-      }
-    });
-    /* ===== FIN LOGICA APUESTAS ===== */
+    // Fin Lógica de Apuestas
 
     const audioBarajear = document.getElementById("audioBarajear");
     const audioCampana = document.getElementById("audioCampana");
@@ -403,6 +351,10 @@
       btnIniciar.style.display = "none";
       cambiarPantalla("seleccion");
       generarCartas();
+      if (btnApostar) {
+        haApostadoLocal = false;
+        btnApostar.disabled = false;
+      }
     });
 
     function generarCartas() {
@@ -486,7 +438,7 @@
         loteriaMensaje.style.display = "none";
       }, 4000);
     }
-   
+    
     function encontrarIdPorNickname(nickname) {
       for (const id in jugadoresGlobal) {
         if (jugadoresGlobal[id].nickname === nickname) {
@@ -519,6 +471,21 @@
       });
     });
 
+    socket.on("jugadores-actualizados", jugadores => {
+      jugadoresGlobal = jugadores;
+      jugadoresLista.innerHTML = "<h3>Jugadores conectados:</h3>" +
+        Object.values(jugadores).map(j => {
+          const check = j.apostado ? "✅" : "";
+          const monedas = (typeof j.monedas !== "undefined") ? j.monedas : "N/A";
+          return `<div>${j.nickname} ${check} <span style="margin-left:8px">(${monedas})</span></div>`;
+        }).join("");
+      
+      const miInfo = jugadores[socket.id];
+      if (miInfo) {
+        monedasEl.textContent = miInfo.monedas;
+      }
+    });
+
     socket.on("bote-actualizado", (bote) => {
       if (boteEl) boteEl.textContent = bote;
     });
@@ -529,6 +496,20 @@
       historial.prepend(img);
       const audioVoz = new Audio(`${cartaId}.mp3`);
       audioVoz.play();
+    });
+    
+    socket.on("loteria-anunciada", (quien) => {
+      alert(`¡${quien} ha cantado LOTERÍA!`);
+      if (soyHost) {
+        const ganadorId = encontrarIdPorNickname(quien);
+        const btnConfirmar = document.createElement('button');
+        btnConfirmar.textContent = 'Confirmar ganador';
+        btnConfirmar.onclick = () => {
+          socket.emit('confirmar-ganador', { sala: salaActual, ganadorId });
+          btnConfirmar.remove();
+        };
+        document.body.appendChild(btnConfirmar);
+      }
     });
 
     socket.on("juego-detenido", () => {
