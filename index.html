@@ -528,9 +528,34 @@ socket.on("loteria-anunciada", quien => {
       audioVoz.play();
     });
 
-    socket.on("loteria-anunciada", (quien) => {
-      alert(`¡${quien} ha cantado LOTERÍA!`);
-    });
+    // Dentro del listener 'loteria-anunciada' en tu index.html
+socket.on("loteria-anunciada", (quien) => {
+    alert(`¡${quien} ha cantado LOTERÍA!`);
+    
+    // Si soy el host, muestro un botón para confirmar
+    if (soyHost) {
+        const ganadorId = encontrarIdPorNickname(quien); // Necesitas una función para esto
+        const btnConfirmar = document.createElement('button');
+        btnConfirmar.textContent = 'Confirmar ganador';
+        btnConfirmar.onclick = () => {
+            socket.emit('confirmar-ganador', { sala: salaActual, ganadorId });
+            btnConfirmar.remove(); // Quita el botón después de usarlo
+        };
+        document.body.appendChild(btnConfirmar);
+    }
+});
+
+// Y necesitas una función para encontrar el ID del socket por el nickname
+function encontrarIdPorNickname(nickname) {
+    // Necesitas almacenar el objeto de jugadores en el cliente.
+    // Tu listener 'jugadores-actualizados' ya lo tiene, solo necesitas guardarlo en una variable global.
+    for (const id in jugadores) {
+        if (jugadores[id].nickname === nickname) {
+            return id;
+        }
+    }
+    return null;
+}
 
     socket.on("juego-detenido", () => {
       if (soyHost) {
