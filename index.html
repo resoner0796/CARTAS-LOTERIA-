@@ -455,21 +455,23 @@
     });
 
     socket.on("jugadores-actualizados", jugadores => {
-      jugadoresGlobal = jugadores;
-      if (jugadores[miId]) {
-        monedasEl.textContent = jugadores[miId].monedas;
-      }
-      jugadoresLista.innerHTML = "<h3>Jugadores conectados:</h3>" +
-        Object.values(jugadores).map(j => {
-          const check = j.apostado ? "💸" : "";
-          const monedas = (typeof j.monedas !== "undefined") ? j.monedas : "-";
-          return `<div>${j.nickname} ${check}</div>`;
-        }).join("");
-      if (jugadores[miId] && !jugadores[miId].apostado && btnApostar) {
-        haApostadoLocal = false;
-        btnApostar.disabled = false;
-      }
-    });
+  jugadoresGlobal = jugadores;
+  
+  // ✅ Encuentra el jugador actual en la lista usando su ID
+  const miJugador = jugadores.find(j => j.id === miId);
+  
+  jugadoresLista.innerHTML = "<h3>Jugadores conectados:</h3>" +
+    Object.values(jugadores).map(j => {
+      const check = j.apostado ? "💸" : "";
+      return `<div>${j.nickname} ${check}</div>`;
+    }).join("");
+    
+  // ✅ Usa la información de 'miJugador' para habilitar el botón
+  if (miJugador && !miJugador.apostado && btnApostar) {
+    haApostadoLocal = false;
+    btnApostar.disabled = false;
+  }
+});
     
 socket.on('monedas-actualizado', (monedas) => {
     if (monedasEl) {
