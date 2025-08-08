@@ -150,7 +150,7 @@
   max-width: 90vw;
   white-space: nowrap;
   margin: 0 auto;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Sombreado que querías */
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.5); /* Sombreado que querías */
   order: -1; /* Mueve el historial al principio visualmente */
 }
 
@@ -495,7 +495,7 @@
       historialRecibido.forEach(id => {
         const img = document.createElement("img");
         img.src = `${id}.png`;
-        historial.prepend(img);
+        historial.append(img);
       });
     });
 
@@ -528,7 +528,7 @@ socket.on('monedas-actualizado', (monedas) => {
     socket.on("carta-cantada", (cartaId) => {
       const img = document.createElement("img");
       img.src = `${cartaId}.png`;
-      historial.prepend(img);
+      historial.append(img);
       const audioVoz = new Audio(`${cartaId}.mp3`);
       audioVoz.play();
     });
