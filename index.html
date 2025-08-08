@@ -95,10 +95,11 @@
     
 .monedas-apiladas {
   position: relative;
-  width: 26px; /* Ancho ajustado para la pila */
-  height: 26px; /* Alto ajustado para la pila */
+  width: 26px;
+  height: 26px;
   display: inline-block;
-  margin-right: 15px; /* ✅ Agregamos margen a la derecha para separarlo del número */
+  margin-right: 10px;
+  transform: translateY(-10px); /* ✅ Sube el contenedor 8px */
 }
 
 .moneda-stack {
@@ -251,7 +252,7 @@
       <button onclick="emitirLoteria()">Lotería</button>
     </div>
     <div id="apuestasUI" style="display:flex;align-items:center;gap:12px;margin-top:8px;">
-<div id="monedasDisplay" style="display:flex;align-items:center;gap:12px;">
+<div id="monedasDisplay" style="display:flex;align-items:center;gap:16px;">
 <div class="monedas-apiladas">
     <img src="peso.png" alt="peso" class="moneda-stack">
     <img src="peso.png" alt="peso" class="moneda-stack">
