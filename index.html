@@ -27,12 +27,14 @@
       align-items: center;
       justify-content: center;
       min-height: 100vh;
-      overflow-y: hidden; /* Oculta el scroll vertical dentro de las pantallas */
+      /* Oculta el scroll vertical dentro de las pantallas */
+      overflow-y: hidden; 
       padding: 1rem;
       background-size: cover;
       background-position: center;
       animation: fadein 0.5s ease-in;
-      box-sizing: border-box; /* Asegura que el padding no desborde el ancho */
+      /* Asegura que el padding no desborde el ancho */
+      box-sizing: border-box;
     }
 
     .pantalla.activa {
@@ -54,7 +56,8 @@
 
     #pantallaSeleccion {
       background-image: url("fondo-seleccion.PNG");
-      overflow-y: auto; /* Permite scroll vertical para ver todas las cartas */
+      /* Permite scroll vertical para ver todas las cartas */
+      overflow-y: auto; 
     }
 
     #pantallaJuego {
@@ -75,15 +78,16 @@
       border: 3px solid #fff;
       border-radius: 10px;
       cursor: pointer;
-      transition: transform 0.3s;
+      /* Transición al seleccionar una carta */
+      transition: transform 0.3s; 
       /* Asegura que la imagen se adapte al contenedor */
       max-width: 100%; 
       height: auto;
     }
 
-
     .carta-img.seleccionada {
-      transform: scale(1.05); /* Escala la carta al ser seleccionada */
+      /* Aumenta el tamaño de la carta al ser seleccionada */
+      transform: scale(1.05); 
       box-shadow: 0 0 15px gold;
       border-color: gold;
     }
@@ -197,7 +201,8 @@
 
     #historial {
       display: flex;
-      overflow-x: auto; /* Permite scroll horizontal en el historial */
+      /* Permite scroll horizontal en el historial */
+      overflow-x: auto; 
       gap: 8px;
       padding: 5px;
       white-space: nowrap;
@@ -300,6 +305,7 @@
   </div>
   <div id="pantallaJuego" class="pantalla">
 
+    <!-- Historial movido a la parte superior -->
     <div class="historial-container">
       <div id="historial"></div>
     </div>
@@ -315,6 +321,7 @@
       <button onclick="emitirLoteria()">Lotería</button>
     </div>
     
+    <!-- UI de apuestas actualizada -->
     <div id="apuestasUI" style="display:flex;align-items:center;gap:24px;margin-top:8px;">
       <div style="display:flex;align-items:flex-end;">
           <div class="monedas-apiladas">
@@ -497,8 +504,7 @@
       contenedorCartas.innerHTML = "";
       cartasDisponibles.forEach(id => {
         const img = document.createElement("img");
-        // Las cartas de los jugadores son .jpg
-        img.src = `${id}.jpg`;
+        img.src = `${id}.jpg`; // Las cartas de los jugadores son .jpg
         img.classList.add("carta-img");
         img.dataset.id = id;
         img.onclick = () => seleccionarCarta(img);
@@ -587,7 +593,8 @@
       historialRecibido.forEach(id => {
         const img = document.createElement("img");
         const formattedId = String(id).padStart(2, '0');
-        img.src = `${formattedId}.png`;
+        // Las barajitas del mazo son .png
+        img.src = `${formattedId}.png`; 
         historial.prepend(img);
       });
     });
@@ -623,10 +630,11 @@
     socket.on("carta-cantada", (cartaId) => {
       const img = document.createElement("img");
       const formattedId = String(cartaId).padStart(2, '0');
-      img.src = `${formattedId}.png`;
+      // Las barajitas del mazo son .png
+      img.src = `${formattedId}.png`; 
       historial.prepend(img);
       
-      const audioVoz = new Audio(`${formattedId}.mp3`);
+      const audioVoz = new Audio(`cartas/${formattedId}.mp3`);
       audioVoz.play().catch(e => console.warn("Error al reproducir audio:", e));
     });
 
