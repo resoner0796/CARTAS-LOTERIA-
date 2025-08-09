@@ -13,6 +13,9 @@
       background-color: #111;
       color: #fff;
       font-family: sans-serif;
+      overflow-x: hidden; /* Esto es clave para evitar el scroll horizontal */
+      min-height: 100vh;
+    
     }
 
     .pantalla {
@@ -60,13 +63,16 @@
       gap: 1rem;
     }
 
-    .carta-img {
+   .carta-img {
       width: 180px;
       border: 3px solid #fff;
       border-radius: 10px;
       cursor: pointer;
       transition: transform 0.3s;
+      max-width: 100%; /* Asegura que la imagen no exceda el contenedor */
+      height: auto;
     }
+
 
     .carta-img.seleccionada {
       transform: scale(1.05);
@@ -162,6 +168,7 @@
     }
 
     /* ===== Estilos de historial ===== */
+       /* ===== Estilos de historial ===== */
     .historial-container {
       width: 100%;
       padding: 10px;
@@ -189,9 +196,11 @@
       width: 50px;
       height: 70px;
       border-radius: 5px;
-      border: 2px solid gold;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.5);
+      /* ELIMINADO: border: 2px solid gold; */
+      border: 1px solid #666; /* Añadido borde gris claro */
+      box-shadow: 0 2px 4px rgba(0,0,0,0.3); /* Ajustada la sombra */
     }
+
 
     /* ===== Estilos de apuestas, corregidos ===== */
     #apuestasUI { 
