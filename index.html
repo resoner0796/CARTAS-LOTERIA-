@@ -625,14 +625,16 @@
       boteEl.textContent = bote;
     });
 
-    socket.on("carta-cantada", (cartaId) => {
+       socket.on("carta-cantada", (cartaId) => {
+      // Agrega la carta al historial
       const img = document.createElement("img");
       const formattedId = String(cartaId).padStart(2, '0');
       img.src = `${formattedId}.png`; 
       historial.prepend(img);
       
+      // Crea y reproduce un nuevo objeto de audio cada vez, lo que evita bloqueos del navegador
       const audioVoz = new Audio(`${formattedId}.mp3`);
-      audioVoz.play().catch(e => console.warn("Error al reproducir audio:", e));
+      audioVoz.play();
     });
 
     socket.on("loteria-anunciada", (quien, ganadorId) => {
