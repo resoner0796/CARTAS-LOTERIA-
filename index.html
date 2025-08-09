@@ -83,6 +83,10 @@
       width: 100%;
     }
     
+    .apuesta-control .bote-info {
+  margin-top: -15px; /* Ajusta este valor para acercar o alejar el texto de las monedas */
+}
+    
 .bote-monedas {
   position: relative;
   width: 25px; /* Ajusta el ancho total del contenedor del montón */
@@ -350,24 +354,18 @@
     <strong id="monedas-valor">30</strong>
   </div>
 
-<div class="bote-control" style="display:flex; flex-direction: column; align-items: center; gap: 1px;">
-  <div style="display:flex;flex-direction:column;align-items:center;">
+  <div class="apuesta-control" style="display:flex;flex-direction:column;align-items:center;gap:5px;">
     <div class="bote-monedas">
       <img src="peso.png" alt="moneda">
       <img src="peso.png" alt="moneda">
       <img src="peso.png" alt="moneda">
-      <img src="peso.png" alt="moneda">
-      <img src="peso.png" alt="moneda">
-      <img src="peso.png" alt="moneda">
-      <img src="peso.png" alt="moneda">
-      <img src="peso.png" alt="moneda">
     </div>
-    
-    <strong id="bote-valor">0</strong>
-    <span style="font-weight:600;font-size:0.8rem">Bote</span>
+    <div class="bote-info" style="display:flex;flex-direction:column;align-items:center;">
+      <strong id="bote-valor">0</strong>
+      <span style="font-weight:600;font-size:0.8rem">Bote</span>
+    </div>
+    <button id="btnApostar">Apostar</button>
   </div>
-
-  <button id="btnApostar">Apostar</button>
 </div>
 
 </div>
