@@ -8,14 +8,13 @@
   <link rel="apple-touch-icon" href="icon-192.png">
   <title>Lotería WebApp</title>
   <style>
-    body {
+        body {
       margin: 0;
       background-color: #111;
       color: #fff;
       font-family: sans-serif;
       overflow-x: hidden; /* Esto es clave para evitar el scroll horizontal */
       min-height: 100vh;
-    
     }
 
     .pantalla {
@@ -24,7 +23,7 @@
       align-items: center;
       justify-content: center;
       min-height: 100vh;
-      overflow-y: auto;
+      overflow-y: auto; /* Permite scroll vertical si el contenido es muy largo */
       padding: 1rem;
       background-size: cover;
       background-position: center;
@@ -150,23 +149,43 @@
     }
     
     @media screen and (orientation: landscape) {
-      .juego-cartas {
-        flex-wrap: nowrap;
-        flex-direction: row;
-        justify-content: center;
-      }
-
-      .juego-cartas .carta-juego {
-        width: 30vw;
-        max-width: 180px;
-      }
-
-      .juego-cartas .carta-juego img {
-        width: 100%;
-        height: auto;
-      }
+    .juego-cartas {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 1rem;
     }
 
+    .juego-cartas .carta-juego {
+        position: relative;
+        width: 100%; /* Ajusta el ancho para ocupar todo el espacio disponible */
+        max-width: 250px;
+    }
+    
+    .juego-cartas .carta-juego img {
+      width: 100%;
+      height: auto;
+    }
+    
+    .juego-cartas + div { /* Estilo para el contenedor de botones */
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+    
+    button {
+      padding: 0.6rem 1.2rem;
+      font-size: 1rem;
+      margin: 0.5rem;
+      border-radius: 10px;
+      border: none;
+      background-color: gold;
+      color: black;
+      cursor: pointer;
+      font-weight: bold;
+      flex-grow: 1; /* Permite que los botones crezcan para ocupar el espacio */
+      min-width: 120px; /* Asegura que no se hagan demasiado pequeños */
+    }
     /* ===== Estilos de historial ===== */
        /* ===== Estilos de historial ===== */
     .historial-container {
