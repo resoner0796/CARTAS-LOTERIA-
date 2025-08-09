@@ -84,7 +84,7 @@
     }
     
     .apuesta-control .bote-info {
-  margin-top: 35px; /* Ajusta este valor para acercar o alejar el texto de las monedas */
+  margin-top: -15px; /* Ajusta este valor para acercar o alejar el texto de las monedas */
 }
     
 .bote-monedas {
@@ -172,30 +172,30 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 5px; /* Espacio entre el texto y el botón */
+  gap:-15px; /* Espacio entre el texto y el botón */
 }
     
-.monedas-apiladas {
-  position: relative;
-  width: 26px;
-  height: 26px;
-  display: inline-block;
-  margin-right: 10px;
-  transform: translateY(-18px); /* ✅ Sube el contenedor 8px */
-}
-
-  .monedas-columna {
+<style>
+  .monedas-apiladas {
     display: flex;
     flex-direction: column;
+    /* Ajusta este valor para acercar o alejar las torres */
+    margin-right: -10px; 
+    align-items: center; 
   }
 
+  /* La última torre no necesita el margen negativo para que no se empalme con el contador */
+  .monedas-apiladas:last-of-type {
+    margin-right: 0;
+  }
+  
   .moneda-stack {
     width: 24px;
     height: 24px;
-    margin-top: -12px; /* Esto hace que se superpongan */
+    /* Ajusta este valor para que las monedas no se empalmen */
+    margin-top: -10px; 
   }
 
-  /* Para la primera moneda de cada columna, eliminas el margen negativo para que no se superponga con el elemento de arriba */
   .moneda-stack:first-of-type {
     margin-top: 0;
   }
@@ -390,9 +390,9 @@
 </div>
 <div id="apuestasUI" style="display:flex;align-items:center;gap:12px;margin-top:8px;">
   
-  <div style="display: flex; align-items: center; gap:48px;">
-    
-    <div class="monedas-columna">
+  <div style="display:flex;align-items:flex-end;">
+  
+    <div class="monedas-apiladas">
       <img src="peso.png" alt="peso" class="moneda-stack">
       <img src="peso.png" alt="peso" class="moneda-stack">
       <img src="peso.png" alt="peso" class="moneda-stack">
@@ -400,16 +400,24 @@
       <img src="peso.png" alt="peso" class="moneda-stack">
     </div>
     
-    <strong id="monedas-valor">30</strong>
+    <div class="monedas-apiladas">
+      <img src="peso.png" alt="peso" class="moneda-stack">
+      <img src="peso.png" alt="peso" class="moneda-stack">
+      <img src="peso.png" alt="peso" class="moneda-stack">
+      <img src="peso.png" alt="peso" class="moneda-stack">
+      <img src="peso.png" alt="peso" class="moneda-stack">
+    </div>
     
-  </div>
-  
-  <div class="monedas-columna">
+    <div class="monedas-apiladas">
       <img src="peso.png" alt="peso" class="moneda-stack">
       <img src="peso.png" alt="peso" class="moneda-stack">
       <img src="peso.png" alt="peso" class="moneda-stack">
       <img src="peso.png" alt="peso" class="moneda-stack">
       <img src="peso.png" alt="peso" class="moneda-stack">
+    </div>
+
+    <strong id="monedas-valor" style="margin-left: 8px;">30</strong>
+
   </div>
   
   <div class="apuesta-control" style="display:flex;flex-direction:column;align-items:center;gap:45px;">
