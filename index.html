@@ -105,20 +105,6 @@
       font-weight: bold;
     }
 
-    #historial {
-      display: flex;
-      overflow-x: auto;
-      gap: 5px;
-      padding: 0 1rem;
-      max-width: 90vw;
-      white-space: nowrap;
-    }
-
-    #historial img {
-      width: 40px;
-      border-radius: 5px;
-    }
-
     #jugadoresLista {
       margin-top: 1rem;
       font-size: 1rem;
@@ -173,6 +159,38 @@
         width: 100%;
         height: auto;
       }
+    }
+
+    /* ===== Estilos de historial ===== */
+    .historial-container {
+      width: 100%;
+      padding: 10px;
+      background-color: rgba(0, 0, 0, 0.4);
+      border-radius: 10px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.5);
+      margin-bottom: 20px;
+    }
+
+    #historial {
+      display: flex;
+      overflow-x: auto;
+      gap: 8px;
+      padding: 5px;
+      white-space: nowrap;
+      scrollbar-width: none; /* Firefox */
+      -ms-overflow-style: none;  /* IE and Edge */
+    }
+
+    #historial::-webkit-scrollbar {
+      display: none; /* Chrome, Safari and Opera */
+    }
+
+    #historial img {
+      width: 50px;
+      height: 70px;
+      border-radius: 5px;
+      border: 2px solid gold;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.5);
     }
 
     /* ===== Estilos de apuestas, corregidos ===== */
@@ -256,7 +274,13 @@
     <button id="btnIniciar" style="display:none">Continuar</button>
   </div>
   <div id="pantallaJuego" class="pantalla">
-    <h2>Tu juego</h2>
+
+    <!-- Historial movido a la parte superior -->
+    <div class="historial-container">
+      <div id="historial"></div>
+    </div>
+    
+    
     <div class="juego-cartas" id="juegoCartas"></div>
     <div>
       <button onclick="limpiarFichas()">Limpiar cartas</button>
@@ -317,8 +341,7 @@
           </div>
       </div>
     </div>
-
-    <div id="historial"></div>
+    
     <div id="jugadoresLista"></div>
   </div>
 
