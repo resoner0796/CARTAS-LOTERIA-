@@ -37,8 +37,8 @@
       to { opacity: 1; }
     }
 
-    #pantallaSplash { 
-       background-image: url("splash.PNG");
+    #pantallaSplash {
+      background-image: url("splash.PNG");
     }
 
     #pantallaSala, #pantallaNickname {
@@ -82,8 +82,100 @@
     .carta-juego img {
       width: 100%;
     }
+
+    .ficha {
+      position: absolute;
+      pointer-events: none;
+      width: 40px;
+      height: auto;
+      max-width: 40px;
+      max-height: 40px;
+      transform: translate(-50%, -50%);
+    }
+
+    button {
+      padding: 0.6rem 1.2rem;
+      font-size: 1rem;
+      margin: 0.5rem;
+      border-radius: 10px;
+      border: none;
+      background-color: gold;
+      color: black;
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    #historial {
+      display: flex;
+      overflow-x: auto;
+      gap: 5px;
+      padding: 0 1rem;
+      max-width: 90vw;
+      white-space: nowrap;
+    }
+
+    #historial img {
+      width: 40px;
+      border-radius: 5px;
+    }
+
+    #jugadoresLista {
+      margin-top: 1rem;
+      font-size: 1rem;
+    }
+
+    #loteriaMensaje {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 4rem;
+      color: gold;
+      font-weight: bold;
+      background-color: rgba(0,0,0,0.7);
+      padding: 20px 40px;
+      border-radius: 20px;
+      z-index: 9999;
+      display: none;
+      user-select: none;
+    }
+
+    .confeti {
+      position: fixed;
+      width: 10px;
+      height: 10px;
+      background-color: gold;
+      z-index: 9998;
+      animation: caer 2s linear forwards;
+      border-radius: 50%;
+    }
+
+    @keyframes caer {
+      to {
+        transform: translateY(100vh) rotate(360deg);
+        opacity: 0;
+      }
+    }
     
-    /* ===== Estilos de apuestas ===== */
+    @media screen and (orientation: landscape) {
+      .juego-cartas {
+        flex-wrap: nowrap;
+        flex-direction: row;
+        justify-content: center;
+      }
+
+      .juego-cartas .carta-juego {
+        width: 30vw;
+        max-width: 180px;
+      }
+
+      .juego-cartas .carta-juego img {
+        width: 100%;
+        height: auto;
+      }
+    }
+
+    /* ===== Estilos de apuestas, corregidos ===== */
     #apuestasUI { 
         gap: 24px; 
         flex-wrap: wrap; 
@@ -140,129 +232,6 @@
     #bote-valor { color: gold; font-weight: bold; }
     #btnApostar { background-color: #28a745; color: white; border-radius: 8px; padding: 0.4rem 0.8rem; }
     #btnApostar:disabled { opacity: 0.5; cursor: not-allowed; }
-
-    .ficha {
-      position: absolute;
-      pointer-events: none;
-      width: 40px;
-      height: auto;
-      max-width: 40px;
-      max-height: 40px;
-      transform: translate(-50%, -50%);
-    }
-
-    button {
-      padding: 0.6rem 1.2rem;
-      font-size: 1rem;
-      margin: 0.5rem;
-      border-radius: 10px;
-      border: none;
-      background-color: gold;
-      color: black;
-      cursor: pointer;
-      font-weight: bold;
-    }
-
-    #historial {
-      display: flex;
-      overflow-x: auto;
-      justify-content: flex-start;
-      gap: 5px;
-      padding: 1rem 10px;
-      max-width: 100vw;
-      white-space: nowrap;
-      margin: 0;
-      box-shadow: 0 16px 32px rgba(0, 0, 0, 1.0);
-    }
-
-    #historial img {
-      width: 45px;
-      border-radius: 5px;
-      animation: slideIn 0.3s ease-in-out;
-      border: 1px solid rgba(255, 255, 255, 0.2);
-      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-    }
-    
-    @keyframes slideIn {
-      from { transform: translateX(-50px); opacity: 0; }
-      to { transform: translateX(0); opacity: 1; }
-    }
-
-    #jugadoresLista {
-      margin-top: 1rem;
-      font-size: 1rem;
-    }
-
-    #loteriaMensaje {
-      position: fixed;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      font-size: 4rem;
-      color: gold;
-      font-weight: bold;
-      background-color: rgba(0,0,0,0.7);
-      padding: 20px 40px;
-      border-radius: 20px;
-      z-index: 9999;
-      display: none;
-      user-select: none;
-    }
-
-    .confeti {
-      position: fixed;
-      width: 10px;
-      height: 10px;
-      background-color: gold;
-      z-index: 9998;
-      animation: caer 2s linear forwards;
-      border-radius: 50%;
-    }
-
-    @keyframes caer {
-      to {
-        transform: translateY(100vh) rotate(360deg);
-        opacity: 0;
-      }
-    }
-    
-    @media screen and (orientation: landscape) {
-      .juego-horizontal-wrapper {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        width: 100%;
-      }
-
-      .botones-izquierda, .botones-derecha {
-        display: flex;
-        flex-direction: column;
-        gap: 5px;
-      }
-
-      .botones-izquierda button,
-      .botones-derecha button {
-        padding: 0.4rem 0.8rem;
-        font-size: 0.8rem;
-      }
-      
-      .juego-cartas {
-        flex: 1; 
-      }
-
-      .juego-cartas .carta-juego {
-        width: 30vw;
-        max-width: 250px;
-      }
-      .juego-cartas .carta-juego img {
-        width: 100%;
-        height: auto;
-      }
-      
-      .juego-horizontal-wrapper + div {
-        display: none;
-      }
-    }
   </style>
 </head>
 <body>
@@ -287,82 +256,70 @@
     <button id="btnIniciar" style="display:none">Continuar</button>
   </div>
   <div id="pantallaJuego" class="pantalla">
-    
-    <!-- Historial de cartas, colocado en la parte superior -->
-    <div id="historial"></div>
-
-    <!-- Wrapper para botones y cartas, que maneja el modo horizontal -->
-    <div class="juego-horizontal-wrapper">
-        <div class="botones-izquierda">
-            <button id="btnBarajear" onclick="socket.emit('barajear', salaActual)">Barajear</button>
-            <button onclick="limpiarFichas()">Limpiar cartas</button>
-            <button id="btnReiniciar" onclick="socket.emit('reiniciar-partida', salaActual)">Reiniciar partida</button>
-        </div>
-        
-        <!-- Contenedor principal de las cartas del juego -->
-        <div class="juego-cartas" id="juegoCartas"></div>
-        
-        <div class="botones-derecha">
-            <button id="btnIniciarJuego" onclick="socket.emit('iniciar-juego', salaActual)">Iniciar juego</button>
-            <button onclick="emitirLoteria()">Lotería</button>
-            <button id="btnDetenerJuego" onclick="socket.emit('detener-juego', salaActual)">Detener juego</button>
-        </div>
+    <h2>Tu juego</h2>
+    <div class="juego-cartas" id="juegoCartas"></div>
+    <div>
+      <button onclick="limpiarFichas()">Limpiar cartas</button>
+      <button id="btnBarajear" onclick="socket.emit('barajear', salaActual)">Barajear</button>
+      <button id="btnIniciarJuego" onclick="socket.emit('iniciar-juego', salaActual)">Iniciar juego</button>
+      <button id="btnDetenerJuego" onclick="socket.emit('detener-juego', salaActual)">Detener juego</button>
+      <button id="btnReiniciar" onclick="socket.emit('reiniciar-partida', salaActual)">Reiniciar partida</button>
+      <button onclick="emitirLoteria()">Lotería</button>
     </div>
     
-    <!-- Interfaz de apuestas (UI), restaurada a la versión que ya funcionaba -->
+    <!-- UI de apuestas actualizada -->
     <div id="apuestasUI" style="display:flex;align-items:center;gap:24px;margin-top:8px;">
-        <div style="display:flex;align-items:flex-end;">
-            <div class="monedas-apiladas">
-                <img src="peso.png" alt="peso" class="moneda-stack">
-                <img src="peso.png" alt="peso" class="moneda-stack">
-                <img src="peso.png" alt="peso" class="moneda-stack">
-                <img src="peso.png" alt="peso" class="moneda-stack">
-                <img src="peso.png" alt="peso" class="moneda-stack">
-            </div>
-            <div class="monedas-apiladas">
-                <img src="peso.png" alt="peso" class="moneda-stack">
-                <img src="peso.png" alt="peso" class="moneda-stack">
-                <img src="peso.png" alt="peso" class="moneda-stack">
-                <img src="peso.png" alt="peso" class="moneda-stack">
-                <img src="peso.png" alt="peso" class="moneda-stack">
-            </div>
-            <div class="monedas-apiladas">
-                <img src="peso.png" alt="peso" class="moneda-stack">
-                <img src="peso.png" alt="peso" class="moneda-stack">
-                <img src="peso.png" alt="peso" class="moneda-stack">
-                <img src="peso.png" alt="peso" class="moneda-stack">
-                <img src="peso.png" alt="peso" class="moneda-stack">
-            </div>
-        </div>
-        <strong id="monedas-valor">30</strong>
-        <div class="apuesta-control" style="display:flex;flex-direction:column;align-items:center;">
-            <div class="bote-monedas">
-                <img src="peso.png" alt="moneda">
-                <img src="peso.png" alt="moneda">
-                <img src="peso.png" alt="moneda">
-                <img src="peso.png" alt="moneda">
-                <img src="peso.png" alt="moneda">
-                <img src="peso.png" alt="moneda">
-                <img src="peso.png" alt="moneda">
-                <img src="peso.png" alt="moneda">
-                <img src="peso.png" alt="moneda">
-                <img src="peso.png" alt="moneda">
-                <img src="peso.png" alt="moneda">
-                <img src="peso.png" alt="moneda">
-            </div>
-            <div style="display:flex;flex-direction:column;align-items:center;margin-top: 30px;">
-                <div class="bote-info" style="display:flex;flex-direction:column;align-items:center;">
-                    <strong id="bote-valor">0</strong>
-                    <span style="font-weight:600;font-size:0.8rem">Bote</span>
-                </div>
-                <button id="btnApostar">Apostar</button>
-            </div>
-        </div>
+      <div style="display:flex;align-items:flex-end;">
+          <div class="monedas-apiladas">
+              <img src="peso.png" alt="peso" class="moneda-stack">
+              <img src="peso.png" alt="peso" class="moneda-stack">
+              <img src="peso.png" alt="peso" class="moneda-stack">
+              <img src="peso.png" alt="peso" class="moneda-stack">
+              <img src="peso.png" alt="peso" class="moneda-stack">
+          </div>
+          <div class="monedas-apiladas">
+              <img src="peso.png" alt="peso" class="moneda-stack">
+              <img src="peso.png" alt="peso" class="moneda-stack">
+              <img src="peso.png" alt="peso" class="moneda-stack">
+              <img src="peso.png" alt="peso" class="moneda-stack">
+              <img src="peso.png" alt="peso" class="moneda-stack">
+          </div>
+          <div class="monedas-apiladas">
+              <img src="peso.png" alt="peso" class="moneda-stack">
+              <img src="peso.png" alt="peso" class="moneda-stack">
+              <img src="peso.png" alt="peso" class="moneda-stack">
+              <img src="peso.png" alt="peso" class="moneda-stack">
+              <img src="peso.png" alt="peso" class="moneda-stack">
+          </div>
+      </div>
+      <strong id="monedas-valor">30</strong>
+      <div class="apuesta-control" style="display:flex;flex-direction:column;align-items:center;">
+          <div class="bote-monedas">
+              <img src="peso.png" alt="moneda">
+              <img src="peso.png" alt="moneda">
+              <img src="peso.png" alt="moneda">
+              <img src="peso.png" alt="moneda">
+              <img src="peso.png" alt="moneda">
+              <img src="peso.png" alt="moneda">
+              <img src="peso.png" alt="moneda">
+              <img src="peso.png" alt="moneda">
+              <img src="peso.png" alt="moneda">
+              <img src="peso.png" alt="moneda">
+              <img src="peso.png" alt="moneda">
+              <img src="peso.png" alt="moneda">
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:center;margin-top: 30px;">
+              <div class="bote-info" style="display:flex;flex-direction:column;align-items:center;">
+                  <strong id="bote-valor">0</strong>
+                  <span style="font-weight:600;font-size:0.8rem">Bote</span>
+              </div>
+              <button id="btnApostar">Apostar</button>
+          </div>
+      </div>
     </div>
-    
-    <!-- Lista de jugadores, al final del contenedor -->
-    <div id="jugadoresLista"></div>
 
+    <div id="historial"></div>
+    <div id="jugadoresLista"></div>
   </div>
 
   <div id="loteriaMensaje">¡LOTERÍA!</div>
