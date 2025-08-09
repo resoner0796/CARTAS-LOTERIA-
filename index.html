@@ -275,7 +275,6 @@
   </div>
   <div id="pantallaJuego" class="pantalla">
 
-    <!-- Historial movido a la parte superior -->
     <div class="historial-container">
       <div id="historial"></div>
     </div>
@@ -291,7 +290,6 @@
       <button onclick="emitirLoteria()">Lotería</button>
     </div>
     
-    <!-- UI de apuestas actualizada -->
     <div id="apuestasUI" style="display:flex;align-items:center;gap:24px;margin-top:8px;">
       <div style="display:flex;align-items:flex-end;">
           <div class="monedas-apiladas">
@@ -561,7 +559,8 @@
       historial.innerHTML = "";
       historialRecibido.forEach(id => {
         const img = document.createElement("img");
-        img.src = `${id}.png`;
+        // CORRECCIÓN: Usar la extensión .jpg para las cartas del historial
+        img.src = `${id}.jpg`;
         historial.prepend(img);
       });
     });
@@ -594,7 +593,8 @@
 
     socket.on("carta-cantada", (cartaId) => {
       const img = document.createElement("img");
-      img.src = `${cartaId}.png`;
+      // CORRECCIÓN: Usar la extensión .jpg para las cartas del historial
+      img.src = `${cartaId}.jpg`;
       historial.prepend(img);
       const audioVoz = new Audio(`${cartaId}.mp3`);
       audioVoz.play();
