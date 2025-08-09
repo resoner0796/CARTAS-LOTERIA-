@@ -37,9 +37,23 @@
       to { opacity: 1; }
     }
 
-    #pantallaSplash {
-      background-image: url("splash.PNG");
-    }
+#pantallaSplash {
+    /* Asegura que el contenedor ocupe toda la pantalla */
+    height: 100vh;
+    width: 100vw;
+    
+    /* Convierte el contenedor en un flexbox */
+    display: flex;
+    
+    /* Alinea el contenido (el texto) en la parte inferior */
+    align-items: flex-end;
+    
+    /* Centra el texto horizontalmente */
+    justify-content: center;
+    
+    /* Agrega un poco de espacio en la parte inferior para que no quede pegado al borde */
+    padding-bottom: 20px;
+}
 
     #pantallaSala, #pantallaNickname {
       background-color: #222;
