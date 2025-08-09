@@ -275,6 +275,7 @@
   </div>
   <div id="pantallaJuego" class="pantalla">
 
+    <!-- Historial movido a la parte superior -->
     <div class="historial-container">
       <div id="historial"></div>
     </div>
@@ -290,6 +291,7 @@
       <button onclick="emitirLoteria()">Lotería</button>
     </div>
     
+    <!-- UI de apuestas actualizada -->
     <div id="apuestasUI" style="display:flex;align-items:center;gap:24px;margin-top:8px;">
       <div style="display:flex;align-items:flex-end;">
           <div class="monedas-apiladas">
@@ -361,6 +363,7 @@
     let soyHost = false;
     let seleccionadas = [];
     let salaActual = "";
+    // El set de cartas del jugador es diferente al de las barajitas del mazo
     const cartasDisponibles = Array.from({ length: 16 }, (_, i) => String(i + 1).padStart(2, '0'));
 
     const pantallas = {
@@ -471,6 +474,7 @@
       contenedorCartas.innerHTML = "";
       cartasDisponibles.forEach(id => {
         const img = document.createElement("img");
+        // Las cartas de los jugadores son .jpg
         img.src = `${id}.jpg`;
         img.classList.add("carta-img");
         img.dataset.id = id;
@@ -559,8 +563,9 @@
       historial.innerHTML = "";
       historialRecibido.forEach(id => {
         const img = document.createElement("img");
-        // CORRECCIÓN: Usar la extensión .jpg para las cartas del historial
-        img.src = `${id}.jpg`;
+        // CORRECCIÓN: Asegurar el formato "01" y usar .png para las barajas del historial
+        const formattedId = String(id).padStart(2, '0');
+        img.src = `${formattedId}.png`;
         historial.prepend(img);
       });
     });
@@ -593,10 +598,11 @@
 
     socket.on("carta-cantada", (cartaId) => {
       const img = document.createElement("img");
-      // CORRECCIÓN: Usar la extensión .jpg para las cartas del historial
-      img.src = `${cartaId}.jpg`;
+      // CORRECCIÓN: Asegurar el formato "01" y usar .png para las barajas del historial
+      const formattedId = String(cartaId).padStart(2, '0');
+      img.src = `${formattedId}.png`;
       historial.prepend(img);
-      const audioVoz = new Audio(`${cartaId}.mp3`);
+      const audioVoz = new Audio(`${formattedId}.mp3`);
       audioVoz.play();
     });
 
