@@ -13,8 +13,10 @@
       background-color: #111;
       color: #fff;
       font-family: sans-serif;
-      overflow-x: hidden;
-      overflow-y: hidden; /* Se elimina el scroll vertical */
+      /* Oculta las barras de desplazamiento horizontal */
+      overflow-x: hidden; 
+      /* Oculta las barras de desplazamiento vertical */
+      overflow-y: hidden; 
       min-height: 100vh;
       width: 100vw;
     }
@@ -25,12 +27,12 @@
       align-items: center;
       justify-content: center;
       min-height: 100vh;
-      overflow-y: hidden; /* Se elimina el scroll vertical */
+      overflow-y: hidden; /* Oculta el scroll vertical dentro de las pantallas */
       padding: 1rem;
       background-size: cover;
       background-position: center;
       animation: fadein 0.5s ease-in;
-      box-sizing: border-box;
+      box-sizing: border-box; /* Asegura que el padding no desborde el ancho */
     }
 
     .pantalla.activa {
@@ -52,8 +54,7 @@
 
     #pantallaSeleccion {
       background-image: url("fondo-seleccion.PNG");
-      /* Permite scroll vertical si hay muchas cartas para seleccionar */
-      overflow-y: auto; 
+      overflow-y: auto; /* Permite scroll vertical para ver todas las cartas */
     }
 
     #pantallaJuego {
@@ -64,28 +65,33 @@
       display: flex;
       flex-wrap: wrap;
       justify-content: center;
+      /* Espacio entre las cartas */
       gap: 1rem;
     }
 
    .carta-img {
-      width: 180px;
+      /* Ancho de las cartas en la pantalla de selección */
+      width: 180px; 
       border: 3px solid #fff;
       border-radius: 10px;
       cursor: pointer;
       transition: transform 0.3s;
-      max-width: 100%;
+      /* Asegura que la imagen se adapte al contenedor */
+      max-width: 100%; 
       height: auto;
     }
 
+
     .carta-img.seleccionada {
-      transform: scale(1.05);
+      transform: scale(1.05); /* Escala la carta al ser seleccionada */
       box-shadow: 0 0 15px gold;
       border-color: gold;
     }
 
     .carta-juego {
       position: relative;
-      width: 250px;
+      /* Ancho de las cartas en la pantalla de juego */
+      width: 250px; 
     }
 
     .carta-juego img {
@@ -95,7 +101,8 @@
     .ficha {
       position: absolute;
       pointer-events: none;
-      width: 40px;
+      /* Tamaño de las fichas */
+      width: 40px; 
       height: auto;
       max-width: 40px;
       max-height: 40px;
@@ -103,8 +110,10 @@
     }
 
     button {
-      padding: 0.6rem 1.2rem;
-      font-size: 1rem;
+      /* Espaciado interno de los botones */
+      padding: 0.6rem 1.2rem; 
+      /* Tamaño de la fuente de los botones */
+      font-size: 1rem; 
       margin: 0.5rem;
       border-radius: 10px;
       border: none;
@@ -124,7 +133,8 @@
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
-      font-size: 4rem;
+      /* Tamaño de la fuente del mensaje de lotería */
+      font-size: 4rem; 
       color: gold;
       font-weight: bold;
       background-color: rgba(0,0,0,0.7);
@@ -152,18 +162,20 @@
       }
     }
     
+    /* Media query para pantallas en orientación horizontal */
     @media screen and (orientation: landscape) {
       .juego-cartas {
-        flex-wrap: nowrap;
+        /* Evita que las cartas se envuelvan a la siguiente línea */
+        flex-wrap: nowrap; 
         flex-direction: row;
         justify-content: center;
         width: auto;
-        /* Aseguramos que se muestren las 3 cartas */
         max-width: none; 
       }
 
       .juego-cartas .carta-juego {
-        width: 30vw;
+        /* Ancho de las cartas en modo horizontal */
+        width: 30vw; 
         max-width: 180px;
       }
 
@@ -185,7 +197,7 @@
 
     #historial {
       display: flex;
-      overflow-x: auto;
+      overflow-x: auto; /* Permite scroll horizontal en el historial */
       gap: 8px;
       padding: 5px;
       white-space: nowrap;
@@ -198,7 +210,8 @@
     }
 
     #historial img {
-      width: 50px;
+      /* Tamaño de las imágenes en el historial */
+      width: 50px; 
       height: 70px;
       border-radius: 5px;
       border: 1px solid #666;
@@ -262,7 +275,7 @@
     .bote-monedas img:nth-child(12) { transform: translate(22px, -13px); z-index: 12; }
     #bote-valor { color: gold; font-weight: bold; }
     #btnApostar { background-color: #28a745; color: white; border-radius: 8px; padding: 0.4rem 0.8rem; }
-</style>
+  </style>
 </head>
 <body>
   <div id="pantallaSplash" class="pantalla activa"><h1>Cargando...</h1></div>
@@ -287,7 +300,6 @@
   </div>
   <div id="pantallaJuego" class="pantalla">
 
-    <!-- Historial movido a la parte superior -->
     <div class="historial-container">
       <div id="historial"></div>
     </div>
@@ -303,7 +315,6 @@
       <button onclick="emitirLoteria()">Lotería</button>
     </div>
     
-    <!-- UI de apuestas actualizada -->
     <div id="apuestasUI" style="display:flex;align-items:center;gap:24px;margin-top:8px;">
       <div style="display:flex;align-items:flex-end;">
           <div class="monedas-apiladas">
@@ -575,7 +586,6 @@
       historial.innerHTML = "";
       historialRecibido.forEach(id => {
         const img = document.createElement("img");
-        // CORRECCIÓN: Asegurar el formato "01" y usar .png para las barajas del historial
         const formattedId = String(id).padStart(2, '0');
         img.src = `${formattedId}.png`;
         historial.prepend(img);
@@ -608,14 +618,16 @@
       boteEl.textContent = bote;
     });
 
+    // CORRECCIÓN: Se actualizó esta función para que agregue la carta al historial
+    // y reproduzca el audio correctamente.
     socket.on("carta-cantada", (cartaId) => {
       const img = document.createElement("img");
-      // CORRECCIÓN: Asegurar el formato "01" y usar .png para las barajas del historial
       const formattedId = String(cartaId).padStart(2, '0');
       img.src = `${formattedId}.png`;
       historial.prepend(img);
+      
       const audioVoz = new Audio(`${formattedId}.mp3`);
-      audioVoz.play();
+      audioVoz.play().catch(e => console.warn("Error al reproducir audio:", e));
     });
 
     socket.on("loteria-anunciada", (quien, ganadorId) => {
