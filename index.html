@@ -82,6 +82,48 @@
     .carta-juego img {
       width: 100%;
     }
+    
+.bote-monedas {
+  position: relative;
+  width: 25px; /* Ajusta el ancho total del contenedor del montón */
+  height: 25px; /* Ajusta la altura del contenedor del montón */
+  display: inline-block;
+}
+
+.bote-monedas img {
+  position: absolute;
+  width: 25px; /* Tamaño de cada moneda */
+  height: 25px;
+  top: 0;
+  left: 0;
+}
+
+/* Aplica un desplazamiento aleatorio a cada moneda para el efecto de montón */
+.bote-monedas img:nth-child(2) {
+  transform: translate(8px, 2px);
+  z-index: 2;
+}
+
+.bote-monedas img:nth-child(3) {
+  transform: translate(1px, 8px);
+  z-index: 3;
+}
+
+.bote-monedas img:nth-child(4) {
+  transform: translate(8px, -4px);
+  z-index: 4;
+}
+
+.bote-monedas img:nth-child(5) {
+  transform: translate(1px, -8px);
+  z-index: 5;
+}
+
+.bote-monedas img:nth-child(6) {
+  transform: translate(8px, -5px);
+  z-index: 6;
+}
+
 
     .ficha {
       position: absolute;
@@ -302,11 +344,19 @@
 <strong id="monedas-valor">30</strong>
 </div>
 
-  <div id="boteDisplay" style="display:flex;align-items:center;gap:6px;">
+<div id="boteDisplay" style="display:flex;align-items:center;gap:6px;">
   <span style="font-weight:600">Bote</span>
-  <img src="peso.png" alt="bote" style="width:44px;height:44px;display:inline-block;">
-  <strong id="bote-valor">0</strong>
+  <div class="bote-monedas">
+    <img src="peso.png" alt="moneda">
+    <img src="peso.png" alt="moneda">
+    <img src="peso.png" alt="moneda">
+    <img src="peso.png" alt="moneda">
+    <img src="peso.png" alt="moneda">
+    <img src="peso.png" alt="moneda">
   </div>
+  <strong id="bote-valor">0</strong>
+</div>
+
 
   <button id="btnApostar">Apostar</button>
   </div>
