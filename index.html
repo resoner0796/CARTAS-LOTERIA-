@@ -74,6 +74,56 @@
         width: 100%;
     }
 
+/* Estilos para la orientación vertical (móvil) */
+.juego-vertical-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    flex: 1; /* Permite que este contenedor ocupe el espacio restante */
+}
+.controles-apuestas-wrapper {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    margin-top: 1rem;
+}
+.botones-izquierda, .botones-derecha {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+/* Para ocultar los botones de la izquierda en modo vertical y no ocupar tanto espacio */
+.botones-izquierda {
+    display: none;
+}
+.botones-derecha {
+    display: none;
+}
+
+/* Estilos para la orientación horizontal */
+@media screen and (orientation: landscape) {
+    /* Aquí definimos cómo se verán los elementos en horizontal */
+    .juego-vertical-wrapper {
+        flex-direction: row; /* Ahora se acomodan en fila */
+        justify-content: space-between;
+    }
+    .juego-cartas {
+        flex: 1;
+        max-width: 60%; /* Ajusta el ancho de las cartas para no invadir */
+    }
+    .controles-apuestas-wrapper {
+        flex-direction: column; /* Apilamos los controles en columna */
+        justify-content: flex-start;
+        width: 35%; /* Ancho para los controles y apuestas */
+    }
+    .botones-izquierda, .botones-derecha {
+        display: flex; /* Hacemos que los botones vuelvan a aparecer */
+    }
+}
+
     /* ===== Estilos de apuestas ===== */
     #apuestasUI { 
         gap: 24px; 
@@ -286,70 +336,66 @@
     
     <div id="historial"></div>
 
-    <div class="juego-horizontal-wrapper">
-        <div class="botones-izquierda">
-            <button id="btnBarajear" onclick="socket.emit('barajear', salaActual)">Barajear</button>
-            <button onclick="limpiarFichas()">Limpiar cartas</button>
-            <button id="btnReiniciar" onclick="socket.emit('reiniciar-partida', salaActual)">Reiniciar partida</button>
-        </div>
+    <div class="juego-vertical-wrapper">
+        
         <div class="juego-cartas" id="juegoCartas"></div>
-        <div class="botones-derecha">
-            <button id="btnIniciarJuego" onclick="socket.emit('iniciar-juego', salaActual)">Iniciar juego</button>
-            <button onclick="emitirLoteria()">Lotería</button>
-            <button id="btnDetenerJuego" onclick="socket.emit('detener-juego', salaActual)">Detener juego</button>
-        </div>
-    </div>
-    
-    <div id="apuestasUI" style="display:flex;align-items:center;gap:24px;margin-top:8px;">
-        <div style="display:flex;align-items:flex-end;">
-            <div class="monedas-apiladas">
-                <img src="peso.png" alt="peso" class="moneda-stack">
-                <img src="peso.png" alt="peso" class="moneda-stack">
-                <img src="peso.png" alt="peso" class="moneda-stack">
-                <img src="peso.png" alt="peso" class="moneda-stack">
-                <img src="peso.png" alt="peso" class="moneda-stack">
+
+        <div class="controles-apuestas-wrapper">
+            
+            <div class="botones-izquierda">
+                <button id="btnBarajear" onclick="socket.emit('barajear', salaActual)">Barajear</button>
+                <button onclick="limpiarFichas()">Limpiar cartas</button>
+                <button id="btnReiniciar" onclick="socket.emit('reiniciar-partida', salaActual)">Reiniciar partida</button>
             </div>
-            <div class="monedas-apiladas">
-                <img src="peso.png" alt="peso" class="moneda-stack">
-                <img src="peso.png" alt="peso" class="moneda-stack">
-                <img src="peso.png" alt="peso" class="moneda-stack">
-                <img src="peso.png" alt="peso" class="moneda-stack">
-                <img src="peso.png" alt="peso" class="moneda-stack">
-            </div>
-            <div class="monedas-apiladas">
-                <img src="peso.png" alt="peso" class="moneda-stack">
-                <img src="peso.png" alt="peso" class="moneda-stack">
-                <img src="peso.png" alt="peso" class="moneda-stack">
-                <img src="peso.png" alt="peso" class="moneda-stack">
-                <img src="peso.png" alt="peso" class="moneda-stack">
-            </div>
-        </div>
-        <strong id="monedas-valor">30</strong>
-        <div class="apuesta-control" style="display:flex;flex-direction:column;align-items:center;">
-            <div class="bote-monedas">
-                <img src="peso.png" alt="moneda">
-                <img src="peso.png" alt="moneda">
-                <img src="peso.png" alt="moneda">
-                <img src="peso.png" alt="moneda">
-                <img src="peso.png" alt="moneda">
-                <img src="peso.png" alt="moneda">
-                <img src="peso.png" alt="moneda">
-                <img src="peso.png" alt="moneda">
-                <img src="peso.png" alt="moneda">
-                <img src="peso.png" alt="moneda">
-                <img src="peso.png" alt="moneda">
-                <img src="peso.png" alt="moneda">
-            </div>
-            <div style="display:flex;flex-direction:column;align-items:center;margin-top: 30px;">
-                <div class="bote-info" style="display:flex;flex-direction:column;align-items:center;">
-                    <strong id="bote-valor">0</strong>
-                    <span style="font-weight:600;font-size:0.8rem">Bote</span>
+            
+            <div id="apuestasUI" style="display:flex;flex-direction:column;align-items:center;gap:12px;margin-top:8px;">
+                <div style="display:flex;align-items:flex-end;gap:12px;">
+                    <div class="monedas-apiladas">
+                        <img src="peso.png" alt="peso" class="moneda-stack">
+                        <img src="peso.png" alt="peso" class="moneda-stack">
+                        <img src="peso.png" alt="peso" class="moneda-stack">
+                        <img src="peso.png" alt="peso" class="moneda-stack">
+                        <img src="peso.png" alt="peso" class="moneda-stack">
+                    </div>
+                    <div class="monedas-apiladas">
+                        <img src="peso.png" alt="peso" class="moneda-stack">
+                        <img src="peso.png" alt="peso" class="moneda-stack">
+                        <img src="peso.png" alt="peso" class="moneda-stack">
+                        <img src="peso.png" alt="peso" class="moneda-stack">
+                        <img src="peso.png" alt="peso" class="moneda-stack">
+                    </div>
+                    <div class="monedas-apiladas">
+                        <img src="peso.png" alt="peso" class="moneda-stack">
+                        <img src="peso.png" alt="peso" class="moneda-stack">
+                        <img src="peso.png" alt="peso" class="moneda-stack">
+                        <img src="peso.png" alt="peso" class="moneda-stack">
+                        <img src="peso.png" alt="peso" class="moneda-stack">
+                    </div>
+                    <strong id="monedas-valor">30</strong>
                 </div>
-                <button id="btnApostar">Apostar</button>
+                <div class="apuesta-control" style="display:flex;flex-direction:column;align-items:center;">
+                    <div class="bote-monedas">
+                        </div>
+                    <div style="display:flex;flex-direction:column;align-items:center;margin-top: 30px;">
+                        <div class="bote-info" style="display:flex;flex-direction:column;align-items:center;">
+                            <strong id="bote-valor">0</strong>
+                            <span style="font-weight:600;font-size:0.8rem">Bote</span>
+                        </div>
+                        <button id="btnApostar">Apostar</button>
+                    </div>
+                </div>
             </div>
+
+            <div class="botones-derecha">
+                <button id="btnIniciarJuego" onclick="socket.emit('iniciar-juego', salaActual)">Iniciar juego</button>
+                <button onclick="emitirLoteria()">Lotería</button>
+                <button id="btnDetenerJuego" onclick="socket.emit('detener-juego', salaActual)">Detener juego</button>
+            </div>
+            
         </div>
+        
     </div>
-    
+
     <div id="jugadoresLista"></div>
 
 </div>
