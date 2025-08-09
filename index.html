@@ -22,14 +22,15 @@
         display: none;
         flex-direction: column;
         align-items: center;
-        justify-content: center;
-        min-height: 100vh;
-        overflow-y: auto;
+        /* La altura es 100vh para llenar la pantalla. */
+        height: 100vh;
+        /* Se elimina el scroll para que el contenido se ajuste. */
+        overflow-y: hidden;
         padding: 1rem;
         background-size: cover;
         background-position: center;
         animation: fadein 0.5s ease-in;
-        box-sizing: border-box; /* Asegura que el padding no cause desbordamiento */
+        box-sizing: border-box;
     }
 
     .pantalla.activa {
@@ -63,7 +64,7 @@
         grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
         gap: 1rem;
         width: 100%;
-        max-width: 900px;
+        max-width: 200px;
     }
 
     .carta-img {
@@ -81,7 +82,7 @@
         border-color: gold;
     }
 
-    /* Contenedor de cartas para el juego, ahora con CSS Grid */
+    /* Contenedor de cartas para el juego */
     .juego-cartas {
         display: grid;
         grid-template-columns: repeat(2, 1fr);
@@ -191,8 +192,16 @@
           padding-top: 1rem;
       }
       .juego-cartas {
-        grid-template-columns: repeat(2, 1fr);
+        /* Fuerza a que las 3 cartas se acomoden en una sola línea */
+        grid-template-columns: repeat(3, 1fr);
         max-width: 600px;
+      }
+      #apuestasUI {
+          gap: 0.5rem;
+          margin-top: 0.5rem;
+      }
+      .pantallaJuego-controles {
+        margin-bottom: 0.5rem;
       }
     }
 
@@ -204,7 +213,7 @@
         border-radius: 10px;
         box-shadow: 0 4px 8px rgba(0,0,0,0.5);
         margin-bottom: 20px;
-        max-width: 600px; /* Limita el ancho en pantallas grandes */
+        max-width: 600px;
     }
 
     #historial {
