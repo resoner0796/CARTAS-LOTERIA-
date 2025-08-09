@@ -7,159 +7,161 @@
   <link rel="manifest" href="manifest.json" />
   <link rel="apple-touch-icon" href="icon-192.png">
   <title>Lotería WebApp</title>
-  <style>
+<style>
+    /* Estilos generales para el body y las pantallas */
     body {
-      margin: 0;
-      background-color: #111;
-      color: #fff;
-      font-family: sans-serif;
+        margin: 0;
+        background-color: #111;
+        color: #fff;
+        font-family: sans-serif;
     }
-
     .pantalla {
-      display: none;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      min-height: 100vh;
-      overflow-y: auto;
-      padding: 1rem;
-      background-size: cover;
-      background-position: center;
-      animation: fadein 0.5s ease-in;
+        display: none;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh;
+        overflow-y: auto;
+        padding: 1rem;
+        background-size: cover;
+        background-position: center;
+        animation: fadein 0.5s ease-in;
     }
-
     .pantalla.activa {
-      display: flex;
+        display: flex;
     }
-
     @keyframes fadein {
-      from { opacity: 0; }
-      to { opacity: 1; }
+        from { opacity: 0; }
+        to { opacity: 1; }
     }
-
     #pantallaSplash { 
        background-image: url("splash.PNG");
     }
-
-    
-
     #pantallaSala, #pantallaNickname {
-      background-color: #222;
+        background-color: #222;
     }
-
     #pantallaSeleccion {
-      background-image: url("fondo-seleccion.PNG");
+        background-image: url("fondo-seleccion.PNG");
     }
-
     #pantallaJuego {
-      background-image: url("fondo-juego.PNG");
+        background-image: url("fondo-juego.PNG");
     }
 
+    /* Estilos de las cartas de selección y juego */
     .cartas-container, .juego-cartas {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
-      gap: 1rem;
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 1rem;
     }
-
     .carta-img {
-      width: 180px;
-      border: 3px solid #fff;
-      border-radius: 10px;
-      cursor: pointer;
-      transition: transform 0.3s;
+        width: 180px;
+        border: 3px solid #fff;
+        border-radius: 10px;
+        cursor: pointer;
+        transition: transform 0.3s;
     }
-
     .carta-img.seleccionada {
-      transform: scale(1.05);
-      box-shadow: 0 0 15px gold;
-      border-color: gold;
+        transform: scale(1.05);
+        box-shadow: 0 0 15px gold;
+        border-color: gold;
     }
-
     .carta-juego {
-      position: relative;
-      width: 250px;
+        position: relative;
+        width: 250px;
     }
-
     .carta-juego img {
-      width: 100%;
+        width: 100%;
     }
-    
+
+    /* ===== Estilos de apuestas ===== */
+    #apuestasUI { 
+        gap: 24px; 
+        flex-wrap: wrap; 
+        justify-content: center;
+    }
+    .monedas-apiladas {
+        display: flex;
+        flex-direction: column;
+        /* Acercar las torres */
+        margin-right: -10px; 
+    }
+    .moneda-stack {
+        width: 44px;
+        height: 44px;
+        /* Superponer las monedas sin que se empalmen */
+        margin-top: -30px; 
+    }
+    .moneda-stack:first-of-type {
+        margin-top: 0;
+    }
+    /* La última torre no tiene margen para que no se pegue al contador */
+    .monedas-apiladas:last-of-type {
+        margin-right: 0;
+    }
+    #monedas-valor {
+        color: gold; 
+        font-size: 1.5rem;
+    }
+
+    /* Estilos del bote */
     .apuesta-control .bote-info {
-  margin-top: 5px; /* Ajusta este valor para acercar o alejar el texto de las monedas */
-}
-    
-.bote-monedas {
-  position: relative;
-  width: 35px; /* Ajusta el ancho total del contenedor del montón */
-  height: 35px; /* Ajusta la altura del contenedor del montón */
-  display: inline-block;
-}
+        margin-top: -15px;
+    }
+    .bote-monedas {
+        position: relative;
+        width: 35px;
+        height: 35px;
+        display: inline-block;
+    }
+    .bote-monedas img {
+        position: absolute;
+        width: 48px;
+        height: 48px;
+        top: 0;
+        left: 0;
+    }
+    .bote-monedas img:nth-child(2) { transform: translate(22px, 13px); z-index: 2; }
+    .bote-monedas img:nth-child(3) { transform: translate(13px, 22px); z-index: 3; }
+    .bote-monedas img:nth-child(4) { transform: translate(0px, 25px); z-index: 4; }
+    .bote-monedas img:nth-child(5) { transform: translate(-13px, 22px); z-index: 5; }
+    .bote-monedas img:nth-child(6) { transform: translate(-22px, 13px); z-index: 6; }
+    .bote-monedas img:nth-child(7) { transform: translate(-25px, 0px); z-index: 7; }
+    .bote-monedas img:nth-child(8) { transform: translate(-22px, -13px); z-index: 8; }
+    .bote-monedas img:nth-child(9) { transform: translate(-13px, -22px); z-index: 9; }
+    .bote-monedas img:nth-child(10) { transform: translate(0px, -25px); z-index: 10; }
+    .bote-monedas img:nth-child(11) { transform: translate(13px, -22px); z-index: 11; }
+    .bote-monedas img:nth-child(12) { transform: translate(22px, -13px); z-index: 12; }
+    #bote-valor { color: gold; font-weight: bold; }
+    #btnApostar { background-color: #28a745; color: white; border-radius: 8px; padding: 0.4rem 0.8rem; }
+    #btnApostar:disabled { opacity: 0.5; cursor: not-allowed; }
 
-.bote-monedas img {
-  position: absolute;
-  width: 48px; /* Tamaño de cada moneda */
-  height: 48px;
-  top: 0;
-  left: 0;
-}
+    /* Estilos del historial */
+    #historial {
+        display: flex;
+        overflow-x: auto;
+        justify-content: flex-start;
+        gap: 5px;
+        padding: 1rem 10px;
+        max-width: 100vw;
+        white-space: nowrap;
+        margin: 0;
+        box-shadow: 0 16px 32px rgba(0, 0, 0, 1.0);
+        order: -1;
+    }
+    #historial img {
+        width: 45px;
+        border-radius: 5px;
+        animation: slideIn 0.3s ease-in-out;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    }
+    @keyframes slideIn {
+        from { transform: translateX(-50px); opacity: 0; }
+        to { transform: translateX(0); opacity: 1; }
+    }
 
-/* Aplica un desplazamiento aleatorio a cada moneda para el efecto de montón */
-.bote-monedas img:nth-child(2) {
-  transform: translate(22px, 13px);
-  z-index: 2;
-}
-
-.bote-monedas img:nth-child(3) {
-  transform: translate(13px, 22px);
-  z-index: 3;
-}
-
-.bote-monedas img:nth-child(4) {
-  transform: translate(0px, 25px);
-  z-index: 4;
-}
-
-.bote-monedas img:nth-child(5) {
-  transform: translate(-13px, 22px);
-  z-index: 5;
-}
-
-.bote-monedas img:nth-child(6) {
-  transform: translate(-22px, 13px);
-  z-index: 6;
-}
-
-.bote-monedas img:nth-child(7) {
-  transform: translate(-25px, 0px);
-  z-index: 7;
-}
-
-.bote-monedas img:nth-child(8) {
-  transform: translate(-22px, -13px);
-  z-index: 8;
-}
-
-.bote-monedas img:nth-child(9) {
-  transform: translate(-13px, -22px);
-  z-index: 9;
-}
-
-.bote-monedas img:nth-child(10) {
-  transform: translate(0px, -25px);
-  z-index: 10;
-}
-
-.bote-monedas img:nth-child(11) {
-  transform: translate(13px, -22px);
-  z-index: 11;
-}
-
-.bote-monedas img:nth-child(12) {
-  transform: translate(22px, -13px);
-  z-index: 12;
-}
-
+    /* Fichas y demás elementos */
     .ficha {
       position: absolute;
       pointer-events: none;
@@ -169,53 +171,8 @@
       max-height: 40px;
       transform: translate(-50%, -50%);
     }
-    
-    .apuesta-control {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: -75px; /* Espacio entre el texto y el botón */
-}
-    
-  .monedas-apiladas {
-    display: flex;
-    flex-direction: column;
-    /* Ajusta este valor para acercar o alejar las torres */
-    margin-right: -50px; 
-    align-items: center; 
 
-
-  .moneda-stack:first-of-type {
-    margin-top: 0;
-  }
-  
-.moneda-stack {
-  position: absolute;
-  top: 5;
-  left: 0;
-  width: 44px;
-  height: 44px;
-}
-
-.moneda-stack:nth-child(2) {
-  transform: translate(2px, 2px);
-  z-index: 2;
-}
-
-.moneda-stack:nth-child(3) {
-  transform: translate(4px, 4px);
-  z-index: 3;
-}
-    
-.moneda-stack:nth-child(4) {
-  transform: translate(6px, 6px);
-  z-index: 4;
-}    
-.moneda-stack:nth-child(5) {
-  transform: translate(8px, 8px);
-  z-index: 5;
-}    
-    
+    /* Estilos de botones */
     button {
       padding: 0.6rem 1.2rem;
       font-size: 1rem;
@@ -228,40 +185,7 @@
       font-weight: bold;
     }
 
-#historial {
-  display: flex;
-  overflow-x: auto;
-  justify-content: flex-start;
-  gap: 5px;
-  padding: 1rem 10px;
-  max-width: 100vw;
-  white-space: nowrap;
-  margin: 0;
-  box-shadow: 0 16px 32px rgba(0, 0, 0, 1.0); /* Sombreado que querías */
-  order: -1; /* Mueve el historial al principio visualmente */
-}
-
-#historial img {
-  width: 45px;
-  border-radius: 5px;
-  animation: slideIn 0.3s ease-in-out;
-  border: 1px solid rgba(255, 255, 255, 0.2); /* Borde sutil */
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2); /* Sombra para que resalten */
-}
-
-
-    
-@keyframes slideIn {
-  from { transform: translateX(-50px); opacity: 0; }
-  to { transform: translateX(0); opacity: 1; }
-}
-
-
-    #jugadoresLista {
-      margin-top: 1rem;
-      font-size: 1rem;
-    }
-
+    /* Mensaje de Lotería */
     #loteriaMensaje {
       position: fixed;
       top: 50%;
@@ -278,6 +202,7 @@
       user-select: none;
     }
 
+    /* Confeti de Lotería */
     .confeti {
       position: fixed;
       width: 10px;
@@ -287,51 +212,46 @@
       animation: caer 2s linear forwards;
       border-radius: 50%;
     }
-
     @keyframes caer {
       to {
         transform: translateY(100vh) rotate(360deg);
         opacity: 0;
       }
     }
-    
-@media screen and (orientation: landscape) {
-  .juego-horizontal-wrapper {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    width: 100%;
-  }
 
-  .botones-izquierda, .botones-derecha {
-    display: flex;
-    flex-direction: column;
-    gap: 5px; /* ✅ Reduce el espacio entre botones */
-  }
-
-  .botones-izquierda button,
-  .botones-derecha button {
-    padding: 0.4rem 0.8rem; /* ✅ Reduce el padding de los botones */
-    font-size: 0.8rem; /* ✅ Reduce el tamaño de la fuente */
-  }
-  
-  .juego-cartas {
-    flex: 1; 
-  }
-
-  .juego-cartas .carta-juego {
-    width: 30vw;
-    max-width: 250px;
-  }
-  .juego-cartas .carta-juego img {
-    width: 100%;
-    height: auto;
-  }
-  
-  .juego-horizontal-wrapper + div {
-    display: none;
-  }
-}
+    /* Estilos para orientación horizontal */
+    @media screen and (orientation: landscape) {
+      .juego-horizontal-wrapper {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        width: 100%;
+      }
+      .botones-izquierda, .botones-derecha {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+      }
+      .botones-izquierda button,
+      .botones-derecha button {
+        padding: 0.4rem 0.8rem;
+        font-size: 0.8rem;
+      }
+      .juego-cartas {
+        flex: 1; 
+      }
+      .juego-cartas .carta-juego {
+        width: 30vw;
+        max-width: 250px;
+      }
+      .juego-cartas .carta-juego img {
+        width: 100%;
+        height: auto;
+      }
+      .juego-horizontal-wrapper + div {
+        display: none;
+      }
+    }
 
     /* ===== estilos para apuestas ===== */
     #apuestasUI { gap: 14px; flex-wrap: wrap; }
@@ -377,8 +297,10 @@
     <button id="btnDetenerJuego" onclick="socket.emit('detener-juego', salaActual)">Detener juego</button>
   </div>
 </div>
-<div id="apuestasUI" style="display:flex;align-items:center;gap:12px;margin-top:8px;">
-  <div id="monedasDisplay" style="display:flex;align-items:center;gap:56px;">
+<div id="apuestasUI" style="display:flex;align-items:center;gap:24px;margin-top:8px;">
+  
+  <div style="display:flex;align-items:flex-end;">
+    
     <div class="monedas-apiladas">
       <img src="peso.png" alt="peso" class="moneda-stack">
       <img src="peso.png" alt="peso" class="moneda-stack">
@@ -387,7 +309,6 @@
       <img src="peso.png" alt="peso" class="moneda-stack">
     </div>
     
-    <div id="monedasDisplay" style="display:flex;align-items:center;gap:86px;">
     <div class="monedas-apiladas">
       <img src="peso.png" alt="peso" class="moneda-stack">
       <img src="peso.png" alt="peso" class="moneda-stack">
@@ -396,9 +317,21 @@
       <img src="peso.png" alt="peso" class="moneda-stack">
     </div>
     
-    <strong id="monedas-valor">30</strong>
+    <div class="monedas-apiladas">
+      <img src="peso.png" alt="peso" class="moneda-stack">
+      <img src="peso.png" alt="peso" class="moneda-stack">
+      <img src="peso.png" alt="peso" class="moneda-stack">
+      <img src="peso.png" alt="peso" class="moneda-stack">
+      <img src="peso.png" alt="peso" class="moneda-stack">
+    </div>
+    
   </div>
   
+  <strong id="monedas-valor">30</strong>
+  
+  <div class="apuesta-control" style="display:flex;flex-direction:column;align-items:center;gap:45px;">
+    </div>
+
   <div class="apuesta-control" style="display:flex;flex-direction:column;align-items:center;gap:45px;">
     <div class="bote-monedas">
       <img src="peso.png" alt="moneda">
