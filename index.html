@@ -8,234 +8,246 @@
   <link rel="apple-touch-icon" href="icon-192.png">
   <title>Lotería WebApp</title>
   <style>
-        body {
-      margin: 0;
-      background-color: #111;
-      color: #fff;
-      font-family: sans-serif;
-      overflow-x: hidden; /* Esto es clave para evitar el scroll horizontal */
-      min-height: 100vh;
+    body {
+        margin: 0;
+        background-color: #111;
+        color: #fff;
+        font-family: 'Inter', sans-serif;
+        overflow-x: hidden;
+        min-height: 100vh;
+        width: 100vw;
     }
 
     .pantalla {
-      display: none;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      min-height: 100vh;
-      overflow-y: auto; /* Permite scroll vertical si el contenido es muy largo */
-      padding: 1rem;
-      background-size: cover;
-      background-position: center;
-      animation: fadein 0.5s ease-in;
+        display: none;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh;
+        overflow-y: auto;
+        padding: 1rem;
+        background-size: cover;
+        background-position: center;
+        animation: fadein 0.5s ease-in;
+        box-sizing: border-box; /* Asegura que el padding no cause desbordamiento */
     }
 
     .pantalla.activa {
-      display: flex;
+        display: flex;
     }
 
     @keyframes fadein {
-      from { opacity: 0; }
-      to { opacity: 1; }
+        from { opacity: 0; }
+        to { opacity: 1; }
     }
 
     #pantallaSplash {
-      background-image: url("splash.PNG");
+        background-image: url("splash.PNG");
     }
 
     #pantallaSala, #pantallaNickname {
-      background-color: #222;
+        background-color: #222;
     }
 
     #pantallaSeleccion {
-      background-image: url("fondo-seleccion.PNG");
+        background-image: url("fondo-seleccion.PNG");
     }
 
     #pantallaJuego {
-      background-image: url("fondo-juego.PNG");
+        background-image: url("fondo-juego.PNG");
     }
 
-    .cartas-container, .juego-cartas {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
-      gap: 1rem;
+    /* Contenedor de cartas para selección */
+    .cartas-container {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 1rem;
+        width: 100%;
+        max-width: 900px;
     }
 
-   .carta-img {
-      width: 180px;
-      border: 3px solid #fff;
-      border-radius: 10px;
-      cursor: pointer;
-      transition: transform 0.3s;
-      max-width: 100%; /* Asegura que la imagen no exceda el contenedor */
-      height: auto;
+    .carta-img {
+        width: 100%;
+        height: auto;
+        border: 3px solid #fff;
+        border-radius: 10px;
+        cursor: pointer;
+        transition: transform 0.3s, border-color 0.3s, box-shadow 0.3s;
     }
-
 
     .carta-img.seleccionada {
-      transform: scale(1.05);
-      box-shadow: 0 0 15px gold;
-      border-color: gold;
+        transform: scale(1.05);
+        box-shadow: 0 0 15px gold;
+        border-color: gold;
     }
 
-    .carta-juego {
-      position: relative;
-      width: 250px;
-    }
-
-    .carta-juego img {
-      width: 100%;
-    }
-
-    .ficha {
-      position: absolute;
-      pointer-events: none;
-      width: 40px;
-      height: auto;
-      max-width: 40px;
-      max-height: 40px;
-      transform: translate(-50%, -50%);
-    }
-
-    button {
-      padding: 0.6rem 1.2rem;
-      font-size: 1rem;
-      margin: 0.5rem;
-      border-radius: 10px;
-      border: none;
-      background-color: gold;
-      color: black;
-      cursor: pointer;
-      font-weight: bold;
-    }
-
-    #jugadoresLista {
-      margin-top: 1rem;
-      font-size: 1rem;
-    }
-
-    #loteriaMensaje {
-      position: fixed;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      font-size: 4rem;
-      color: gold;
-      font-weight: bold;
-      background-color: rgba(0,0,0,0.7);
-      padding: 20px 40px;
-      border-radius: 20px;
-      z-index: 9999;
-      display: none;
-      user-select: none;
-    }
-
-    .confeti {
-      position: fixed;
-      width: 10px;
-      height: 10px;
-      background-color: gold;
-      z-index: 9998;
-      animation: caer 2s linear forwards;
-      border-radius: 50%;
-    }
-
-    @keyframes caer {
-      to {
-        transform: translateY(100vh) rotate(360deg);
-        opacity: 0;
-      }
-    }
-    
-    @media screen and (orientation: landscape) {
+    /* Contenedor de cartas para el juego, ahora con CSS Grid */
     .juego-cartas {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
-      gap: 1rem;
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1.5rem;
+        width: 100%;
+        max-width: 550px;
+        margin-bottom: 1rem;
     }
 
     .juego-cartas .carta-juego {
         position: relative;
-        width: 100%; /* Ajusta el ancho para ocupar todo el espacio disponible */
-        max-width: 250px;
+        width: 100%;
+        height: auto;
     }
-    
+
     .juego-cartas .carta-juego img {
-      width: 100%;
-      height: auto;
+        width: 100%;
+        height: auto;
     }
-    
-    .juego-cartas + div { /* Estilo para el contenedor de botones */
+
+    .ficha {
+        position: absolute;
+        pointer-events: none;
+        width: 100%;
+        height: 100%;
+        max-width: 50px;
+        max-height: 50px;
+        transform: translate(-50%, -50%);
+        top: 50%;
+        left: 50%;
+    }
+
+    /* Estilos de botones */
+    .pantallaJuego-controles {
         display: flex;
         flex-wrap: wrap;
         justify-content: center;
+        width: 100%;
+        margin-bottom: 1rem;
     }
     
     button {
-      padding: 0.6rem 1.2rem;
-      font-size: 1rem;
-      margin: 0.5rem;
-      border-radius: 10px;
-      border: none;
-      background-color: gold;
-      color: black;
-      cursor: pointer;
-      font-weight: bold;
-      flex-grow: 1; /* Permite que los botones crezcan para ocupar el espacio */
-      min-width: 120px; /* Asegura que no se hagan demasiado pequeños */
+        padding: 0.6rem 1.2rem;
+        font-size: 1rem;
+        margin: 0.5rem;
+        border-radius: 10px;
+        border: none;
+        background-color: gold;
+        color: black;
+        cursor: pointer;
+        font-weight: bold;
+        transition: transform 0.2s;
     }
+    
+    button:hover {
+        transform: scale(1.05);
+    }
+    
+    button:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+
+    #jugadoresLista {
+        margin-top: 1rem;
+        font-size: 1rem;
+        text-align: center;
+    }
+
+    #loteriaMensaje {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        font-size: 4rem;
+        color: gold;
+        font-weight: bold;
+        background-color: rgba(0,0,0,0.7);
+        padding: 20px 40px;
+        border-radius: 20px;
+        z-index: 9999;
+        display: none;
+        user-select: none;
+    }
+
+    .confeti {
+        position: fixed;
+        width: 10px;
+        height: 10px;
+        background-color: gold;
+        z-index: 9998;
+        animation: caer 2s linear forwards;
+        border-radius: 50%;
+    }
+
+    @keyframes caer {
+        to {
+            transform: translateY(100vh) rotate(360deg);
+            opacity: 0;
+        }
+    }
+    
+    /* Media queries para orientación horizontal */
+    @media screen and (orientation: landscape) {
+      .pantalla {
+          justify-content: flex-start;
+          padding-top: 1rem;
+      }
+      .juego-cartas {
+        grid-template-columns: repeat(2, 1fr);
+        max-width: 600px;
+      }
+    }
+
     /* ===== Estilos de historial ===== */
-       /* ===== Estilos de historial ===== */
     .historial-container {
-      width: 100%;
-      padding: 10px;
-      background-color: rgba(0, 0, 0, 0.4);
-      border-radius: 10px;
-      box-shadow: 0 4px 8px rgba(0,0,0,0.5);
-      margin-bottom: 20px;
+        width: 100%;
+        padding: 10px;
+        background-color: rgba(0, 0, 0, 0.4);
+        border-radius: 10px;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.5);
+        margin-bottom: 20px;
+        max-width: 600px; /* Limita el ancho en pantallas grandes */
     }
 
     #historial {
-      display: flex;
-      overflow-x: auto;
-      gap: 8px;
-      padding: 5px;
-      white-space: nowrap;
-      scrollbar-width: none; /* Firefox */
-      -ms-overflow-style: none;  /* IE and Edge */
+        display: flex;
+        overflow-x: auto;
+        gap: 8px;
+        padding: 5px;
+        white-space: nowrap;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
     }
 
     #historial::-webkit-scrollbar {
-      display: none; /* Chrome, Safari and Opera */
+        display: none;
     }
 
     #historial img {
-      width: 50px;
-      height: 70px;
-      border-radius: 5px;
-      /* ELIMINADO: border: 2px solid gold; */
-      border: 1px solid #666; /* Añadido borde gris claro */
-      box-shadow: 0 2px 4px rgba(0,0,0,0.3); /* Ajustada la sombra */
+        width: 50px;
+        height: 70px;
+        border-radius: 5px;
+        border: 1px solid #666;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        flex-shrink: 0;
     }
 
-
-    /* ===== Estilos de apuestas, corregidos ===== */
-    #apuestasUI { 
-        gap: 24px; 
-        flex-wrap: wrap; 
+    /* ===== Estilos de apuestas ===== */
+    #apuestasUI {
+        display: flex;
+        flex-wrap: wrap;
         justify-content: center;
+        align-items: center;
+        gap: 1.5rem;
+        margin-top: 8px;
     }
     .monedas-apiladas {
         display: flex;
         flex-direction: column;
-        margin-right: -10px; 
+        margin-right: -10px;
     }
     .moneda-stack {
         width: 44px;
         height: 44px;
-        margin-top: -30px; 
+        margin-top: -30px;
     }
     .moneda-stack:first-of-type {
         margin-top: 0;
@@ -244,8 +256,9 @@
         margin-right: 0;
     }
     #monedas-valor {
-        color: gold; 
+        color: gold;
         font-size: 1.5rem;
+        margin-left: 10px;
     }
     .apuesta-control .bote-info {
         position: relative;
@@ -277,8 +290,7 @@
     .bote-monedas img:nth-child(12) { transform: translate(22px, -13px); z-index: 12; }
     #bote-valor { color: gold; font-weight: bold; }
     #btnApostar { background-color: #28a745; color: white; border-radius: 8px; padding: 0.4rem 0.8rem; }
-    #btnApostar:disabled { opacity: 0.5; cursor: not-allowed; }
-  </style>
+</style>
 </head>
 <body>
   <div id="pantallaSplash" class="pantalla activa"><h1>Cargando...</h1></div>
