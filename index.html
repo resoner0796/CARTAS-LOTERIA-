@@ -504,7 +504,7 @@
       contenedorCartas.innerHTML = "";
       cartasDisponibles.forEach(id => {
         const img = document.createElement("img");
-        img.src = `${id}.jpg`; // Las cartas de los jugadores son .jpg
+        img.src = `${id}.jpg`;
         img.classList.add("carta-img");
         img.dataset.id = id;
         img.onclick = () => seleccionarCarta(img);
@@ -625,16 +625,13 @@
       boteEl.textContent = bote;
     });
 
-    // CORRECCIÓN: Se actualizó esta función para que agregue la carta al historial
-    // y reproduzca el audio correctamente.
     socket.on("carta-cantada", (cartaId) => {
       const img = document.createElement("img");
       const formattedId = String(cartaId).padStart(2, '0');
-      // Las barajitas del mazo son .png
       img.src = `${formattedId}.png`; 
       historial.prepend(img);
       
-      const audioVoz = new Audio(`cartas/${formattedId}.mp3`);
+      const audioVoz = new Audio(`${formattedId}.mp3`);
       audioVoz.play().catch(e => console.warn("Error al reproducir audio:", e));
     });
 
