@@ -522,7 +522,7 @@
     function seleccionarCarta(img) {
       const id = img.dataset.id;
       if (seleccionadas.includes(id)) return;
-      if (seleccionadas.length < 3) {
+      if (seleccionadas.length < 4) {
         img.classList.add("seleccionada");
         seleccionadas.push(id);
         socket.emit("seleccionar-carta", { carta: id, sala: salaActual });
