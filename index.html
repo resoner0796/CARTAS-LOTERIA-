@@ -282,6 +282,39 @@
 #btnApostar { background-color: #28a745; color: white; border-radius: 8px; padding: 0.4rem 0.8rem; }
     #btnApostar:disabled { opacity: 0.5; cursor: not-allowed; }
 
+  /* --- ESTILOS DE BOTONES INDIVIDUALES --- */
+    #btnBarajear {
+      background-color: #007bff; /* Azul */
+      color: white;
+    }
+    
+    #btnIniciarJuego {
+      background-color: #28a745; /* Verde */
+      color: white;
+    }
+    
+    #btnDetenerJuego {
+      background-color: #dc3545; /* Rojo */
+      color: white;
+    }
+
+    #btnReiniciar {
+      background-color: #ffc107; /* Amarillo */
+      color: black;
+    }
+
+    /* El botón de "Limpiar cartas" no tiene ID, así que lo seleccionaremos por su contenido de texto. */
+    #pantallaJuego button:first-child {
+      background-color: #17a2b8; /* Turquesa */
+      color: white;
+    }
+
+    /* El botón de "Lotería" también se puede seleccionar por su ID si se lo agregas. */
+    #pantallaJuego button:last-child {
+      background-color: #6c757d; /* Gris */
+      color: white;
+    }
+
   </style>
 </head>
 <body>
