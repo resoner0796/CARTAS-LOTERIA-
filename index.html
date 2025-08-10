@@ -498,7 +498,11 @@
           pantallas.seleccion.style.backgroundImage = 'url("fondo-seleccion.PNG")';
           pantallas.juego.style.backgroundImage = 'url("fondo-juego.PNG")';
           break;
-        default:
+          case "Amigos":
+          // Aquí agregamos los fondos personalizados para la sala Amigos
+          pantallas.seleccion.style.backgroundImage = 'url("fondo-seleccion-amigos.PNG")';
+          pantallas.juego.style.backgroundImage = 'url("fondo-juego-amigos.PNG")';
+          break;        default:
           // Usa los fondos predeterminados para el resto de las salas
           pantallas.seleccion.style.backgroundImage = 'url("fondo-seleccion.PNG")';
           pantallas.juego.style.backgroundImage = 'url("fondo-juego.PNG")';
