@@ -484,8 +484,26 @@
       if (nombre === "seleccion") pantallas["seleccion"].scrollTo(0, 0);
     }
 
-    function irANickname() {
+        function irANickname() {
       salaActual = document.getElementById("salaSelect").value;
+      
+      // Lógica para cambiar los fondos según la sala
+      switch(salaActual) {
+        case "Familia":
+          pantallas.seleccion.style.backgroundImage = 'url("fondo-seleccion-familia.PNG")';
+          pantallas.juego.style.backgroundImage = 'url("fondo-juego-familia.PNG")';
+          break;
+        case "Oficina":
+          // Aquí puedes agregar fondos específicos para la sala Oficina si lo deseas
+          pantallas.seleccion.style.backgroundImage = 'url("fondo-seleccion.PNG")';
+          pantallas.juego.style.backgroundImage = 'url("fondo-juego.PNG")';
+          break;
+        default:
+          // Usa los fondos predeterminados para el resto de las salas
+          pantallas.seleccion.style.backgroundImage = 'url("fondo-seleccion.PNG")';
+          pantallas.juego.style.backgroundImage = 'url("fondo-juego.PNG")';
+      }
+      
       cambiarPantalla("nickname");
     }
 
