@@ -184,28 +184,36 @@
     }
     
     /* Media query para pantallas en orientación horizontal */
-    @media screen and (orientation: landscape) {
-      .juego-cartas {
-        /* Evita que las cartas se envuelvan a la siguiente línea */
-        flex-wrap: nowrap; 
-        flex-direction: row;
-        justify-content: center;
-        width: auto;
-        max-width: none; 
-      }
+ @media screen and (orientation: landscape) {
+  .juego-cartas {
+    /* Usamos flexbox para distribuir el espacio */
+    display: flex;
+    /* La propiedad flex-wrap está bien */
+    flex-wrap: nowrap; 
+    flex-direction: row;
+    justify-content: center;
+    /* Nuevo: hacemos que el contenedor ocupe el 100% del ancho */
+    width: 100vw; 
+    /* Agregamos el espacio entre las cartas */
+    gap: 1vw; /* Puedes ajustar este valor */
+    /* Nueva propiedad para el espacio interno */
+    padding: 0 1vw;
+    /* Opcional: Centramos verticalmente las cartas */
+    align-items: center; 
+  }
 
-      .juego-cartas .carta-juego {
-        /* Ancho de las cartas en modo horizontal */
-        width: 30vw; 
-        max-width: 194px;
-      }
-
-      .juego-cartas .carta-juego img {
-        width: 100%;
-        height: auto;
-      }
-    }
-
+  .juego-cartas .carta-juego {
+    /* Usamos 'flex-grow' para que las cartas ocupen el espacio disponible */
+    flex-grow: 1; 
+    /* El 'max-width' es un buen límite para pantallas más grandes */
+    max-width: 194px;
+  }
+  /* Este bloque ya lo tienes y está correcto */
+  .juego-cartas .carta-juego img {
+    width: 100%;
+    height: auto;
+  }
+}
     /* ===== Estilos de historial ===== */
     .historial-container {
       width: 100%;
