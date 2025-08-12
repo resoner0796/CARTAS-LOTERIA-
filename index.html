@@ -99,11 +99,15 @@
     }
 
     .carta-img.seleccionada {
-      /* Aumenta el tamaño de la carta al ser seleccionada */
-      transform: scale(1.05); 
-      box-shadow: 0 0 15px gold;
-      border-color: gold;
-    }
+    /* Elimina el redondeado de las esquinas */
+    border-radius: 0; 
+    /* Aumenta el tamaño de la carta al ser seleccionada */
+    transform: scale(1.05); 
+    /* Borde difuminado para el efecto de iluminación */
+    box-shadow: 0 0 10px 5px gold;
+    /* Elimina el borde sólido para que solo se vea la sombra */
+    border: none;
+}
 
     .carta-juego {
       position: relative;
