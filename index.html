@@ -517,32 +517,37 @@
       if (nombre === "seleccion") pantallas["seleccion"].scrollTo(0, 0);
     }
 
-        function irANickname() {
-      salaActual = document.getElementById("salaSelect").value;
-      
-      // Lógica para cambiar los fondos según la sala
-      switch(salaActual) {
-        case "Familia":
-          pantallas.seleccion.style.backgroundImage = 'url("fondo-seleccion-familia.PNG")';
-          pantallas.juego.style.backgroundImage = 'url("fondo-juego-familia.PNG")';
-          break;
-        case "Oficina":
-          // Aquí puedes agregar fondos específicos para la sala Oficina si lo deseas
-          pantallas.seleccion.style.backgroundImage = 'url("fondo-seleccion.PNG")';
-          pantallas.juego.style.backgroundImage = 'url("fondo-juego.PNG")';
-          break;
-          case "Amigos":
-          // Aquí agregamos los fondos personalizados para la sala Amigos
-          pantallas.seleccion.style.backgroundImage = 'url("fondo-seleccion-amigos.PNG")';
-          pantallas.juego.style.backgroundImage = 'url("fondo-juego-amigos.PNG")';
-          break;        default:
-          // Usa los fondos predeterminados para el resto de las salas
-          pantallas.seleccion.style.backgroundImage = 'url("fondo-seleccion.PNG")';
-          pantallas.juego.style.backgroundImage = 'url("fondo-juego.PNG")';
-      }
-      
-      cambiarPantalla("nickname");
+function aplicarFondo(elemento, imageUrl) {
+    elemento.style.backgroundImage = `url("${imageUrl}")`;
+    elemento.style.backgroundSize = 'cover';
+    elemento.style.backgroundPosition = 'center';
+}
+
+// Y luego usa esta función en tu switch
+function irANickname() {
+    salaActual = document.getElementById("salaSelect").value;
+    
+    switch(salaActual) {
+      case "Familia":
+        aplicarFondo(pantallas.seleccion, "fondo-seleccion-familia.PNG");
+        aplicarFondo(pantallas.juego, "fondo-juego-familia.PNG");
+        break;
+      case "Oficina":
+        // Aplicar los fondos predeterminados o específicos si los tienes
+        aplicarFondo(pantallas.seleccion, "fondo-seleccion.PNG");
+        aplicarFondo(pantallas.juego, "fondo-juego.PNG");
+        break;
+      case "Amigos":
+        aplicarFondo(pantallas.seleccion, "fondo-seleccion-amigos.PNG");
+        aplicarFondo(pantallas.juego, "fondo-juego-amigos.PNG");
+        break;
+      default:
+        // Usa los fondos predeterminados para el resto de las salas
+        aplicarFondo(pantallas.seleccion, "fondo-seleccion.PNG");
+        aplicarFondo(pantallas.juego, "fondo-juego.PNG");
     }
+    cambiarPantalla("nickname");
+}
 
     function entrarJuego() {
       nickname = document.getElementById("nicknameInput").value.trim();
