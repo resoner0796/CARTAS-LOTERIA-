@@ -750,6 +750,8 @@
         haApostadoLocal = false;
         btnApostar.disabled = false;
       }
+      limpiarFichas();
+      historial.innerHTML = "";
     });
 
     function generarCartas() {
@@ -897,14 +899,28 @@
       }
     });
 
+    socket.on('ganador-confirmado', () => {
+      alert("¡Lotería confirmada! Reiniciando partida...");
+      audioAplausos.play();
+      // El backend ya debería haber manejado la transferencia de monedas.
+      // Aquí, solo reiniciamos la UI.
+      loteriaModal.classList.remove('active');
+      limpiarFichas();
+      historial.innerHTML = "";
+      cambiarPantalla("juego");
+    });
+
+    socket.on('ganador-rechazado', () => {
+      alert("La lotería fue rechazada. El juego continúa.");
+      loteriaModal.classList.remove('active');
+    });
+
     btnAceptarGanador.addEventListener('click', () => {
       socket.emit('confirmar-ganador', { sala: salaActual, ganadorId: ganadorTempId, esValido: true });
-      loteriaModal.classList.remove('active');
     });
 
     btnRechazarGanador.addEventListener('click', () => {
       socket.emit('confirmar-ganador', { sala: salaActual, ganadorId: ganadorTempId, esValido: false });
-      loteriaModal.classList.remove('active');
     });
 
     socket.on("juego-detenido", () => {
