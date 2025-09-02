@@ -900,10 +900,12 @@
     });
 
     btnAceptarGanador.addEventListener('click', () => {
+      // **Línea corregida**
       socket.emit('confirmar-ganador', { sala: salaActual, ganadorId: ganadorTempId, esValido: true });
     });
 
     btnRechazarGanador.addEventListener('click', () => {
+      // **Línea corregida**
       socket.emit('confirmar-ganador', { sala: salaActual, ganadorId: ganadorTempId, esValido: false });
     });
 
