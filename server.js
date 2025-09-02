@@ -27,7 +27,9 @@ io.on('connection', (socket) => {
         juegoIniciado: false,
         bote: 0,
         hostId: socket.id,
-        intervaloCartas: null, // 👈 controlar intervalos
+        intervaloCartas: null,
+        loteriaPendiente: null,   // 👈 guardamos el anuncio de lotería
+        pagoRealizado: false      // 👈 evita pagos dobles por error
       };
       console.log(`Sala '${sala}' creada por ${nickname} (${socket.id})`);
       socket.emit('rol-asignado', { host: true });
@@ -73,6 +75,8 @@ io.on('connection', (socket) => {
         salas[sala].baraja = mezclarBaraja();
         salas[sala].historial = [];
         salas[sala].juegoIniciado = true;
+        salas[sala].loteriaPendiente = null;
+        salas[sala].pagoRealizado = false;
         io.to(sala).emit('juego-iniciado');
         repartirCartas(sala);
       }
@@ -100,6 +104,8 @@ io.on('connection', (socket) => {
       salas[sala].juegoIniciado = false;
       salas[sala].historial = [];
       salas[sala].bote = 0;
+      salas[sala].loteriaPendiente = null;
+      salas[sala].pagoRealizado = false;
       if (salas[sala].intervaloCartas) clearInterval(salas[sala].intervaloCartas);
       for (const id in salas[sala].jugadores) {
         salas[sala].jugadores[id].apostado = false;
@@ -113,35 +119,70 @@ io.on('connection', (socket) => {
 
   socket.on('loteria', ({ nickname, sala }) => {
     if (salas[sala] && salas[sala].juegoIniciado) {
+      // Pausa el juego y guarda la lotería pendiente
       salas[sala].juegoIniciado = false;
       if (salas[sala].intervaloCartas) clearInterval(salas[sala].intervaloCartas);
+
+      salas[sala].loteriaPendiente = {
+        ganadorId: socket.id,
+        nickname,
+        timestamp: Date.now()
+      };
+      salas[sala].pagoRealizado = false;
+
+      // Solo el host recibe el modal para aceptar/rechazar
       io.to(salas[sala].hostId).emit('loteria-anunciada', nickname, socket.id);
     }
   });
 
+  // ✅ BLOQUE CORREGIDO Y BLINDADO
   socket.on('confirmar-ganador', ({ sala, ganadorId, esValido }) => {
-  if (salas[sala] && socket.id === salas[sala].hostId) {
-    if (esValido) {
-      const ganador = salas[sala].jugadores[ganadorId];
-      if (ganador) {
-        ganador.monedas += salas[sala].bote;
-        salas[sala].bote = 0;
+    const salaInfo = salas[sala];
+    // Debe existir la sala, debe ser el host y debe haber una lotería pendiente
+    if (!salaInfo || socket.id !== salaInfo.hostId || !salaInfo.loteriaPendiente) return;
+
+    const { ganadorId: propuestoId } = salaInfo.loteriaPendiente;
+
+    // Si el id no coincide con el que anunció, se ignora
+    if (ganadorId !== propuestoId) return;
+
+    // Aceptar ganador: SOLO si es boolean true estricto
+    if (esValido === true) {
+      if (salaInfo.pagoRealizado) return; // ya se pagó antes, ignorar
+
+      const ganador = salaInfo.jugadores[ganadorId];
+      const boteActual = Number(salaInfo.bote) || 0;
+
+      if (ganador && boteActual > 0) {
+        ganador.monedas += boteActual;
+        salaInfo.bote = 0;
+        salaInfo.pagoRealizado = true;
 
         // Reiniciar estado de apuestas
-        for (const id in salas[sala].jugadores) {
-          salas[sala].jugadores[id].apostado = false;
+        for (const id in salaInfo.jugadores) {
+          salaInfo.jugadores[id].apostado = false;
         }
 
+        // Limpiar la lotería pendiente
+        salaInfo.loteriaPendiente = null;
+
         io.to(sala).emit('ganador-confirmado', ganadorId);
-        io.to(sala).emit('jugadores-actualizados', salas[sala].jugadores);
+        io.to(sala).emit('jugadores-actualizados', salaInfo.jugadores);
         io.to(sala).emit('bote-actualizado', 0);
       }
     } else {
-      // 🚫 Solo avisamos, no tocamos el bote ni repartimos
+      // Rechazado: NO se toca el bote, NO se pagan monedas
       io.to(sala).emit('ganador-rechazado', ganadorId);
+
+      // Limpia la lotería pendiente
+      salaInfo.loteriaPendiente = null;
+
+      // 🔁 (opcional) reanudar el juego automáticamente:
+      salaInfo.juegoIniciado = true;
+      repartirCartas(sala);
+      // Si prefieres que quede pausado, comenta las dos líneas de arriba.
     }
-  }
-});
+  });
 
   socket.on('disconnect', () => {
     console.log('Jugador desconectado:', socket.id);
