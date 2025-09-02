@@ -910,6 +910,7 @@ btnAceptarGanador.addEventListener("click", () => {
 // Botón rechazar ganador
 btnRechazarGanador.addEventListener("click", () => {
   if (ganadorTempId) {
+    // ✅ Aquí se envía explícitamente `esValido: false`
     socket.emit("confirmar-ganador", { sala: salaActual, ganadorId: ganadorTempId, esValido: false });
     loteriaModal.classList.remove("active");
     ganadorTempId = "";
