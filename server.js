@@ -1,76 +1,177 @@
-const express = require("express");
+const express = require('express');
 const app = express();
-const http = require("http").createServer(app);
-const io = require("socket.io")(http, {
+const http = require('http').createServer(app);
+const io = require('socket.io')(http, {
   cors: {
-    origin: "*"
+    origin: '*',
   }
 });
 
 const PORT = process.env.PORT || 3000;
 
-let baraja = [];
-let historial = [];
-let juegoIniciado = false;
+// Estado del juego por sala
+const salas = {};
 
-app.get("/", (req, res) => {
-  res.send("Servidor de Lotería funcionando.");
+app.get('/', (req, res) => {
+  res.send('Servidor de Lotería funcionando.');
 });
 
-io.on("connection", socket => {
-  console.log("Nuevo jugador conectado:", socket.id);
+io.on('connection', (socket) => {
+  console.log('Nuevo jugador conectado:', socket.id);
 
-  // Enviar historial al nuevo jugador
-  socket.emit("historial", historial);
+  socket.on('unirse-sala', ({ nickname, sala }) => {
+    socket.join(sala);
+    if (!salas[sala]) {
+      salas[sala] = {
+        jugadores: {},
+        baraja: [],
+        historial: [],
+        juegoIniciado: false,
+        bote: 0,
+        hostId: socket.id,
+      };
+      console.log(`Sala '${sala}' creada por ${nickname} (${socket.id})`);
+      socket.emit('rol-asignado', { host: true });
+    } else {
+      socket.emit('rol-asignado', { host: false });
+    }
+    salas[sala].jugadores[socket.id] = { nickname, monedas: 30, apostado: false, cartas: [], id: socket.id };
+    console.log(`${nickname} se ha unido a la sala '${sala}'`);
 
-  // Jugador dice que ganó
-  socket.on("loteria", () => {
-    io.emit("mensaje", `🎉 El jugador ${socket.id} cantó ¡Lotería!`);
-    io.emit("detener");
+    io.to(sala).emit('jugadores-actualizados', salas[sala].jugadores);
+    io.to(sala).emit('bote-actualizado', salas[sala].bote);
+    io.to(sala).emit('historial-actualizado', salas[sala].historial);
   });
 
-  socket.on("limpiar", () => {
-    socket.emit("limpiarFichas");
-  });
-
-  socket.on("iniciar", () => {
-    if (!juegoIniciado) {
-      baraja = mezclarBaraja();
-      historial = [];
-      juegoIniciado = true;
-      io.emit("juego-iniciado");
-      repartirCartas();
+  socket.on('seleccionar-carta', ({ carta, sala }) => {
+    if (salas[sala] && salas[sala].jugadores[socket.id]) {
+      const jugador = salas[sala].jugadores[socket.id];
+      if (jugador.cartas.length < 4) {
+        jugador.cartas.push(carta);
+      }
     }
   });
 
-  socket.on("barajear", () => {
-    io.emit("barajeando");
+  socket.on('apostar', ({ sala, cantidad }) => {
+    if (salas[sala] && salas[sala].jugadores[socket.id] && !salas[sala].jugadores[socket.id].apostado) {
+      const jugador = salas[sala].jugadores[socket.id];
+      if (jugador.monedas >= cantidad) {
+        jugador.monedas -= cantidad;
+        salas[sala].bote += cantidad;
+        jugador.apostado = true;
+        io.to(sala).emit('jugadores-actualizados', salas[sala].jugadores);
+        io.to(sala).emit('monedas-actualizado', jugador.monedas);
+        io.to(sala).emit('bote-actualizado', salas[sala].bote);
+      } else {
+        socket.emit('error-apuesta', 'No tienes suficientes monedas.');
+      }
+    }
   });
 
-  socket.on("detener", () => {
-    juegoIniciado = false;
-    io.emit("detener");
+  socket.on('iniciar-juego', (sala) => {
+    if (salas[sala] && socket.id === salas[sala].hostId) {
+      if (!salas[sala].juegoIniciado) {
+        salas[sala].baraja = mezclarBaraja();
+        salas[sala].historial = [];
+        salas[sala].juegoIniciado = true;
+        io.to(sala).emit('juego-iniciado');
+        repartirCartas(sala);
+      }
+    }
   });
 
-  socket.on("disconnect", () => {
-    console.log("Jugador desconectado:", socket.id);
+  socket.on('detener-juego', (sala) => {
+    if (salas[sala] && socket.id === salas[sala].hostId) {
+      salas[sala].juegoIniciado = false;
+      io.to(sala).emit('juego-detenido');
+    }
+  });
+
+  socket.on('barajear', (sala) => {
+    if (salas[sala] && socket.id === salas[sala].hostId) {
+      salas[sala].baraja = mezclarBaraja();
+      salas[sala].historial = [];
+      io.to(sala).emit('barajear');
+    }
+  });
+
+  socket.on('reiniciar-partida', (sala) => {
+    if (salas[sala] && socket.id === salas[sala].hostId) {
+      salas[sala].juegoIniciado = false;
+      salas[sala].historial = [];
+      salas[sala].bote = 0;
+      for (const id in salas[sala].jugadores) {
+        salas[sala].jugadores[id].apostado = false;
+        salas[sala].jugadores[id].cartas = [];
+      }
+      io.to(sala).emit('partida-reiniciada');
+      io.to(sala).emit('jugadores-actualizados', salas[sala].jugadores);
+      io.to(sala).emit('bote-actualizado', 0);
+    }
+  });
+
+  socket.on('loteria', ({ nickname, sala }) => {
+    if (salas[sala] && salas[sala].juegoIniciado) {
+      salas[sala].juegoIniciado = false;
+      io.to(salas[sala].hostId).emit('loteria-anunciada', nickname, socket.id);
+    }
+  });
+
+  socket.on('confirmar-ganador', ({ sala, ganadorId, esValido }) => {
+    if (salas[sala] && socket.id === salas[sala].hostId) {
+      if (esValido) {
+        const ganador = salas[sala].jugadores[ganadorId];
+        if (ganador) {
+          ganador.monedas += salas[sala].bote;
+          salas[sala].bote = 0;
+          io.to(sala).emit('ganador-confirmado', ganadorId);
+          io.to(sala).emit('jugadores-actualizados', salas[sala].jugadores);
+          io.to(sala).emit('bote-actualizado', 0);
+        }
+      } else {
+        io.to(sala).emit('ganador-rechazado', ganadorId);
+        salas[sala].juegoIniciado = true; // El juego continúa si se rechaza
+        repartirCartas(sala); // Reanuda el juego
+      }
+    }
+  });
+
+  socket.on('disconnect', () => {
+    console.log('Jugador desconectado:', socket.id);
+    for (const sala in salas) {
+      if (salas[sala].jugadores[socket.id]) {
+        const nickname = salas[sala].jugadores[socket.id].nickname;
+        delete salas[sala].jugadores[socket.id];
+        console.log(`${nickname} ha dejado la sala '${sala}'`);
+        io.to(sala).emit('jugadores-actualizados', salas[sala].jugadores);
+        if (Object.keys(salas[sala].jugadores).length === 0) {
+          delete salas[sala];
+          console.log(`Sala '${sala}' eliminada.`);
+        }
+      }
+    }
   });
 });
 
 function mezclarBaraja() {
-  return Array.from({ length: 54 }, (_, i) => String(i + 1).padStart(2, "0")).sort(() => Math.random() - 0.5);
+  const cartas = Array.from({ length: 54 }, (_, i) => String(i + 1).padStart(2, '0'));
+  return cartas.sort(() => Math.random() - 0.5);
 }
 
-function repartirCartas() {
+function repartirCartas(sala) {
   let index = 0;
+  const salaInfo = salas[sala];
+  if (!salaInfo) return;
+
   const intervalo = setInterval(() => {
-    if (!juegoIniciado || index >= baraja.length) {
+    if (!salaInfo.juegoIniciado || index >= salaInfo.baraja.length) {
       clearInterval(intervalo);
       return;
     }
-    const carta = baraja[index++];
-    historial.push(carta);
-    io.emit("carta", carta);
+    const carta = salaInfo.baraja[index++];
+    salaInfo.historial.push(carta);
+    io.to(sala).emit('carta-cantada', carta);
+    io.to(sala).emit('historial-actualizado', salaInfo.historial);
   }, 4000);
 }
 
