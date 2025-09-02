@@ -184,6 +184,7 @@ io.on('connection', (socket) => {
           salaInfo.loteriaPendiente = null;
           salaInfo.pagoRealizado = false;
           salaInfo.juegoIniciado = true;
+          // ✅ La llamada a la función para reanudar el juego
           repartirCartas(sala);
       }
   });
