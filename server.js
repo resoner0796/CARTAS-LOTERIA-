@@ -135,15 +135,10 @@ io.on('connection', (socket) => {
           io.to(sala).emit('bote-actualizado', 0);
         }
       } else {
-        // Si el ganador es rechazado
+        // Solo se notifica que fue rechazado, sin transferencias ni reinicios
         io.to(sala).emit('ganador-rechazado', ganadorId);
-        // El bote se mantiene, y se restablece el estado de apuesta
-        for (const id in salas[sala].jugadores) {
-          salas[sala].jugadores[id].apostado = false;
-        }
+        // El juego simplemente se reanuda
         salas[sala].juegoIniciado = true;
-        repartirCartas(sala); // Reanuda el juego
-        io.to(sala).emit('jugadores-actualizados', salas[sala].jugadores);
       }
     }
   });
