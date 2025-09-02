@@ -118,7 +118,7 @@ io.on('connection', (socket) => {
   });
 
   // Lógica corregida para la confirmación del ganador
-   socket.on('confirmar-ganador', ({ sala, ganadorId, esValido }) => {
+  socket.on('confirmar-ganador', ({ sala, ganadorId, esValido }) => {
     if (salas[sala] && socket.id === salas[sala].hostId) {
       if (esValido) {
         const ganador = salas[sala].jugadores[ganadorId];
@@ -137,9 +137,13 @@ io.on('connection', (socket) => {
       } else {
         // Si el ganador es rechazado
         io.to(sala).emit('ganador-rechazado', ganadorId);
-        // El bote se mantiene, y solo se reanuda el juego
+        // El bote se mantiene, y se restablece el estado de apuesta
+        for (const id in salas[sala].jugadores) {
+          salas[sala].jugadores[id].apostado = false;
+        }
         salas[sala].juegoIniciado = true;
         repartirCartas(sala); // Reanuda el juego
+        io.to(sala).emit('jugadores-actualizados', salas[sala].jugadores);
       }
     }
   });
