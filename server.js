@@ -94,12 +94,11 @@ io.on("connection", socket => {
     }
   });
 
-  // ¡AQUÍ ESTÁ LA LÓGICA CORREGIDA!
   socket.on("loteria", ({ nickname, sala, fichas, cartas }) => {
     const salaObj = salas[sala];
     if (salaObj) {
       const hostSocketId = salaObj.hostId;
-      // Guardar las fichas y cartas del jugador
+      // Guardamos las fichas y cartas en el objeto del jugador en la sala
       salaObj.jugadores[socket.id].fichas = fichas;
       salaObj.jugadores[socket.id].cartasSeleccionadas = cartas;
 
@@ -107,12 +106,12 @@ io.on("connection", socket => {
       salaObj.juegoIniciado = false;
       io.to(sala).emit("juego-detenido");
 
-      // Enviar los datos del ganador solo al host
+      // Enviar los datos del ganador al host, tomando la información del objeto del jugador
       io.to(hostSocketId).emit("loteria-anunciada", {
         quien: nickname,
         ganadorId: socket.id,
-        cartasGanador: cartas,
-        fichasGanador: fichas,
+        cartasGanador: salaObj.jugadores[socket.id].cartasSeleccionadas,
+        fichasGanador: salaObj.jugadores[socket.id].fichas,
       });
 
       // Notificar a todos los demás (excepto al que cantó)
@@ -131,7 +130,6 @@ io.on("connection", socket => {
   socket.on("rechazar-ganador", ({ sala, perdedorId }) => {
       const salaObj = salas[sala];
       if (salaObj && salaObj.hostId === socket.id) {
-          // El juego se reinicia o se continúa según tu lógica de juego
           salaObj.juegoIniciado = true; // Continuar el juego
           io.to(sala).emit("ganador-rechazado");
       }
