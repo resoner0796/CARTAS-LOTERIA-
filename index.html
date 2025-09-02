@@ -836,28 +836,23 @@ function irANickname() {
         
         // Renderizar las cartas y fichas del jugador que cantó lotería
         if (cartasGanador) {
-            cartasGanador.forEach(cartaId => {
+            cartasGanador.forEach((cartaId, index) => {
               const contenedor = document.createElement("div");
               contenedor.classList.add("carta-juego");
               contenedor.innerHTML = `<img src="${cartaId}.jpg" data-id="${cartaId}" class="carta-img seleccionada">`;
               cartasGanadorEl.appendChild(contenedor);
-            });
-        }
 
-        // Colocar las fichas en las cartas correspondientes
-        if (fichasGanador) {
-            fichasGanador.forEach(fichaInfo => {
-                const cartaEl = cartasGanadorEl.querySelector(`[data-id="${fichaInfo.cartaId}"]`);
-                if (cartaEl) {
-                    fichaInfo.fichas.forEach(fichaPos => {
-                        const ficha = document.createElement("img");
-                        ficha.src = "ficha.PNG";
-                        ficha.classList.add("ficha");
-                        ficha.style.left = fichaPos.left;
-                        ficha.style.top = fichaPos.top;
-                        cartaEl.closest(".carta-juego").appendChild(ficha);
-                    });
-                }
+              // Colocar las fichas en las cartas correspondientes
+              if (fichasGanador && fichasGanador[index]) {
+                  fichasGanador[index].fichas.forEach(fichaPos => {
+                      const ficha = document.createElement("img");
+                      ficha.src = "ficha.PNG";
+                      ficha.classList.add("ficha");
+                      ficha.style.left = fichaPos.left;
+                      ficha.style.top = fichaPos.top;
+                      contenedor.appendChild(ficha);
+                  });
+              }
             });
         }
 
