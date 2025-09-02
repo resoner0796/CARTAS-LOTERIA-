@@ -134,51 +134,62 @@ io.on('connection', (socket) => {
   });
 
   // ✅ BLOQUE CORREGIDO Y BLINDADO
-  socket.on('confirmar-ganador', ({ sala, ganadorId, esValido }) => {
+  // ✅ BLOQUE CORREGIDO
+socket.on('confirmar-ganador', ({ sala, ganadorId, esValido }) => {
     const salaInfo = salas[sala];
+
+    // 1. Verificación básica de la petición
     if (!salaInfo || socket.id !== salaInfo.hostId || !salaInfo.loteriaPendiente) {
-      console.warn("Intento de confirmación inválido.");
-      return;
-    }
-    const { ganadorId: propuestoId } = salaInfo.loteriaPendiente;
-    if (ganadorId !== propuestoId) {
-      console.warn("ID de ganador no coincide.");
-      return;
+        console.warn("Intento de confirmación inválido.");
+        return;
     }
 
-    if (esValido === true) {
-      if (salaInfo.pagoRealizado) {
-        console.warn("Intento de pago doble.");
+    const { ganadorId: propuestoId } = salaInfo.loteriaPendiente;
+
+    // 2. Si el ID del ganador propuesto no coincide, se ignora.
+    if (ganadorId !== propuestoId) {
+        console.warn("ID de ganador no coincide.");
         return;
-      }
-      const ganador = salaInfo.jugadores[ganadorId];
-      const boteActual = Number(salaInfo.bote) || 0;
-      if (ganador && boteActual > 0) {
-        ganador.monedas += boteActual;
-        salaInfo.bote = 0;
-        salaInfo.pagoRealizado = true;
-        for (const id in salaInfo.jugadores) {
-          salaInfo.jugadores[id].apostado = false;
-        }
-        salaInfo.loteriaPendiente = null;
-        io.to(sala).emit('ganador-confirmado', ganadorId);
-        io.to(sala).emit('jugadores-actualizados', salaInfo.jugadores);
-        io.to(sala).emit('bote-actualizado', 0);
-        
-        salaInfo.juegoIniciado = false;
-        if (salaInfo.intervaloCartas) {
-          clearInterval(salaInfo.intervaloCartas);
-          salaInfo.intervaloCartas = null;
-        }
-      }
-    } else {
-      io.to(sala).emit('ganador-rechazado', ganadorId);
-      salaInfo.loteriaPendiente = null;
-      salaInfo.pagoRealizado = false;
-      salaInfo.juegoIniciado = true;
-      repartirCartas(sala);
     }
-  });
+
+    // 3. Lógica principal: Comprobamos si la victoria es válida
+    if (esValido === true) {
+        // Lógica para ACEPTAR la victoria
+        if (salaInfo.pagoRealizado) return;
+        const ganador = salaInfo.jugadores[ganadorId];
+        const boteActual = Number(salaInfo.bote) || 0;
+
+        if (ganador && boteActual > 0) {
+            ganador.monedas += boteActual;
+            salaInfo.bote = 0;
+            salaInfo.pagoRealizado = true;
+            for (const id in salaInfo.jugadores) {
+                salaInfo.jugadores[id].apostado = false;
+            }
+            salaInfo.loteriaPendiente = null;
+
+            io.to(sala).emit('ganador-confirmado', ganadorId);
+            io.to(sala).emit('jugadores-actualizados', salaInfo.jugadores);
+            io.to(sala).emit('bote-actualizado', 0);
+
+            salaInfo.juegoIniciado = false;
+            if (salaInfo.intervaloCartas) {
+                clearInterval(salaInfo.intervaloCartas);
+                salaInfo.intervaloCartas = null;
+            }
+        }
+    } else {
+        // Lógica para RECHAZAR la victoria
+        console.log(`Victoria de ${salaInfo.jugadores[ganadorId].nickname} rechazada por el host.`);
+        io.to(sala).emit('ganador-rechazado', ganadorId);
+
+        // Limpia el estado y reanuda el juego
+        salaInfo.loteriaPendiente = null;
+        salaInfo.pagoRealizado = false;
+        salaInfo.juegoIniciado = true;
+        repartirCartas(sala);
+    }
+});
 
   socket.on('disconnect', () => {
     console.log('Jugador desconectado:', socket.id);
