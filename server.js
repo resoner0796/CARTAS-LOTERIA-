@@ -117,6 +117,7 @@ io.on('connection', (socket) => {
     }
   });
 
+  // Lógica corregida para la confirmación del ganador
   socket.on('confirmar-ganador', ({ sala, ganadorId, esValido }) => {
     if (salas[sala] && socket.id === salas[sala].hostId) {
       if (esValido) {
@@ -130,7 +131,8 @@ io.on('connection', (socket) => {
         }
       } else {
         io.to(sala).emit('ganador-rechazado', ganadorId);
-        salas[sala].juegoIniciado = true; // El juego continúa si se rechaza
+        // El juego continúa si se rechaza
+        salas[sala].juegoIniciado = true; 
         repartirCartas(sala); // Reanuda el juego
       }
     }
@@ -161,7 +163,7 @@ function mezclarBaraja() {
 function repartirCartas(sala) {
   let index = 0;
   const salaInfo = salas[sala];
-  if (!salaInfo) return;
+  if (!salaInfo || !salaInfo.juegoIniciado) return;
 
   const intervalo = setInterval(() => {
     if (!salaInfo.juegoIniciado || index >= salaInfo.baraja.length) {
