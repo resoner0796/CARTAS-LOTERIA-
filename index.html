@@ -310,6 +310,7 @@
       font-weight: bold;
     }
     
+    /* Reestructuración para el control de apuesta */
     .apuesta-control {
       display: flex;
       flex-direction: column;
@@ -321,6 +322,7 @@
       position: relative;
       width: 60px;
       height: 60px;
+      margin-bottom: 12px; /* Espacio para separar del valor del bote */
     }
 
     .bote-monedas img {
@@ -348,12 +350,9 @@
       color: var(--accent-yellow);
       font-weight: bold;
       font-size: 1.5rem;
-      /* Se hace visible el número del bote */
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      z-index: 13;
+      /* Eliminamos la posición absoluta para que fluya en el layout */
+      position: static;
+      transform: none;
       text-shadow: 0 0 5px rgba(0,0,0,0.8);
     }
     
@@ -497,10 +496,10 @@
               <img src="peso.png" alt="moneda">
               <img src="peso.png" alt="moneda">
               <img src="peso.png" alt="moneda">
-              <strong id="bote-valor">0</strong>
           </div>
           <div>
               <div class="bote-info" style="display:flex;flex-direction:column;align-items:center;">
+                  <strong id="bote-valor">0</strong>
                   <span style="font-weight:600;font-size:0.8rem">Bote</span>
               </div>
               <button id="btnApostar">Apostar</button>
