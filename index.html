@@ -879,6 +879,18 @@
       boteEl.textContent = bote;
     });
 
+// ✅✅ BLOQUE AÑADIDO PARA LA LÓGICA DE RECHAZO ✅✅
+socket.on("juego-reanudar", () => {
+  // Oculta el mensaje de lotería si está visible
+  loteriaMensaje.style.display = "none";
+  // Oculta el modal del host si está visible
+  loteriaModal.classList.remove("active");
+  // Aquí puedes añadir cualquier otra lógica necesaria para reanudar la interfaz del juego
+  // Por ejemplo, activar botones que se desactivaron, etc.
+});
+
+
+
     socket.on("carta-cantada", (cartaId) => {
       const img = document.createElement("img");
       const formattedId = String(cartaId).padStart(2, '0');
