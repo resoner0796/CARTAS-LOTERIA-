@@ -281,14 +281,8 @@
       background-color: var(--secondary-bg);
       border-radius: 12px;
       box-shadow: 0 4px 8px var(--box-shadow-color);
-      flex-direction: column; /* Para apilar los elementos verticalmente en el móvil */
+      flex-direction: row; /* Cambio para mantener la disposición horizontal */
       gap: 1rem;
-    }
-
-    @media screen and (min-width: 768px) {
-      #apuestasUI {
-        flex-direction: row;
-      }
     }
 
     .saldo-jugador {
@@ -477,50 +471,52 @@
     </div>
     
     <div id="apuestasUI">
-      <div class="saldo-jugador">
-          <div style="display:flex;align-items:flex-end;">
-              <div class="monedas-apiladas">
-                  <img src="peso.png" alt="peso" class="moneda-stack">
-                  <img src="peso.png" alt="peso" class="moneda-stack">
-                  <img src="peso.png" alt="peso" class="moneda-stack">
-                  <img src="peso.png" alt="peso" class="moneda-stack">
-                  <img src="peso.png" alt="peso" class="moneda-stack">
+      <div style="display: flex; align-items: center; justify-content: space-around; width: 100%;">
+          <div class="saldo-jugador">
+              <div style="display:flex;align-items:flex-end;">
+                  <div class="monedas-apiladas">
+                      <img src="peso.png" alt="peso" class="moneda-stack">
+                      <img src="peso.png" alt="peso" class="moneda-stack">
+                      <img src="peso.png" alt="peso" class="moneda-stack">
+                      <img src="peso.png" alt="peso" class="moneda-stack">
+                      <img src="peso.png" alt="peso" class="moneda-stack">
+                  </div>
+                  <div class="monedas-apiladas">
+                      <img src="peso.png" alt="peso" class="moneda-stack">
+                      <img src="peso.png" alt="peso" class="moneda-stack">
+                      <img src="peso.png" alt="peso" class="moneda-stack">
+                      <img src="peso.png" alt="peso" class="moneda-stack">
+                      <img src="peso.png" alt="peso" class="moneda-stack">
+                  </div>
+                  <div class="monedas-apiladas">
+                      <img src="peso.png" alt="peso" class="moneda-stack">
+                      <img src="peso.png" alt="peso" class="moneda-stack">
+                      <img src="peso.png" alt="peso" class="moneda-stack">
+                      <img src="peso.png" alt="peso" class="moneda-stack">
+                      <img src="peso.png" alt="peso" class="moneda-stack">
+                  </div>
               </div>
-              <div class="monedas-apiladas">
-                  <img src="peso.png" alt="peso" class="moneda-stack">
-                  <img src="peso.png" alt="peso" class="moneda-stack">
-                  <img src="peso.png" alt="peso" class="moneda-stack">
-                  <img src="peso.png" alt="peso" class="moneda-stack">
-                  <img src="peso.png" alt="peso" class="moneda-stack">
-              </div>
-              <div class="monedas-apiladas">
-                  <img src="peso.png" alt="peso" class="moneda-stack">
-                  <img src="peso.png" alt="peso" class="moneda-stack">
-                  <img src="peso.png" alt="peso" class="moneda-stack">
-                  <img src="peso.png" alt="peso" class="moneda-stack">
-                  <img src="peso.png" alt="peso" class="moneda-stack">
-              </div>
+              <strong id="monedas-valor">30</strong>
           </div>
-          <strong id="monedas-valor">30</strong>
-      </div>
-      <div class="apuesta-control">
-          <div class="bote-monedas">
-              <img src="peso.png" alt="moneda">
-              <img src="peso.png" alt="moneda">
-              <img src="peso.png" alt="moneda">
-              <img src="peso.png" alt="moneda">
-              <img src="peso.png" alt="moneda">
-              <img src="peso.png" alt="moneda">
-              <img src="peso.png" alt="moneda">
-              <img src="peso.png" alt="moneda">
-              <img src="peso.png" alt="moneda">
-              <img src="peso.png" alt="moneda">
-              <img src="peso.png" alt="moneda">
-              <img src="peso.png" alt="moneda">
-              <strong id="bote-valor">0</strong>
+          <div class="apuesta-control">
+              <div class="bote-monedas">
+                  <img src="peso.png" alt="moneda">
+                  <img src="peso.png" alt="moneda">
+                  <img src="peso.png" alt="moneda">
+                  <img src="peso.png" alt="moneda">
+                  <img src="peso.png" alt="moneda">
+                  <img src="peso.png" alt="moneda">
+                  <img src="peso.png" alt="moneda">
+                  <img src="peso.png" alt="moneda">
+                  <img src="peso.png" alt="moneda">
+                  <img src="peso.png" alt="moneda">
+                  <img src="peso.png" alt="moneda">
+                  <img src="peso.png" alt="moneda">
+                  <strong id="bote-valor">0</strong>
+              </div>
+              <span style="font-weight:600;font-size:0.8rem">Bote</span>
+              <button id="btnApostar">Apostar</button>
           </div>
-          <span style="font-weight:600;font-size:0.8rem">Bote</span>
-          <button id="btnApostar">Apostar</button>
       </div>
     </div>
     
