@@ -401,10 +401,10 @@
       gap: 1rem;
     }
 
-    /* Estilos para móviles */
+    /* Estilos para móviles en vertical */
     .juego-cartas {
         display: flex;
-        flex-wrap: nowrap; /* Evita que las cartas bajen a una nueva fila */
+        flex-wrap: wrap; /* Permite que las cartas bajen a una nueva fila */
         justify-content: center;
         width: 100%;
         gap: 1.25rem;
@@ -413,10 +413,22 @@
     }
 
     .juego-cartas .carta-juego {
-        flex-basis: 25%; /* Cada carta ocupa el 25% del ancho */
-        max-width: 25%;
+        flex-basis: 45%; /* Cada carta ocupa el 45% del ancho para dos columnas */
+        max-width: 45%;
     }
 
+    /* Media query para orientación horizontal */
+    @media (orientation: landscape) {
+        .juego-cartas {
+            flex-wrap: nowrap; /* Fuerza a las cartas a estar en una sola fila */
+        }
+
+        .juego-cartas .carta-juego {
+            flex-basis: 25%; /* Cada carta ocupa el 25% del ancho */
+            max-width: 25%;
+        }
+    }
+    
     /* Estilos para computadoras y pantallas grandes */
     @media (min-width: 768px) {
       body {
