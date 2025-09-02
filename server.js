@@ -133,26 +133,21 @@ io.on('connection', (socket) => {
     }
   });
   
-  // ✅✅ BLOQUE CORREGIDO FINAL ✅✅
   socket.on('confirmar-ganador', ({ sala, ganadorId, esValido }) => {
       const salaInfo = salas[sala];
 
-      // 1. Verificación de seguridad y estado
       if (!salaInfo || socket.id !== salaInfo.hostId || !salaInfo.loteriaPendiente) {
           console.warn("Intento de confirmación inválido.");
           return;
       }
 
-      // 2. Verificar que el ganador propuesto sea el que está pendiente
       if (ganadorId !== salaInfo.loteriaPendiente.ganadorId) {
           console.warn("ID de ganador no coincide con el pendiente.");
           return;
       }
       
-      // 3. Lógica principal: Elige el flujo según la validación del host
       if (esValido) {
-          // Lógica para ACEPTAR la victoria
-          if (salaInfo.pagoRealizado) return; // Evita pagos duplicados
+          if (salaInfo.pagoRealizado) return;
           const ganador = salaInfo.jugadores[ganadorId];
           const boteActual = Number(salaInfo.bote) || 0;
 
@@ -176,20 +171,33 @@ io.on('connection', (socket) => {
               }
           }
       } else {
-          // Lógica para RECHAZAR la victoria
           console.log(`Victoria de ${salaInfo.jugadores[ganadorId].nickname} rechazada por el host.`);
           io.to(sala).emit('ganador-rechazado', ganadorId);
-          // ✅ AGREGADO: Notifica a todos que el juego se reanuda
-          io.to(sala).emit('juego-reanudar');
 
-          // Limpia el estado y reanuda el juego
           salaInfo.loteriaPendiente = null;
           salaInfo.pagoRealizado = false;
           salaInfo.juegoIniciado = true;
-          // ✅ La llamada a la función para reanudar el juego
+          io.to(sala).emit('jugadores-actualizados', salaInfo.jugadores); // Esto reestablece el estado de apuesta
           repartirCartas(sala);
       }
   });
+  
+  // ✅✅ AGREGADO: Evento para que el usuario salga de la sala ✅✅
+  socket.on('salir-sala', (sala) => {
+    if (salas[sala] && salas[sala].jugadores[socket.id]) {
+      const nickname = salas[sala].jugadores[socket.id].nickname;
+      socket.leave(sala);
+      delete salas[sala].jugadores[socket.id];
+      console.log(`${nickname} ha dejado la sala '${sala}'`);
+      io.to(sala).emit('jugadores-actualizados', salas[sala].jugadores);
+      if (Object.keys(salas[sala].jugadores).length === 0) {
+        if (salas[sala].intervaloCartas) clearInterval(salas[sala].intervaloCartas);
+        delete salas[sala];
+        console.log(`Sala '${sala}' eliminada.`);
+      }
+    }
+  });
+
 
   socket.on('disconnect', () => {
     console.log('Jugador desconectado:', socket.id);
