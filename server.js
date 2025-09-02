@@ -118,21 +118,27 @@ io.on('connection', (socket) => {
   });
 
   // Lógica corregida para la confirmación del ganador
-  socket.on('confirmar-ganador', ({ sala, ganadorId, esValido }) => {
+   socket.on('confirmar-ganador', ({ sala, ganadorId, esValido }) => {
     if (salas[sala] && socket.id === salas[sala].hostId) {
       if (esValido) {
         const ganador = salas[sala].jugadores[ganadorId];
         if (ganador) {
+          // Transfiere el bote al ganador
           ganador.monedas += salas[sala].bote;
           salas[sala].bote = 0;
+          // Reinicia el estado de 'apostado' para todos los jugadores
+          for (const id in salas[sala].jugadores) {
+            salas[sala].jugadores[id].apostado = false;
+          }
           io.to(sala).emit('ganador-confirmado', ganadorId);
           io.to(sala).emit('jugadores-actualizados', salas[sala].jugadores);
           io.to(sala).emit('bote-actualizado', 0);
         }
       } else {
+        // Si el ganador es rechazado
         io.to(sala).emit('ganador-rechazado', ganadorId);
-        // El juego continúa si se rechaza
-        salas[sala].juegoIniciado = true; 
+        // El bote se mantiene, y solo se reanuda el juego
+        salas[sala].juegoIniciado = true;
         repartirCartas(sala); // Reanuda el juego
       }
     }
