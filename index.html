@@ -348,6 +348,67 @@
       color: white;
     }
 
+  /* NUEVOS ESTILOS PARA LA PANTALLA DE VERIFICACIÓN */
+    #pantallaVerificacion {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background-color: rgba(0, 0, 0, 0.9);
+        display: none;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        z-index: 10000;
+        padding: 1rem;
+    }
+
+    #pantallaVerificacion h2 {
+        color: gold;
+        text-align: center;
+        font-size: 2.5rem;
+        margin-bottom: 2rem;
+    }
+
+    #cartasGanador {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 1rem;
+        width: 100%;
+        max-width: 800px;
+    }
+
+    #cartasGanador .carta-juego {
+        width: 183px;
+    }
+
+    #cartasGanador .carta-juego img {
+        width: 100%;
+        border: 3px solid gold;
+        border-radius: 0;
+        box-shadow: 0 0 10px 5px gold;
+    }
+    
+    #botonesVerificacion {
+        margin-top: 2rem;
+        display: flex;
+        gap: 2rem;
+    }
+
+    #btnConfirmarGanador {
+        background-color: #28a745; /* Verde */
+        color: white;
+        font-size: 1.2rem;
+    }
+
+    #btnRechazarGanador {
+        background-color: #dc3545; /* Rojo */
+        color: white;
+        font-size: 1.2rem;
+    }
+
   </style>
 </head>
 <body>
@@ -377,7 +438,6 @@
   </div>
   <div id="pantallaJuego" class="pantalla">
 
-    <!-- Historial movido a la parte superior -->
     <div class="historial-container">
       <div id="historial"></div>
     </div>
@@ -393,7 +453,6 @@
       <button onclick="emitirLoteria()">Lotería</button>
     </div>
     
-    <!-- UI de apuestas actualizada -->
     <div id="apuestasUI" style="display:flex;align-items:center;gap:24px;margin-top:8px;">
       <div style="display:flex;align-items:flex-end;">
           <div class="monedas-apiladas">
@@ -448,6 +507,15 @@
   </div>
 
   <div id="loteriaMensaje">¡LOTERÍA!</div>
+  
+  <div id="pantallaVerificacion">
+      <h2 id="ganadorNickname"></h2>
+      <div id="cartasGanador"></div>
+      <div id="botonesVerificacion">
+          <button id="btnConfirmarGanador">Confirmar Ganador</button>
+          <button id="btnRechazarGanador">Rechazar</button>
+      </div>
+  </div>
 
   <audio id="audioBarajear" src="barajar.mp3"></audio>
   <audio id="audioCampana" src="campana.mp3"></audio>
@@ -473,7 +541,8 @@
       sala: document.getElementById("pantallaSala"),
       nickname: document.getElementById("pantallaNickname"),
       seleccion: document.getElementById("pantallaSeleccion"),
-      juego: document.getElementById("pantallaJuego")
+      juego: document.getElementById("pantallaJuego"),
+      verificacion: document.getElementById("pantallaVerificacion") // Nueva pantalla
     };
 
     const contenedorCartas = document.getElementById("contenedorCartas");
@@ -508,6 +577,13 @@
     const audioAplausos = document.getElementById("audioAplausos");
 
     const loteriaMensaje = document.getElementById("loteriaMensaje");
+    // Nuevos elementos de la pantalla de verificación
+    const pantallaVerificacion = document.getElementById("pantallaVerificacion");
+    const ganadorNicknameEl = document.getElementById("ganadorNickname");
+    const cartasGanadorEl = document.getElementById("cartasGanador");
+    const btnConfirmarGanador = document.getElementById("btnConfirmarGanador");
+    const btnRechazarGanador = document.getElementById("btnRechazarGanador");
+    let ganadorTemporalId = null;
 
     window.onload = () => setTimeout(() => cambiarPantalla("sala"), 1000);
 
@@ -659,7 +735,17 @@ function irANickname() {
       audioCampana.pause();
       audioBarajear.pause();
       mostrarLoteriaMensaje();
-      socket.emit("loteria", { nickname, sala: salaActual });
+      // Ahora también se envían las fichas que ha puesto el jugador
+      const fichasJugador = Array.from(document.querySelectorAll("#juegoCartas .carta-juego")).map(contenedor => {
+          return {
+              cartaId: contenedor.querySelector("img").dataset.id,
+              fichas: Array.from(contenedor.querySelectorAll(".ficha")).map(f => ({
+                  left: f.style.left,
+                  top: f.style.top
+              }))
+          };
+      });
+      socket.emit("loteria", { nickname, sala: salaActual, fichas: fichasJugador });
     }
 
     function mostrarLoteriaMensaje() {
@@ -735,20 +821,75 @@ function irANickname() {
       audioVoz.play();
     });
 
-    socket.on("loteria-anunciada", (quien, ganadorId) => {
-      alert(`¡${quien} ha cantado LOTERÍA!`);
+    // Nueva lógica para la pantalla de verificación del host
+    socket.on("loteria-anunciada", (data) => {
+      // El host recibe la información completa
+      const { quien, ganadorId, cartasGanador, fichasGanador } = data;
+      alert(`¡${quien} ha cantado LOTERÍA! El juego se ha pausado.`);
+      
+      // Si soy el host, muestro la pantalla de verificación
       if (soyHost) {
-        const confirmar = confirm(`¿${quien} es el ganador?`);
-        if (confirmar) {
-          socket.emit('confirmar-ganador', { sala: salaActual, ganadorId });
-        }
+        ganadorTemporalId = ganadorId;
+        ganadorNicknameEl.textContent = `Verificando a ${quien}`;
+        cartasGanadorEl.innerHTML = ""; // Limpiar el contenedor
+        
+        // Renderizar las cartas y fichas del jugador que cantó lotería
+        cartasGanador.forEach(cartaId => {
+          const contenedor = document.createElement("div");
+          contenedor.classList.add("carta-juego");
+          contenedor.innerHTML = `<img src="${cartaId}.jpg" class="carta-img seleccionada">`;
+          cartasGanadorEl.appendChild(contenedor);
+        });
+
+        // Colocar las fichas en las cartas correspondientes
+        fichasGanador.forEach(fichaInfo => {
+            const cartaEl = cartasGanadorEl.querySelector(`[src="${fichaInfo.cartaId}.jpg"]`);
+            if (cartaEl) {
+                fichaInfo.fichas.forEach(fichaPos => {
+                    const ficha = document.createElement("img");
+                    ficha.src = "ficha.PNG";
+                    ficha.classList.add("ficha");
+                    ficha.style.left = fichaPos.left;
+                    ficha.style.top = fichaPos.top;
+                    cartaEl.closest(".carta-juego").appendChild(ficha);
+                });
+            }
+        });
+
+        cambiarPantalla("verificacion");
       }
     });
+
+    btnConfirmarGanador.onclick = () => {
+        if (ganadorTemporalId) {
+            socket.emit('confirmar-ganador', { sala: salaActual, ganadorId: ganadorTemporalId });
+            ganadorTemporalId = null;
+            cambiarPantalla("juego"); // Regresar a la pantalla de juego
+        }
+    };
+    
+    btnRechazarGanador.onclick = () => {
+        if (ganadorTemporalId) {
+            socket.emit('rechazar-ganador', { sala: salaActual, perdedorId: ganadorTemporalId });
+            ganadorTemporalId = null;
+            cambiarPantalla("juego"); // Regresar a la pantalla de juego
+        }
+    };
 
     socket.on("juego-detenido", () => {
       if (soyHost) {
         audioAplausos.play();
       }
+    });
+
+    socket.on('ganador-confirmado', () => {
+        cambiarPantalla("juego"); // Asegurar que todos los jugadores vuelvan a la pantalla de juego
+        alert("¡El host ha confirmado el ganador!");
+    });
+
+    socket.on('ganador-rechazado', () => {
+        cambiarPantalla("juego"); // Asegurar que todos los jugadores vuelvan a la pantalla de juego
+        alert("El host ha rechazado la lotería. ¡El juego continúa!");
     });
 
     // Registrar Service Worker para PWA
