@@ -120,26 +120,28 @@ io.on('connection', (socket) => {
   });
 
   socket.on('confirmar-ganador', ({ sala, ganadorId, esValido }) => {
-    if (salas[sala] && socket.id === salas[sala].hostId) {
-      if (esValido) {
-        const ganador = salas[sala].jugadores[ganadorId];
-        if (ganador) {
-          ganador.monedas += salas[sala].bote;
-          salas[sala].bote = 0;
-          for (const id in salas[sala].jugadores) {
-            salas[sala].jugadores[id].apostado = false;
-          }
-          io.to(sala).emit('ganador-confirmado', ganadorId);
-          io.to(sala).emit('jugadores-actualizados', salas[sala].jugadores);
-          io.to(sala).emit('bote-actualizado', 0);
+  if (salas[sala] && socket.id === salas[sala].hostId) {
+    if (esValido) {
+      const ganador = salas[sala].jugadores[ganadorId];
+      if (ganador) {
+        ganador.monedas += salas[sala].bote;
+        salas[sala].bote = 0;
+
+        // Reiniciar estado de apuestas
+        for (const id in salas[sala].jugadores) {
+          salas[sala].jugadores[id].apostado = false;
         }
-      } else {
-        io.to(sala).emit('ganador-rechazado', ganadorId);
-        salas[sala].juegoIniciado = true;
-        repartirCartas(sala); // 👈 reanudar sin transferir fondos
+
+        io.to(sala).emit('ganador-confirmado', ganadorId);
+        io.to(sala).emit('jugadores-actualizados', salas[sala].jugadores);
+        io.to(sala).emit('bote-actualizado', 0);
       }
+    } else {
+      // 🚫 Solo avisamos, no tocamos el bote ni repartimos
+      io.to(sala).emit('ganador-rechazado', ganadorId);
     }
-  });
+  }
+});
 
   socket.on('disconnect', () => {
     console.log('Jugador desconectado:', socket.id);
