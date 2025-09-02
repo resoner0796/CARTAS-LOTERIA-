@@ -381,6 +381,7 @@
     }
 
     #cartasGanador .carta-juego {
+        position: relative;
         width: 183px;
     }
 
@@ -705,7 +706,7 @@ function irANickname() {
       seleccionadas.forEach(id => {
         const contenedor = document.createElement("div");
         contenedor.classList.add("carta-juego");
-        contenedor.innerHTML = `<img src="${id}.jpg" class="carta-img seleccionada">`;
+        contenedor.innerHTML = `<img src="${id}.jpg" data-id="${id}" class="carta-img seleccionada">`;
         contenedor.onclick = e => marcarFicha(e, contenedor);
         juegoCartas.appendChild(contenedor);
       });
@@ -745,7 +746,7 @@ function irANickname() {
               }))
           };
       });
-      socket.emit("loteria", { nickname, sala: salaActual, fichas: fichasJugador });
+      socket.emit("loteria", { nickname, sala: salaActual, fichas: fichasJugador, cartas: seleccionadas });
     }
 
     function mostrarLoteriaMensaje() {
@@ -834,27 +835,31 @@ function irANickname() {
         cartasGanadorEl.innerHTML = ""; // Limpiar el contenedor
         
         // Renderizar las cartas y fichas del jugador que cantó lotería
-        cartasGanador.forEach(cartaId => {
-          const contenedor = document.createElement("div");
-          contenedor.classList.add("carta-juego");
-          contenedor.innerHTML = `<img src="${cartaId}.jpg" class="carta-img seleccionada">`;
-          cartasGanadorEl.appendChild(contenedor);
-        });
+        if (cartasGanador) {
+            cartasGanador.forEach(cartaId => {
+              const contenedor = document.createElement("div");
+              contenedor.classList.add("carta-juego");
+              contenedor.innerHTML = `<img src="${cartaId}.jpg" data-id="${cartaId}" class="carta-img seleccionada">`;
+              cartasGanadorEl.appendChild(contenedor);
+            });
+        }
 
         // Colocar las fichas en las cartas correspondientes
-        fichasGanador.forEach(fichaInfo => {
-            const cartaEl = cartasGanadorEl.querySelector(`[src="${fichaInfo.cartaId}.jpg"]`);
-            if (cartaEl) {
-                fichaInfo.fichas.forEach(fichaPos => {
-                    const ficha = document.createElement("img");
-                    ficha.src = "ficha.PNG";
-                    ficha.classList.add("ficha");
-                    ficha.style.left = fichaPos.left;
-                    ficha.style.top = fichaPos.top;
-                    cartaEl.closest(".carta-juego").appendChild(ficha);
-                });
-            }
-        });
+        if (fichasGanador) {
+            fichasGanador.forEach(fichaInfo => {
+                const cartaEl = cartasGanadorEl.querySelector(`[data-id="${fichaInfo.cartaId}"]`);
+                if (cartaEl) {
+                    fichaInfo.fichas.forEach(fichaPos => {
+                        const ficha = document.createElement("img");
+                        ficha.src = "ficha.PNG";
+                        ficha.classList.add("ficha");
+                        ficha.style.left = fichaPos.left;
+                        ficha.style.top = fichaPos.top;
+                        cartaEl.closest(".carta-juego").appendChild(ficha);
+                    });
+                }
+            });
+        }
 
         cambiarPantalla("verificacion");
       }
