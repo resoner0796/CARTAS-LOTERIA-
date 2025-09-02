@@ -133,50 +133,65 @@ io.on('connection', (socket) => {
     }
   });
   
+  // ✅✅✅ CÓDIGO CORREGIDO Y MEJORADO ✅✅✅
   socket.on('confirmar-ganador', ({ sala, ganadorId, esValido }) => {
     const salaInfo = salas[sala];
-    if (!salaInfo || socket.id !== salaInfo.hostId) return;
-    if (!salaInfo.loteriaPendiente) return;
-    if (ganadorId !== salaInfo.loteriaPendiente.ganadorId) return;
-    if (salaInfo.pagoRealizado) return;
+
+    // --- 1. Validaciones Iniciales ---
+    if (!salaInfo || socket.id !== salaInfo.hostId || !salaInfo.loteriaPendiente || ganadorId !== salaInfo.loteriaPendiente.ganadorId || salaInfo.pagoRealizado) {
+        console.warn(`[SALA: ${sala}] Intento de confirmación inválido o duplicado.`);
+        return;
+    }
 
     const jugadorQueGritoLoteria = salaInfo.jugadores[ganadorId];
-    if (!jugadorQueGritoLoteria) return;
+    if (!jugadorQueGritoLoteria) {
+        console.error(`[SALA: ${sala}] Error crítico: El jugador con ID ${ganadorId} no fue encontrado.`);
+        return;
+    }
 
-    // --- CASO: Host RECHAZA ---
+    // --- 2. Lógica de Decisión (Rechazar vs Aceptar) ---
+
+    // CASO B: El Host RECHAZA la victoria.
     if (esValido === false) {
-      console.log(`[SALA: ${sala}] Host rechazó la victoria de ${jugadorQueGritoLoteria.nickname}`);
-      io.to(sala).emit('ganador-rechazado', ganadorId);
+        console.log(`[SALA: ${sala}] El Host ha RECHAZADO la victoria de ${jugadorQueGritoLoteria.nickname}. El juego continúa.`);
+        
+        io.to(sala).emit('ganador-rechazado', ganadorId);
 
-      salaInfo.loteriaPendiente = null;
-      salaInfo.juegoIniciado = true;
-
-      // reanudar solo si no hay intervalo corriendo
-      if (!salaInfo.intervaloCartas) {
+        // Se limpia el estado de "victoria pendiente" y se reanuda el juego.
+        salaInfo.loteriaPendiente = null;
+        salaInfo.juegoIniciado = true;
         repartirCartas(sala);
-      }
-      return;
+        
+        // ¡ESTA ES LA CORRECCIÓN CLAVE! Detiene la ejecución para no pagar el bote.
+        return; 
     }
 
-    // --- CASO: Host ACEPTA ---
+    // CASO A: El Host ACEPTA la victoria.
+    // Si el código llega hasta aquí, significa que esValido es true.
     const boteActual = Number(salaInfo.bote) || 0;
+    console.log(`[SALA: ${sala}] El Host ha ACEPTADO la victoria de ${jugadorQueGritoLoteria.nickname}.`);
+
+    // Realizar la transferencia del bote
     if (boteActual > 0) {
-      jugadorQueGritoLoteria.monedas += boteActual;
-      salaInfo.bote = 0;
-      salaInfo.pagoRealizado = true;
+        jugadorQueGritoLoteria.monedas += boteActual;
+        salaInfo.bote = 0;
+        salaInfo.pagoRealizado = true; // Marcar que el pago se hizo para evitar dobles pagos.
     }
 
+    // Reiniciar el estado de apuesta de todos los jugadores para la siguiente ronda.
     for (const id in salaInfo.jugadores) {
-      salaInfo.jugadores[id].apostado = false;
+        salaInfo.jugadores[id].apostado = false;
     }
 
+    // Limpiar el estado del juego para la siguiente ronda.
     salaInfo.loteriaPendiente = null;
     salaInfo.juegoIniciado = false;
     if (salaInfo.intervaloCartas) {
-      clearInterval(salaInfo.intervaloCartas);
-      salaInfo.intervaloCartas = null;
+        clearInterval(salaInfo.intervaloCartas);
+        salaInfo.intervaloCartas = null;
     }
 
+    // Notificar a todos los clientes sobre el resultado.
     io.to(sala).emit('ganador-confirmado', ganadorId);
     io.to(sala).emit('jugadores-actualizados', salaInfo.jugadores);
     io.to(sala).emit('bote-actualizado', salaInfo.bote);
@@ -224,7 +239,7 @@ function repartirCartas(sala) {
   const salaInfo = salas[sala];
   if (!salaInfo || !salaInfo.juegoIniciado) return;
 
-  let index = 0;
+  let index = salaInfo.historial.length; // Continuar desde donde se quedó
   if (salaInfo.intervaloCartas) clearInterval(salaInfo.intervaloCartas);
 
   salaInfo.intervaloCartas = setInterval(() => {
@@ -236,7 +251,6 @@ function repartirCartas(sala) {
     const carta = salaInfo.baraja[index++];
     salaInfo.historial.push(carta);
     io.to(sala).emit('carta-cantada', carta);
-    io.to(sala).emit('historial-actualizado', salaInfo.historial);
   }, 4000);
 }
 
