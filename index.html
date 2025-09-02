@@ -15,7 +15,7 @@
       --text-color: #f0f8ff;
       --accent-blue: #4dd0e1;
       --accent-green: #aed581;
-      --accent-yellow: #ffeb3b;
+      --accent-yellow: gold;
       --border-color: #444;
       --box-shadow-color: rgba(0, 0, 0, 0.4);
     }
@@ -93,8 +93,8 @@
 
     .carta-img.seleccionada {
       transform: scale(1.08);
-      border-color: var(--accent-blue);
-      box-shadow: 0 0 15px 5px var(--accent-blue);
+      border-color: var(--accent-yellow);
+      box-shadow: 0 0 15px 5px var(--accent-yellow);
     }
 
     .carta-img:not(.seleccionada):hover {
@@ -119,8 +119,11 @@
     .ficha {
       position: absolute;
       pointer-events: none;
-      width: 20px;
+      /* Ajuste de tamaño de la ficha */
+      width: 53px; 
       height: auto;
+      max-width: 50px;
+      max-height: 50px;
       transform: translate(-50%, -50%);
       filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
     }
@@ -131,16 +134,17 @@
       margin: 0.5rem;
       border-radius: 8px;
       border: none;
-      background-color: var(--accent-blue);
+      background-color: var(--accent-yellow);
       color: var(--primary-bg);
       cursor: pointer;
       font-weight: bold;
-      transition: transform 0.1s ease, background-color 0.2s ease;
+      transition: transform 0.1s ease, background-color 0.2s ease, box-shadow 0.2s ease;
       box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
     }
 
     button:hover {
-      background-color: #58daec;
+      background-color: #ffda00;
+      box-shadow: 0 4px 12px rgba(255, 215, 0, 0.4);
     }
 
     button:active {
@@ -344,8 +348,15 @@
       color: var(--accent-yellow);
       font-weight: bold;
       font-size: 1.5rem;
+      /* Se hace visible el número del bote */
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 13;
+      text-shadow: 0 0 5px rgba(0,0,0,0.8);
     }
-
+    
     #btnApostar {
       background-color: var(--accent-green);
       color: var(--primary-bg);
@@ -358,13 +369,54 @@
     }
 
     /* --- ESTILOS DE BOTONES INDIVIDUALES --- */
-    #btnBarajear { background-color: #007bff; color: white; }
-    #btnIniciarJuego { background-color: #28a745; color: white; }
+    #btnLimpiarCartas { background-color: var(--accent-blue); color: white; }
+    #btnBarajear { background-color: var(--accent-blue); color: white; }
+    #btnIniciarJuego { background-color: var(--accent-green); color: white; }
     #btnDetenerJuego { background-color: #dc3545; color: white; }
-    #btnReiniciar { background-color: #ffc107; color: black; }
-    #btnLimpiarCartas { background-color: #17a2b8; color: white; }
+    #btnReiniciar { background-color: var(--accent-yellow); color: black; }
     #btnLoteria { background-color: var(--accent-green); color: black; }
-    
+
+    /* Modal Styles */
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 10000;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.8);
+      justify-content: center;
+      align-items: center;
+      transition: opacity 0.3s ease;
+      opacity: 0;
+    }
+
+    .modal.active {
+      display: flex;
+      opacity: 1;
+    }
+
+    .modal-content {
+      background-color: var(--secondary-bg);
+      padding: 2rem;
+      border-radius: 12px;
+      text-align: center;
+      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.4);
+      animation: modal-fadein 0.3s ease-out;
+    }
+
+    @keyframes modal-fadein {
+      from { transform: scale(0.9); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+
+    .modal-buttons {
+      margin-top: 1.5rem;
+      display: flex;
+      justify-content: center;
+      gap: 1rem;
+    }
   </style>
 </head>
 <body>
@@ -445,10 +497,10 @@
               <img src="peso.png" alt="moneda">
               <img src="peso.png" alt="moneda">
               <img src="peso.png" alt="moneda">
+              <strong id="bote-valor">0</strong>
           </div>
           <div>
               <div class="bote-info" style="display:flex;flex-direction:column;align-items:center;">
-                  <strong id="bote-valor">0</strong>
                   <span style="font-weight:600;font-size:0.8rem">Bote</span>
               </div>
               <button id="btnApostar">Apostar</button>
@@ -460,6 +512,17 @@
   </div>
 
   <div id="loteriaMensaje">¡LOTERÍA!</div>
+
+  <div id="loteriaModal" class="modal">
+    <div class="modal-content">
+      <h2 id="modalLoteriaTitulo"></h2>
+      <p id="modalLoteriaTexto"></p>
+      <div class="modal-buttons">
+        <button id="btnAceptarGanador">Aceptar</button>
+        <button id="btnRechazarGanador">Rechazar</button>
+      </div>
+    </div>
+  </div>
 
   <audio id="audioBarajear" src="barajar.mp3"></audio>
   <audio id="audioCampana" src="campana.mp3"></audio>
@@ -497,6 +560,15 @@
     const monedasEl = document.getElementById("monedas-valor");
     const boteEl = document.getElementById("bote-valor");
     let haApostadoLocal = false;
+
+    // Elementos del modal
+    const loteriaModal = document.getElementById("loteriaModal");
+    const modalLoteriaTitulo = document.getElementById("modalLoteriaTitulo");
+    const modalLoteriaTexto = document.getElementById("modalLoteriaTexto");
+    const btnAceptarGanador = document.getElementById("btnAceptarGanador");
+    const btnRechazarGanador = document.getElementById("btnRechazarGanador");
+    let ganadorTempId = "";
+
 
     btnApostar && btnApostar.addEventListener("click", () => {
       if (!salaActual) return alert("Únete a una sala primero.");
@@ -740,14 +812,27 @@
       audioVoz.play();
     });
 
+    // Nuevo manejador para el modal de lotería
     socket.on("loteria-anunciada", (quien, ganadorId) => {
-      alert(`¡${quien} ha cantado LOTERÍA!`);
       if (soyHost) {
-        const confirmar = confirm(`¿${quien} es el ganador?`);
-        if (confirmar) {
-          socket.emit('confirmar-ganador', { sala: salaActual, ganadorId });
-        }
+        ganadorTempId = ganadorId;
+        modalLoteriaTitulo.textContent = `¡${quien} ha cantado LOTERÍA!`;
+        modalLoteriaTexto.textContent = `¿Es realmente el ganador?`;
+        loteriaModal.classList.add('active');
+      } else {
+        alert(`¡${quien} ha cantado LOTERÍA!`);
       }
+    });
+
+    // Manejador del modal del host
+    btnAceptarGanador.addEventListener('click', () => {
+      socket.emit('confirmar-ganador', { sala: salaActual, ganadorId: ganadorTempId, esValido: true });
+      loteriaModal.classList.remove('active');
+    });
+
+    btnRechazarGanador.addEventListener('click', () => {
+      socket.emit('confirmar-ganador', { sala: salaActual, ganadorId: ganadorTempId, esValido: false });
+      loteriaModal.classList.remove('active');
     });
 
     socket.on("juego-detenido", () => {
