@@ -179,6 +179,8 @@ io.on('connection', (socket) => {
           // Lógica para RECHAZAR la victoria
           console.log(`Victoria de ${salaInfo.jugadores[ganadorId].nickname} rechazada por el host.`);
           io.to(sala).emit('ganador-rechazado', ganadorId);
+          // ✅ AGREGADO: Notifica a todos que el juego se reanuda
+          io.to(sala).emit('juego-reanudar');
 
           // Limpia el estado y reanuda el juego
           salaInfo.loteriaPendiente = null;
