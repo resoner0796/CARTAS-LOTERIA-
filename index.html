@@ -274,13 +274,27 @@
     
     #apuestasUI {
       display: flex;
-      justify-content: space-between; /* Ajusta la distribución */
+      justify-content: space-between;
       align-items: center;
       margin-top: 16px;
       padding: 1rem;
       background-color: var(--secondary-bg);
       border-radius: 12px;
       box-shadow: 0 4px 8px var(--box-shadow-color);
+      flex-direction: column; /* Para apilar los elementos verticalmente en el móvil */
+      gap: 1rem;
+    }
+
+    @media screen and (min-width: 768px) {
+      #apuestasUI {
+        flex-direction: row;
+      }
+    }
+
+    .saldo-jugador {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
     }
 
     .monedas-apiladas {
@@ -309,7 +323,7 @@
       font-size: 2rem;
       font-weight: bold;
       text-align: center;
-      margin: 0 1rem; /* Espacio para separar de las monedas */
+      margin-top: 0.5rem; /* Espacio para separar de las monedas */
     }
     
     /* Reestructuración para el control de apuesta */
@@ -322,31 +336,32 @@
 
     .bote-monedas {
       position: relative;
-      width: 100px;
-      height: 100px;
+      width: 65px; /* Reducido para que las monedas sean más pequeñas */
+      height: 65px; /* Reducido para que las monedas sean más pequeñas */
       display: flex;
       justify-content: center;
       align-items: center;
+      margin-bottom: 0.5rem; /* Espacio para el texto de "Bote" */
     }
     
     .bote-monedas img {
       position: absolute;
-      width: 70px;
-      height: 70px;
+      width: 48px; /* Reducido para que las monedas sean más pequeñas */
+      height: 48px; /* Reducido para que las monedas sean más pequeñas */
       filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
     }
 
-    .bote-monedas img:nth-child(2) { transform: translate(32px, 18px) scale(0.9); z-index: 2; }
-    .bote-monedas img:nth-child(3) { transform: translate(18px, 32px) scale(0.9); z-index: 3; }
-    .bote-monedas img:nth-child(4) { transform: translate(0px, 35px) scale(0.9); z-index: 4; }
-    .bote-monedas img:nth-child(5) { transform: translate(-18px, 32px) scale(0.9); z-index: 5; }
-    .bote-monedas img:nth-child(6) { transform: translate(-32px, 18px) scale(0.9); z-index: 6; }
-    .bote-monedas img:nth-child(7) { transform: translate(-35px, 0px) scale(0.9); z-index: 7; }
-    .bote-monedas img:nth-child(8) { transform: translate(-32px, -18px) scale(0.9); z-index: 8; }
-    .bote-monedas img:nth-child(9) { transform: translate(-18px, -32px) scale(0.9); z-index: 9; }
-    .bote-monedas img:nth-child(10) { transform: translate(0px, -35px) scale(0.9); z-index: 10; }
-    .bote-monedas img:nth-child(11) { transform: translate(18px, -32px) scale(0.9); z-index: 11; }
-    .bote-monedas img:nth-child(12) { transform: translate(32px, -18px) scale(0.9); z-index: 12; }
+    .bote-monedas img:nth-child(2) { transform: translate(22px, 13px); z-index: 2; }
+    .bote-monedas img:nth-child(3) { transform: translate(13px, 22px); z-index: 3; }
+    .bote-monedas img:nth-child(4) { transform: translate(0px, 25px); z-index: 4; }
+    .bote-monedas img:nth-child(5) { transform: translate(-13px, 22px); z-index: 5; }
+    .bote-monedas img:nth-child(6) { transform: translate(-22px, 13px); z-index: 6; }
+    .bote-monedas img:nth-child(7) { transform: translate(-25px, 0px); z-index: 7; }
+    .bote-monedas img:nth-child(8) { transform: translate(-22px, -13px); z-index: 8; }
+    .bote-monedas img:nth-child(9) { transform: translate(-13px, -22px); z-index: 9; }
+    .bote-monedas img:nth-child(10) { transform: translate(0px, -25px); z-index: 10; }
+    .bote-monedas img:nth-child(11) { transform: translate(13px, -22px); z-index: 11; }
+    .bote-monedas img:nth-child(12) { transform: translate(22px, -13px); z-index: 12; }
     
     #bote-valor {
       color: var(--accent-yellow);
@@ -359,7 +374,7 @@
       z-index: 13;
       text-shadow: 0 0 5px rgba(0,0,0,0.8);
     }
-
+    
     #btnApostar {
       background-color: var(--accent-green);
       color: var(--primary-bg);
@@ -461,31 +476,33 @@
       <button id="btnLoteria" onclick="emitirLoteria()">Lotería</button>
     </div>
     
-    <div id="apuestasUI" style="display:flex;align-items:center;">
-      <div style="display:flex;align-items:flex-end;">
-          <div class="monedas-apiladas">
-              <img src="peso.png" alt="peso" class="moneda-stack">
-              <img src="peso.png" alt="peso" class="moneda-stack">
-              <img src="peso.png" alt="peso" class="moneda-stack">
-              <img src="peso.png" alt="peso" class="moneda-stack">
-              <img src="peso.png" alt="peso" class="moneda-stack">
+    <div id="apuestasUI">
+      <div class="saldo-jugador">
+          <div style="display:flex;align-items:flex-end;">
+              <div class="monedas-apiladas">
+                  <img src="peso.png" alt="peso" class="moneda-stack">
+                  <img src="peso.png" alt="peso" class="moneda-stack">
+                  <img src="peso.png" alt="peso" class="moneda-stack">
+                  <img src="peso.png" alt="peso" class="moneda-stack">
+                  <img src="peso.png" alt="peso" class="moneda-stack">
+              </div>
+              <div class="monedas-apiladas">
+                  <img src="peso.png" alt="peso" class="moneda-stack">
+                  <img src="peso.png" alt="peso" class="moneda-stack">
+                  <img src="peso.png" alt="peso" class="moneda-stack">
+                  <img src="peso.png" alt="peso" class="moneda-stack">
+                  <img src="peso.png" alt="peso" class="moneda-stack">
+              </div>
+              <div class="monedas-apiladas">
+                  <img src="peso.png" alt="peso" class="moneda-stack">
+                  <img src="peso.png" alt="peso" class="moneda-stack">
+                  <img src="peso.png" alt="peso" class="moneda-stack">
+                  <img src="peso.png" alt="peso" class="moneda-stack">
+                  <img src="peso.png" alt="peso" class="moneda-stack">
+              </div>
           </div>
-          <div class="monedas-apiladas">
-              <img src="peso.png" alt="peso" class="moneda-stack">
-              <img src="peso.png" alt="peso" class="moneda-stack">
-              <img src="peso.png" alt="peso" class="moneda-stack">
-              <img src="peso.png" alt="peso" class="moneda-stack">
-              <img src="peso.png" alt="peso" class="moneda-stack">
-          </div>
-          <div class="monedas-apiladas">
-              <img src="peso.png" alt="peso" class="moneda-stack">
-              <img src="peso.png" alt="peso" class="moneda-stack">
-              <img src="peso.png" alt="peso" class="moneda-stack">
-              <img src="peso.png" alt="peso" class="moneda-stack">
-              <img src="peso.png" alt="peso" class="moneda-stack">
-          </div>
+          <strong id="monedas-valor">30</strong>
       </div>
-      <strong id="monedas-valor">30</strong>
       <div class="apuesta-control">
           <div class="bote-monedas">
               <img src="peso.png" alt="moneda">
