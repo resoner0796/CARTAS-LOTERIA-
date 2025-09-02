@@ -133,70 +133,77 @@ io.on('connection', (socket) => {
     }
   });
   
-  // ✅✅✅ CÓDIGO CORREGIDO Y MEJORADO ✅✅✅
+  // ✅✅✅ CÓDIGO CORREGIDO ✅✅✅
   socket.on('confirmar-ganador', ({ sala, ganadorId, esValido }) => {
     const salaInfo = salas[sala];
-
-    // --- 1. Validaciones Iniciales ---
-    if (!salaInfo || socket.id !== salaInfo.hostId || !salaInfo.loteriaPendiente || ganadorId !== salaInfo.loteriaPendiente.ganadorId || salaInfo.pagoRealizado) {
-        console.warn(`[SALA: ${sala}] Intento de confirmación inválido o duplicado.`);
-        return;
+  
+    // --- 1. Validaciones ---
+    // (Estas validaciones están bien, aseguran que solo el host pueda confirmar una victoria válida y pendiente)
+    if (!salaInfo || socket.id !== salaInfo.hostId || !salaInfo.loteriaPendiente || salaInfo.pagoRealizado || ganadorId !== salaInfo.loteriaPendiente.ganadorId) {
+      console.warn(`[SALA: ${sala}] Intento de confirmación inválido.`);
+      return;
     }
-
-    const jugadorQueGritoLoteria = salaInfo.jugadores[ganadorId];
-    if (!jugadorQueGritoLoteria) {
-        console.error(`[SALA: ${sala}] Error crítico: El jugador con ID ${ganadorId} no fue encontrado.`);
-        return;
+  
+    const jugadorGanador = salaInfo.jugadores[ganadorId];
+    if (!jugadorGanador) {
+      console.error(`[SALA: ${sala}] Error: El jugador con ID ${ganadorId} no fue encontrado.`);
+      return;
     }
-
-    // --- 2. Lógica de Decisión (Rechazar vs Aceptar) ---
-
-    // CASO B: El Host RECHAZA la victoria.
+  
+    // --- 2. Lógica de Decisión (Aceptar vs Rechazar) ---
+  
+    // CASO B: El Host RECHAZA la victoria (esValido es false)
     if (esValido === false) {
-        console.log(`[SALA: ${sala}] El Host ha RECHAZADO la victoria de ${jugadorQueGritoLoteria.nickname}. El juego continúa.`);
-        
-        io.to(sala).emit('ganador-rechazado', ganadorId);
-
-        // Se limpia el estado de "victoria pendiente" y se reanuda el juego.
-        salaInfo.loteriaPendiente = null;
-        salaInfo.juegoIniciado = true;
-        repartirCartas(sala);
-        
-        // ¡ESTA ES LA CORRECCIÓN CLAVE! Detiene la ejecución para no pagar el bote.
-        return; 
+      console.log(`[SALA: ${sala}] El Host RECHAZÓ la victoria de ${jugadorGanador.nickname}. El juego continúa.`);
+      
+      // Notificamos a todos que la victoria fue rechazada.
+      io.to(sala).emit('ganador-rechazado', ganadorId);
+  
+      // Limpiamos el estado de "victoria pendiente" para que alguien más pueda ganar.
+      salaInfo.loteriaPendiente = null;
+      
+      // Reanudamos el juego.
+      salaInfo.juegoIniciado = true;
+      repartirCartas(sala); // Función que sigue sacando cartas.
+      
+      // ***** LA CORRECCIÓN CLAVE *****
+      // Usamos 'return' para detener la ejecución aquí. 
+      // Si no lo hiciéramos, el código continuaría y pagaría el bote incorrectamente.
+      return; 
     }
-
-    // CASO A: El Host ACEPTA la victoria.
-    // Si el código llega hasta aquí, significa que esValido es true.
+  
+    // CASO A: El Host ACEPTA la victoria (esValido es true)
+    // Si el código llega a este punto, significa que la victoria fue aceptada.
     const boteActual = Number(salaInfo.bote) || 0;
-    console.log(`[SALA: ${sala}] El Host ha ACEPTADO la victoria de ${jugadorQueGritoLoteria.nickname}.`);
-
-    // Realizar la transferencia del bote
+    console.log(`[SALA: ${sala}] El Host ACEPTÓ la victoria de ${jugadorGanador.nickname}.`);
+  
+    // Transferimos el bote al ganador.
     if (boteActual > 0) {
-        jugadorQueGritoLoteria.monedas += boteActual;
-        salaInfo.bote = 0;
-        salaInfo.pagoRealizado = true; // Marcar que el pago se hizo para evitar dobles pagos.
+      jugadorGanador.monedas += boteActual;
+      salaInfo.bote = 0;
+      salaInfo.pagoRealizado = true; // Marcamos que el pago se hizo para evitar dobles pagos.
     }
-
-    // Reiniciar el estado de apuesta de todos los jugadores para la siguiente ronda.
+  
+    // Reiniciamos el estado de apuesta de todos para la siguiente ronda.
     for (const id in salaInfo.jugadores) {
-        salaInfo.jugadores[id].apostado = false;
+      salaInfo.jugadores[id].apostado = false;
     }
-
-    // Limpiar el estado del juego para la siguiente ronda.
+  
+    // Limpiamos la victoria pendiente y detenemos el juego.
     salaInfo.loteriaPendiente = null;
     salaInfo.juegoIniciado = false;
     if (salaInfo.intervaloCartas) {
-        clearInterval(salaInfo.intervaloCartas);
-        salaInfo.intervaloCartas = null;
+      clearInterval(salaInfo.intervaloCartas);
+      salaInfo.intervaloCartas = null;
     }
-
-    // Notificar a todos los clientes sobre el resultado.
+  
+    // Notificamos a todos los clientes sobre el resultado final.
     io.to(sala).emit('ganador-confirmado', ganadorId);
     io.to(sala).emit('jugadores-actualizados', salaInfo.jugadores);
     io.to(sala).emit('bote-actualizado', salaInfo.bote);
   });
 
+  
   socket.on('salir-sala', (sala) => {
     if (salas[sala] && salas[sala].jugadores[socket.id]) {
       const nickname = salas[sala].jugadores[socket.id].nickname;
@@ -239,7 +246,7 @@ function repartirCartas(sala) {
   const salaInfo = salas[sala];
   if (!salaInfo || !salaInfo.juegoIniciado) return;
 
-  let index = salaInfo.historial.length; // Continuar desde donde se quedó
+  let index = 0;
   if (salaInfo.intervaloCartas) clearInterval(salaInfo.intervaloCartas);
 
   salaInfo.intervaloCartas = setInterval(() => {
@@ -251,6 +258,7 @@ function repartirCartas(sala) {
     const carta = salaInfo.baraja[index++];
     salaInfo.historial.push(carta);
     io.to(sala).emit('carta-cantada', carta);
+    io.to(sala).emit('historial-actualizado', salaInfo.historial);
   }, 4000);
 }
 
