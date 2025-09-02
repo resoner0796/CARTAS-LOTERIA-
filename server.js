@@ -28,8 +28,8 @@ io.on('connection', (socket) => {
         bote: 0,
         hostId: socket.id,
         intervaloCartas: null,
-        loteriaPendiente: null,   // 👈 guardamos el anuncio de lotería
-        pagoRealizado: false      // 👈 evita pagos dobles por error
+        loteriaPendiente: null,
+        pagoRealizado: false
       };
       console.log(`Sala '${sala}' creada por ${nickname} (${socket.id})`);
       socket.emit('rol-asignado', { host: true });
@@ -119,7 +119,6 @@ io.on('connection', (socket) => {
 
   socket.on('loteria', ({ nickname, sala }) => {
     if (salas[sala] && salas[sala].juegoIniciado) {
-      // Pausa el juego y guarda la lotería pendiente
       salas[sala].juegoIniciado = false;
       if (salas[sala].intervaloCartas) clearInterval(salas[sala].intervaloCartas);
 
@@ -130,7 +129,6 @@ io.on('connection', (socket) => {
       };
       salas[sala].pagoRealizado = false;
 
-      // Solo el host recibe el modal para aceptar/rechazar
       io.to(salas[sala].hostId).emit('loteria-anunciada', nickname, socket.id);
     }
   });
@@ -138,49 +136,47 @@ io.on('connection', (socket) => {
   // ✅ BLOQUE CORREGIDO Y BLINDADO
   socket.on('confirmar-ganador', ({ sala, ganadorId, esValido }) => {
     const salaInfo = salas[sala];
-    // Debe existir la sala, debe ser el host y debe haber una lotería pendiente
-    if (!salaInfo || socket.id !== salaInfo.hostId || !salaInfo.loteriaPendiente) return;
-
+    if (!salaInfo || socket.id !== salaInfo.hostId || !salaInfo.loteriaPendiente) {
+      console.warn("Intento de confirmación inválido.");
+      return;
+    }
     const { ganadorId: propuestoId } = salaInfo.loteriaPendiente;
+    if (ganadorId !== propuestoId) {
+      console.warn("ID de ganador no coincide.");
+      return;
+    }
 
-    // Si el id no coincide con el que anunció, se ignora
-    if (ganadorId !== propuestoId) return;
-
-    // Aceptar ganador: SOLO si es boolean true estricto
     if (esValido === true) {
-      if (salaInfo.pagoRealizado) return; // ya se pagó antes, ignorar
-
+      if (salaInfo.pagoRealizado) {
+        console.warn("Intento de pago doble.");
+        return;
+      }
       const ganador = salaInfo.jugadores[ganadorId];
       const boteActual = Number(salaInfo.bote) || 0;
-
       if (ganador && boteActual > 0) {
         ganador.monedas += boteActual;
         salaInfo.bote = 0;
         salaInfo.pagoRealizado = true;
-
-        // Reiniciar estado de apuestas
         for (const id in salaInfo.jugadores) {
           salaInfo.jugadores[id].apostado = false;
         }
-
-        // Limpiar la lotería pendiente
         salaInfo.loteriaPendiente = null;
-
         io.to(sala).emit('ganador-confirmado', ganadorId);
         io.to(sala).emit('jugadores-actualizados', salaInfo.jugadores);
         io.to(sala).emit('bote-actualizado', 0);
+        
+        salaInfo.juegoIniciado = false;
+        if (salaInfo.intervaloCartas) {
+          clearInterval(salaInfo.intervaloCartas);
+          salaInfo.intervaloCartas = null;
+        }
       }
     } else {
-      // Rechazado: NO se toca el bote, NO se pagan monedas
       io.to(sala).emit('ganador-rechazado', ganadorId);
-
-      // Limpia la lotería pendiente
       salaInfo.loteriaPendiente = null;
-
-      // 🔁 (opcional) reanudar el juego automáticamente:
+      salaInfo.pagoRealizado = false;
       salaInfo.juegoIniciado = true;
       repartirCartas(sala);
-      // Si prefieres que quede pausado, comenta las dos líneas de arriba.
     }
   });
 
@@ -217,6 +213,7 @@ function repartirCartas(sala) {
   salaInfo.intervaloCartas = setInterval(() => {
     if (!salaInfo.juegoIniciado || index >= salaInfo.baraja.length) {
       clearInterval(salaInfo.intervaloCartas);
+      salaInfo.intervaloCartas = null;
       return;
     }
     const carta = salaInfo.baraja[index++];
