@@ -135,86 +135,53 @@ io.on('connection', (socket) => {
   
   socket.on('confirmar-ganador', ({ sala, ganadorId, esValido }) => {
     const salaInfo = salas[sala];
-
-    // --- 1. Validaciones Iniciales ---
-    // Si alguna de estas condiciones se cumple, la operación no es válida y nos detenemos.
-    if (!salaInfo || socket.id !== salaInfo.hostId) {
-        console.error(`[SALA: ${sala}] Intento de confirmación por alguien que no es el host (${socket.id}).`);
-        return;
-    }
-    if (!salaInfo.loteriaPendiente) {
-        console.warn(`[SALA: ${sala}] Se intentó confirmar una victoria, pero no había ninguna pendiente.`);
-        return;
-    }
-    if (ganadorId !== salaInfo.loteriaPendiente.ganadorId) {
-        console.warn(`[SALA: ${sala}] El ID del ganador (${ganadorId}) no coincide con el que estaba pendiente (${salaInfo.loteriaPendiente.ganadorId}).`);
-        return;
-    }
-    if (salaInfo.pagoRealizado) {
-        console.warn(`[SALA: ${sala}] Se intentó confirmar una victoria que ya fue pagada.`);
-        return;
-    }
+    if (!salaInfo || socket.id !== salaInfo.hostId) return;
+    if (!salaInfo.loteriaPendiente) return;
+    if (ganadorId !== salaInfo.loteriaPendiente.ganadorId) return;
+    if (salaInfo.pagoRealizado) return;
 
     const jugadorQueGritoLoteria = salaInfo.jugadores[ganadorId];
-    if (!jugadorQueGritoLoteria) {
-        console.error(`[SALA: ${sala}] Error crítico: El jugador con ID ${ganadorId} no fue encontrado.`);
-        return;
-    }
+    if (!jugadorQueGritoLoteria) return;
 
-    // --- 2. Lógica de Decisión (Aceptar vs Rechazar) ---
-
-    // CASO B: El Host RECHAZA la victoria.
+    // --- CASO: Host RECHAZA ---
     if (esValido === false) {
-        console.log(`[SALA: ${sala}] El Host ha RECHAZADO la victoria de ${jugadorQueGritoLoteria.nickname}. El juego continúa.`);
-        
-        // Se notifica a todos que la victoria fue rechazada.
-        io.to(sala).emit('ganador-rechazado', ganadorId);
+      console.log(`[SALA: ${sala}] Host rechazó la victoria de ${jugadorQueGritoLoteria.nickname}`);
+      io.to(sala).emit('ganador-rechazado', ganadorId);
 
-        // Se limpia el estado de "victoria pendiente" y se reanuda el juego.
-        salaInfo.loteriaPendiente = null;
-        salaInfo.juegoIniciado = true;
-        repartirCartas(sala); // La función que sigue sacando cartas.
-        
-        // Importante: Usamos 'return' para asegurarnos de que el código de abajo NUNCA se ejecute.
-        return; 
+      salaInfo.loteriaPendiente = null;
+      salaInfo.juegoIniciado = true;
+
+      // reanudar solo si no hay intervalo corriendo
+      if (!salaInfo.intervaloCartas) {
+        repartirCartas(sala);
+      }
+      return;
     }
 
-    // CASO A: El Host ACEPTA la victoria.
-    // Si llegamos aquí, es porque esValido es true.
+    // --- CASO: Host ACEPTA ---
     const boteActual = Number(salaInfo.bote) || 0;
-    console.log(`[SALA: ${sala}] El Host ha ACEPTADO la victoria de ${jugadorQueGritoLoteria.nickname}.`);
-    console.log(`[SALA: ${sala}] Bote a transferir: ${boteActual}. Monedas del ganador ANTES: ${jugadorQueGritoLoteria.monedas}.`);
-
-    // Realizar la transferencia del bote
-    if (ganadorQueGritoLoteria && boteActual > 0) {
-        jugadorQueGritoLoteria.monedas += boteActual;
-        salaInfo.bote = 0;
-        salaInfo.pagoRealizado = true; // Marcamos que el pago se hizo para evitar dobles pagos.
+    if (boteActual > 0) {
+      jugadorQueGritoLoteria.monedas += boteActual;
+      salaInfo.bote = 0;
+      salaInfo.pagoRealizado = true;
     }
 
-    console.log(`[SALA: ${sala}] Monedas del ganador DESPUÉS: ${jugadorQueGritoLoteria.monedas}. Bote ahora es: ${salaInfo.bote}.`);
-
-    // Reiniciar el estado de apuesta de todos los jugadores para la siguiente ronda.
     for (const id in salaInfo.jugadores) {
-        salaInfo.jugadores[id].apostado = false;
+      salaInfo.jugadores[id].apostado = false;
     }
 
-    // Limpiar el estado de "victoria pendiente" y detener el juego.
     salaInfo.loteriaPendiente = null;
     salaInfo.juegoIniciado = false;
     if (salaInfo.intervaloCartas) {
-        clearInterval(salaInfo.intervaloCartas);
-        salaInfo.intervaloCartas = null;
+      clearInterval(salaInfo.intervaloCartas);
+      salaInfo.intervaloCartas = null;
     }
 
-    // Notificar a todos los clientes sobre el resultado.
     io.to(sala).emit('ganador-confirmado', ganadorId);
     io.to(sala).emit('jugadores-actualizados', salaInfo.jugadores);
     io.to(sala).emit('bote-actualizado', salaInfo.bote);
-});
+  });
 
-  
-  // ✅✅ AGREGADO: Evento para que el usuario salga de la sala ✅✅
   socket.on('salir-sala', (sala) => {
     if (salas[sala] && salas[sala].jugadores[socket.id]) {
       const nickname = salas[sala].jugadores[socket.id].nickname;
@@ -229,7 +196,6 @@ io.on('connection', (socket) => {
       }
     }
   });
-
 
   socket.on('disconnect', () => {
     console.log('Jugador desconectado:', socket.id);
