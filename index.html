@@ -902,11 +902,13 @@
     btnAceptarGanador.addEventListener('click', () => {
       // **Línea corregida**
       socket.emit('confirmar-ganador', { sala: salaActual, ganadorId: ganadorTempId, esValido: true });
+      loteriaModal.classList.remove('active');
     });
 
     btnRechazarGanador.addEventListener('click', () => {
       // **Línea corregida**
       socket.emit('confirmar-ganador', { sala: salaActual, ganadorId: ganadorTempId, esValido: false });
+      loteriaModal.classList.remove('active');
     });
 
     socket.on('ganador-confirmado', () => {
