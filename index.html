@@ -358,6 +358,7 @@
     #btnDetenerJuego { background-color: #dc3545; color: white; }
     #btnReiniciar { background-color: var(--accent-yellow); color: black; }
     #btnLoteria { background-color: var(--accent-green); color: black; }
+    #btnSalirSala { background-color: #dc3545; color: white; }
 
     /* Modal Styles */
     .modal {
@@ -535,6 +536,7 @@
       <button id="btnDetenerJuego" onclick="socket.emit('detener-juego', salaActual)">Detener juego</button>
       <button id="btnReiniciar" onclick="socket.emit('reiniciar-partida', salaActual)">Reiniciar partida</button>
       <button id="btnLoteria" onclick="emitirLoteria()">Lotería</button>
+      <button id="btnSalirSala">Salir de sala</button>
     </div>
     
     <div id="apuestasUI">
@@ -631,6 +633,9 @@
     const btnIniciar = document.getElementById("btnIniciar");
     const historial = document.getElementById("historial");
     const jugadoresLista = document.getElementById("jugadoresLista");
+    
+    // ✅✅ Agregado el botón de salir de sala ✅✅
+    const btnSalirSala = document.getElementById("btnSalirSala");
 
     const btnApostar = document.getElementById("btnApostar");
     const monedasEl = document.getElementById("monedas-valor");
@@ -653,6 +658,19 @@
       btnApostar.disabled = true;
     });
 
+    // ✅✅ AGREGADO: Lógica para el botón de salir de sala ✅✅
+    btnSalirSala && btnSalirSala.addEventListener("click", () => {
+      socket.emit("salir-sala", salaActual);
+      limpiarFichas();
+      seleccionadas = [];
+      juegoCartas.innerHTML = "";
+      btnIniciar.style.display = "none";
+      historial.innerHTML = "";
+      haApostadoLocal = false;
+      if (btnApostar) btnApostar.disabled = false;
+      cambiarPantalla("sala");
+    });
+    
     socket.on("error-apuesta", msg => {
       alert(msg || "Error al apostar");
       haApostadoLocal = false;
@@ -746,10 +764,6 @@
       btnIniciar.style.display = "none";
       cambiarPantalla("seleccion");
       generarCartas();
-      if (btnApostar) {
-        haApostadoLocal = false;
-        btnApostar.disabled = false;
-      }
       limpiarFichas();
       historial.innerHTML = "";
     });
@@ -852,21 +866,21 @@
       });
     });
 
+    // ✅✅ CORRECCIÓN: Lógica para restablecer el botón de apostar ✅✅
     socket.on("jugadores-actualizados", jugadores => {
       jugadoresGlobal = jugadores;
       if (jugadores[miId]) {
         monedasEl.textContent = jugadores[miId].monedas;
+        haApostadoLocal = jugadores[miId].apostado; // Sincroniza el estado local con el del servidor
+      }
+      if (btnApostar) {
+        btnApostar.disabled = haApostadoLocal; // Deshabilita/Habilita el botón según el estado del servidor
       }
       jugadoresLista.innerHTML = "<h3>Jugadores conectados:</h3>" +
         Object.values(jugadores).map(j => {
           const check = j.apostado ? "💸" : "";
-          const monedas = (typeof j.monedas !== "undefined") ? j.monedas : "-";
           return `<div>${j.nickname} ${check}</div>`;
         }).join("");
-      if (jugadores[miId] && !jugadores[miId].apostado && btnApostar) {
-        haApostadoLocal = false;
-        btnApostar.disabled = false;
-      }
     });
     
     socket.on('monedas-actualizado', (monedas) => {
@@ -878,18 +892,6 @@
     socket.on('bote-actualizado', (bote) => {
       boteEl.textContent = bote;
     });
-
-// ✅✅ BLOQUE AÑADIDO PARA LA LÓGICA DE RECHAZO ✅✅
-socket.on("juego-reanudar", () => {
-  // Oculta el mensaje de lotería si está visible
-  loteriaMensaje.style.display = "none";
-  // Oculta el modal del host si está visible
-  loteriaModal.classList.remove("active");
-  // Aquí puedes añadir cualquier otra lógica necesaria para reanudar la interfaz del juego
-  // Por ejemplo, activar botones que se desactivaron, etc.
-});
-
-
 
     socket.on("carta-cantada", (cartaId) => {
       const img = document.createElement("img");
@@ -922,7 +924,6 @@ btnAceptarGanador.addEventListener("click", () => {
 // Botón rechazar ganador
 btnRechazarGanador.addEventListener("click", () => {
   if (ganadorTempId) {
-    // ✅ Aquí se envía explícitamente `esValido: false`
     socket.emit("confirmar-ganador", { sala: salaActual, ganadorId: ganadorTempId, esValido: false });
     loteriaModal.classList.remove("active");
     ganadorTempId = "";
