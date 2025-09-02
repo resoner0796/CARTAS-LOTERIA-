@@ -2,9 +2,7 @@ const express = require('express');
 const app = express();
 const http = require('http').createServer(app);
 const io = require('socket.io')(http, {
-  cors: {
-    origin: '*',
-  }
+  cors: { origin: '*' }
 });
 
 const PORT = process.env.PORT || 3000;
@@ -29,6 +27,7 @@ io.on('connection', (socket) => {
         juegoIniciado: false,
         bote: 0,
         hostId: socket.id,
+        intervaloCartas: null, // 👈 controlar intervalos
       };
       console.log(`Sala '${sala}' creada por ${nickname} (${socket.id})`);
       socket.emit('rol-asignado', { host: true });
@@ -83,6 +82,7 @@ io.on('connection', (socket) => {
   socket.on('detener-juego', (sala) => {
     if (salas[sala] && socket.id === salas[sala].hostId) {
       salas[sala].juegoIniciado = false;
+      if (salas[sala].intervaloCartas) clearInterval(salas[sala].intervaloCartas);
       io.to(sala).emit('juego-detenido');
     }
   });
@@ -100,6 +100,7 @@ io.on('connection', (socket) => {
       salas[sala].juegoIniciado = false;
       salas[sala].historial = [];
       salas[sala].bote = 0;
+      if (salas[sala].intervaloCartas) clearInterval(salas[sala].intervaloCartas);
       for (const id in salas[sala].jugadores) {
         salas[sala].jugadores[id].apostado = false;
         salas[sala].jugadores[id].cartas = [];
@@ -113,20 +114,18 @@ io.on('connection', (socket) => {
   socket.on('loteria', ({ nickname, sala }) => {
     if (salas[sala] && salas[sala].juegoIniciado) {
       salas[sala].juegoIniciado = false;
+      if (salas[sala].intervaloCartas) clearInterval(salas[sala].intervaloCartas);
       io.to(salas[sala].hostId).emit('loteria-anunciada', nickname, socket.id);
     }
   });
 
-  // Lógica corregida para la confirmación del ganador
   socket.on('confirmar-ganador', ({ sala, ganadorId, esValido }) => {
     if (salas[sala] && socket.id === salas[sala].hostId) {
       if (esValido) {
         const ganador = salas[sala].jugadores[ganadorId];
         if (ganador) {
-          // Transfiere el bote al ganador
           ganador.monedas += salas[sala].bote;
           salas[sala].bote = 0;
-          // Reinicia el estado de 'apostado' para todos los jugadores
           for (const id in salas[sala].jugadores) {
             salas[sala].jugadores[id].apostado = false;
           }
@@ -135,10 +134,9 @@ io.on('connection', (socket) => {
           io.to(sala).emit('bote-actualizado', 0);
         }
       } else {
-        // Solo se notifica que fue rechazado, sin transferencias ni reinicios
         io.to(sala).emit('ganador-rechazado', ganadorId);
-        // El juego simplemente se reanuda
         salas[sala].juegoIniciado = true;
+        repartirCartas(sala); // 👈 reanudar sin transferir fondos
       }
     }
   });
@@ -152,6 +150,7 @@ io.on('connection', (socket) => {
         console.log(`${nickname} ha dejado la sala '${sala}'`);
         io.to(sala).emit('jugadores-actualizados', salas[sala].jugadores);
         if (Object.keys(salas[sala].jugadores).length === 0) {
+          if (salas[sala].intervaloCartas) clearInterval(salas[sala].intervaloCartas);
           delete salas[sala];
           console.log(`Sala '${sala}' eliminada.`);
         }
@@ -166,13 +165,15 @@ function mezclarBaraja() {
 }
 
 function repartirCartas(sala) {
-  let index = 0;
   const salaInfo = salas[sala];
   if (!salaInfo || !salaInfo.juegoIniciado) return;
 
-  const intervalo = setInterval(() => {
+  let index = 0;
+  if (salaInfo.intervaloCartas) clearInterval(salaInfo.intervaloCartas);
+
+  salaInfo.intervaloCartas = setInterval(() => {
     if (!salaInfo.juegoIniciado || index >= salaInfo.baraja.length) {
-      clearInterval(intervalo);
+      clearInterval(salaInfo.intervaloCartas);
       return;
     }
     const carta = salaInfo.baraja[index++];
