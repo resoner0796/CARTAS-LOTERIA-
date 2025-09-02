@@ -888,39 +888,48 @@
       audioVoz.play();
     });
 
-    socket.on("loteria-anunciada", (quien, ganadorId) => {
-      if (soyHost) {
-        ganadorTempId = ganadorId;
-        modalLoteriaTitulo.textContent = `¡${quien} ha cantado LOTERÍA!`;
-        modalLoteriaTexto.textContent = `¿Es realmente el ganador?`;
-        loteriaModal.classList.add('active');
-      } else {
-        alert(`¡${quien} ha cantado LOTERÍA!`);
-      }
-    });
+  // Cuando el host recibe la notificación de lotería
+socket.on("loteria-anunciada", (nicknameGanador, idGanador) => {
+  if (soyHost) {
+    ganadorTempId = idGanador;
+    modalLoteriaTitulo.textContent = "¡Lotería anunciada!";
+    modalLoteriaTexto.textContent = `${nicknameGanador} dice que tiene LOTERÍA. ¿Es correcto?`;
+    loteriaModal.classList.add("active");
+  }
+});
 
-    btnAceptarGanador.addEventListener('click', () => {
-      // **Línea corregida**
-      socket.emit('confirmar-ganador', { sala: salaActual, ganadorId: ganadorTempId, esValido: true });
-      loteriaModal.classList.remove('active');
-    });
+// Botón aceptar ganador
+btnAceptarGanador.addEventListener("click", () => {
+  if (ganadorTempId) {
+    socket.emit("confirmar-ganador", { sala: salaActual, ganadorId: ganadorTempId, esValido: true });
+    loteriaModal.classList.remove("active");
+    ganadorTempId = "";
+  }
+});
 
-    btnRechazarGanador.addEventListener('click', () => {
-      // **Línea corregida**
-      socket.emit('confirmar-ganador', { sala: salaActual, ganadorId: ganadorTempId, esValido: false });
-      loteriaModal.classList.remove('active');
-    });
+// Botón rechazar ganador
+btnRechazarGanador.addEventListener("click", () => {
+  if (ganadorTempId) {
+    socket.emit("confirmar-ganador", { sala: salaActual, ganadorId: ganadorTempId, esValido: false });
+    loteriaModal.classList.remove("active");
+    ganadorTempId = "";
+  }
+});
 
-    socket.on('ganador-confirmado', () => {
-      alert("¡Lotería confirmada! Reiniciando partida...");
-      audioAplausos.play();
-      loteriaModal.classList.remove('active');
-    });
+// Cuando se confirma al ganador (para todos los jugadores)
+socket.on("ganador-confirmado", (ganadorId) => {
+  if (jugadoresGlobal[ganadorId]) {
+    alert(`🎉 ${jugadoresGlobal[ganadorId].nickname} ganó el bote!`);
+    audioAplausos.play().catch(() => {});
+  }
+  loteriaMensaje.style.display = "none";
+});
 
-    socket.on('ganador-rechazado', () => {
-      alert("La lotería fue rechazada. El juego continúa.");
-      loteriaModal.classList.remove('active');
-    });
+// Cuando el host rechaza el ganador
+socket.on("ganador-rechazado", (ganadorId) => {
+  alert(`${jugadoresGlobal[ganadorId]?.nickname || "Jugador"} fue rechazado. ¡Sigue el juego!`);
+  loteriaMensaje.style.display = "none";
+});
 
     socket.on("juego-detenido", () => {
       if (soyHost) {
