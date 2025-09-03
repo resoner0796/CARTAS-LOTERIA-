@@ -259,7 +259,7 @@
       box-shadow: 0 4px 8px var(--box-shadow-color);
       flex-direction: row;
       gap: 1rem;
-      width: 90%; /* Ancho reducido para móviles */
+      width: 90%;
     }
     
     .saldo-jugador, .apuesta-control {
@@ -298,7 +298,6 @@
       margin-top: 0.5rem;
     }
     
-    /* Ajuste de tamaño de las monedas del bote */
     .bote-monedas {
       position: relative;
       width: 55px;
@@ -351,7 +350,6 @@
       background-color: #c9e6a0;
     }
 
-    /* --- ESTILOS DE BOTONES INDIVIDUALES --- */
     #btnLimpiarCartas { background-color: var(--accent-blue); color: white; }
     #btnBarajear { background-color: var(--accent-blue); color: white; }
     #btnIniciarJuego { background-color: var(--accent-green); color: white; }
@@ -360,7 +358,6 @@
     #btnLoteria { background-color: var(--accent-green); color: black; }
     #btnSalirSala { background-color: #dc3545; color: white; }
 
-    /* Modal Styles */
     .modal {
       display: none;
       position: fixed;
@@ -405,7 +402,7 @@
     /* Estilos para móviles en vertical */
     .juego-cartas {
         display: flex;
-        flex-wrap: wrap; /* Permite que las cartas bajen a una nueva fila */
+        flex-wrap: wrap; 
         justify-content: center;
         width: 100%;
         gap: 1.25rem;
@@ -414,18 +411,18 @@
     }
 
     .juego-cartas .carta-juego {
-        flex-basis: 45%; /* Cada carta ocupa el 45% del ancho para dos columnas */
+        flex-basis: 45%; 
         max-width: 45%;
     }
 
     /* Media query para orientación horizontal */
     @media (orientation: landscape) {
         .juego-cartas {
-            flex-wrap: nowrap; /* Fuerza a las cartas a estar en una sola fila */
+            flex-wrap: nowrap; 
         }
 
         .juego-cartas .carta-juego {
-            flex-basis: 25%; /* Cada carta ocupa el 25% del ancho */
+            flex-basis: 25%;
             max-width: 25%;
         }
     }
@@ -442,11 +439,11 @@
       .juego-cartas {
         max-width: 800px;
         padding: 0 20px;
-        flex-wrap: nowrap; /* Asegura que no se envuelvan */
+        flex-wrap: nowrap;
       }
       
       .juego-cartas .carta-juego {
-        flex-basis: 183px; /* Tamaño fijo para escritorio */
+        flex-basis: 183px;
         max-width: 183px;
       }
       
@@ -596,6 +593,7 @@
     <div class="modal-content">
       <h2 id="modalLoteriaTitulo"></h2>
       <p id="modalLoteriaTexto"></p>
+      <div id="modalVerificationArea" class="juego-cartas" style="margin-top: 1rem; margin-bottom: 1rem; transform: scale(0.8); gap: 0.8rem;"></div>
       <div class="modal-buttons">
         <button id="btnAceptarGanador">Aceptar</button>
         <button id="btnRechazarGanador">Rechazar</button>
@@ -646,6 +644,7 @@
     const modalLoteriaTexto = document.getElementById("modalLoteriaTexto");
     const btnAceptarGanador = document.getElementById("btnAceptarGanador");
     const btnRechazarGanador = document.getElementById("btnRechazarGanador");
+    const modalVerificationArea = document.getElementById("modalVerificationArea");
     let ganadorTempId = "";
 
     btnApostar && btnApostar.addEventListener("click", () => {
@@ -781,7 +780,7 @@
     function seleccionarCarta(img) {
       const id = img.dataset.id;
       if (seleccionadas.includes(id)) return;
-      if (img.style.pointerEvents === 'none') return; // No seleccionar cartas desactivadas
+      if (img.style.pointerEvents === 'none') return; 
       if (seleccionadas.length < 4) {
         img.classList.add("seleccionada");
         seleccionadas.push(id);
@@ -790,12 +789,14 @@
       }
     }
 
+    // ✅✅✅ LÓGICA MEJORADA AQUÍ ✅✅✅
     btnIniciar.onclick = () => {
       cambiarPantalla("juego");
       juegoCartas.innerHTML = "";
       seleccionadas.forEach(id => {
         const contenedor = document.createElement("div");
         contenedor.classList.add("carta-juego");
+        contenedor.dataset.id = id; // Asignamos ID para luego encontrarlo
         contenedor.innerHTML = `<img src="${id}.jpg" class="carta-img seleccionada">`;
         contenedor.onclick = e => marcarFicha(e, contenedor);
         juegoCartas.appendChild(contenedor);
@@ -821,12 +822,34 @@
       document.querySelectorAll(".ficha").forEach(f => f.remove());
     }
 
+    // ✅✅✅ LÓGICA MEJORADA AQUÍ ✅✅✅
     function emitirLoteria() {
       audioCorre.pause();
       audioCampana.pause();
       audioBarajear.pause();
       mostrarLoteriaMensaje();
-      socket.emit("loteria", { nickname, sala: salaActual });
+      
+      // Construir el objeto con el estado del tablero
+      const boardState = {
+        cards: seleccionadas,
+        chips: {}
+      };
+
+      document.querySelectorAll('#juegoCartas .carta-juego').forEach(cardContainer => {
+        const cardId = cardContainer.dataset.id;
+        const cardChips = [];
+        cardContainer.querySelectorAll('.ficha').forEach(ficha => {
+          cardChips.push({
+            left: ficha.style.left,
+            top: ficha.style.top
+          });
+        });
+        if (cardChips.length > 0) {
+          boardState.chips[cardId] = cardChips;
+        }
+      });
+
+      socket.emit("loteria", { nickname, sala: salaActual, boardState });
     }
 
     function mostrarLoteriaMensaje() {
@@ -852,7 +875,6 @@
           img.style.opacity = 0.3;
           img.style.pointerEvents = "none";
         } else {
-          // Asegurarse de que las cartas que no están desactivadas estén activas
           img.style.opacity = 1;
           img.style.pointerEvents = "auto";
         }
@@ -890,16 +912,46 @@
       const formattedId = String(cartaId).padStart(2, '0');
       img.src = `${formattedId}.png`;
       historial.prepend(img);
-      historial.scrollLeft = 0; // Para ver siempre la última
+      historial.scrollLeft = 0;
       const audioVoz = new Audio(`${formattedId}.mp3`);
       audioVoz.play();
     });
 
-    socket.on("loteria-anunciada", (nicknameGanador, idGanador) => {
+    // ✅✅✅ LÓGICA MEJORADA AQUÍ ✅✅✅
+    socket.on("loteria-anunciada", (nicknameGanador, idGanador, boardState) => {
         if (soyHost) {
             ganadorTempId = idGanador;
             modalLoteriaTitulo.textContent = "¡Lotería anunciada!";
-            modalLoteriaTexto.textContent = `${nicknameGanador} dice que tiene LOTERÍA. ¿Es correcto?`;
+            modalLoteriaTexto.textContent = `${nicknameGanador} dice ¡LOTERÍA! Revisa su tabla:`;
+            
+            modalVerificationArea.innerHTML = ''; // Limpiar área antes de usar
+
+            if (boardState && boardState.cards) {
+                boardState.cards.forEach(cardId => {
+                    const cardContainer = document.createElement('div');
+                    cardContainer.className = 'carta-juego';
+
+                    const cardImg = document.createElement('img');
+                    cardImg.src = `${cardId}.jpg`;
+                    cardImg.className = 'carta-img seleccionada';
+                    cardContainer.appendChild(cardImg);
+
+                    if (boardState.chips && boardState.chips[cardId]) {
+                        boardState.chips[cardId].forEach(chipPos => {
+                            const ficha = document.createElement("img");
+                            ficha.src = "ficha.PNG";
+                            ficha.className = "ficha";
+                            ficha.style.left = chipPos.left;
+                            ficha.style.top = chipPos.top;
+                            cardContainer.appendChild(ficha);
+                        });
+                    }
+                    modalVerificationArea.appendChild(cardContainer);
+                });
+            } else {
+                modalVerificationArea.textContent = 'No se pudo cargar la tabla del jugador.';
+            }
+
             loteriaModal.classList.add("active");
         }
     });
@@ -908,6 +960,7 @@
         if (ganadorTempId) {
             socket.emit("confirmar-ganador", { sala: salaActual, ganadorId: ganadorTempId, esValido: true });
             loteriaModal.classList.remove("active");
+            modalVerificationArea.innerHTML = '';
             ganadorTempId = "";
         }
     });
@@ -916,6 +969,7 @@
         if (ganadorTempId) {
             socket.emit("confirmar-ganador", { sala: salaActual, ganadorId: ganadorTempId, esValido: false });
             loteriaModal.classList.remove("active");
+            modalVerificationArea.innerHTML = '';
             ganadorTempId = "";
         }
     });
