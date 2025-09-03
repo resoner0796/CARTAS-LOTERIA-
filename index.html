@@ -696,7 +696,7 @@
     const verificacionContainer = document.getElementById("verificacion-cartas-container");
     let ganadorTempId = "";
 
-    // --- ✅ Nuevos elementos del Modal de Resultado ✅ ---
+    // --- Nuevos elementos del Modal de Resultado ---
     const resultadoModal = document.getElementById("resultadoModal");
     const modalResultadoTitulo = document.getElementById("modalResultadoTitulo");
     const modalResultadoTexto = document.getElementById("modalResultadoTexto");
@@ -713,7 +713,6 @@
     window.onload = () => setTimeout(() => cambiarPantalla("sala"), 1000);
     btnCerrarResultado.addEventListener('click', () => resultadoModal.classList.remove('active'));
 
-    // --- ✅ Nueva función para mostrar el modal de resultado ✅ ---
     function mostrarResultado(titulo, texto) {
         modalResultadoTitulo.textContent = titulo;
         modalResultadoTexto.innerHTML = texto;
