@@ -716,7 +716,7 @@
     // --- ✅ Nueva función para mostrar el modal de resultado ✅ ---
     function mostrarResultado(titulo, texto) {
         modalResultadoTitulo.textContent = titulo;
-        modalResultadoTexto.innerHTML = texto; // innerHTML para permitir emojis como 🎉
+        modalResultadoTexto.innerHTML = texto;
         resultadoModal.classList.add('active');
     }
 
@@ -761,7 +761,6 @@
 
     function irANickname() {
         salaActual = document.getElementById("salaSelect").value;
-        // Lógica de fondos...
         cambiarPantalla("nickname");
     }
 
@@ -834,12 +833,13 @@
         const contenedor = document.createElement("div");
         contenedor.classList.add("carta-juego");
         contenedor.innerHTML = `<img src="${id}.jpg" class="carta-img-juego">`;
-        contenedor.onclick = e => marcarFicha(e, contenedor);
+        contenedor.addEventListener('click', marcarFicha); 
         juegoCartas.appendChild(contenedor);
       });
     };
 
-    function marcarFicha(e, contenedor) {
+    function marcarFicha(e) {
+      const contenedor = e.currentTarget;
       const img = contenedor.querySelector("img");
       const bounds = img.getBoundingClientRect();
       const x = e.clientX - bounds.left;
@@ -856,7 +856,6 @@
       document.querySelectorAll(".ficha").forEach(f => f.remove());
     }
 
-    // --- ✅ FUNCIÓN MODIFICADA PARA ENVIAR ESTADO DEL JUEGO ✅ ---
     function emitirLoteria() {
       audioCorre.pause();
       audioCampana.pause();
@@ -917,14 +916,13 @@
       audioVoz.play();
     });
 
-    // --- ✅ LÓGICA MODIFICADA PARA MOSTRAR TABLERO DE VERIFICACIÓN ✅ ---
     socket.on("loteria-anunciada", ({ nicknameGanador, idGanador, estadoJuego }) => {
         if (soyHost) {
             ganadorTempId = idGanador;
             modalLoteriaTitulo.textContent = "¡Lotería Anunciada!";
             modalLoteriaTexto.textContent = `${nicknameGanador} dice que ganó. ¿Es correcto?`;
             
-            verificacionContainer.innerHTML = ""; // Limpiar el contenedor
+            verificacionContainer.innerHTML = "";
             estadoJuego.forEach(cartaData => {
                 const contenedor = document.createElement("div");
                 contenedor.className = "carta-verificacion";
@@ -952,7 +950,7 @@
         if (ganadorTempId) {
             socket.emit("confirmar-ganador", { sala: salaActual, ganadorId: ganadorTempId, esValido: true });
             loteriaModal.classList.remove("active");
-            verificacionContainer.innerHTML = ""; // Limpiar al cerrar
+            verificacionContainer.innerHTML = "";
             ganadorTempId = "";
         }
     });
@@ -961,12 +959,11 @@
         if (ganadorTempId) {
             socket.emit("confirmar-ganador", { sala: salaActual, ganadorId: ganadorTempId, esValido: false });
             loteriaModal.classList.remove("active");
-            verificacionContainer.innerHTML = ""; // Limpiar al cerrar
+            verificacionContainer.innerHTML = "";
             ganadorTempId = "";
         }
     });
 
-    // --- ✅ EVENTOS MODIFICADOS PARA USAR EL NUEVO MODAL ✅ ---
     socket.on("ganador-confirmado", (ganadorId) => {
         if (jugadoresGlobal[ganadorId]) {
             mostrarResultado("¡Tenemos un Ganador!", `🎉 ${jugadoresGlobal[ganadorId].nickname} ganó el bote!`);
@@ -979,7 +976,6 @@
         mostrarResultado("Victoria Rechazada", `${jugadoresGlobal[ganadorId]?.nickname || "Jugador"} fue rechazado. ¡Sigue el juego!`);
         loteriaMensaje.style.display = "none";
     });
-    
   </script>
 </body>
 </html>
