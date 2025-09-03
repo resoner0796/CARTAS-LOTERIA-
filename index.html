@@ -825,7 +825,7 @@
         socket.emit("seleccionar-carta", { carta: id, sala: salaActual });
         if (seleccionadas.length >= 2) btnIniciar.style.display = "block";
       }
-    }
+    });
 
     btnIniciar.onclick = () => {
       cambiarPantalla("juego");
