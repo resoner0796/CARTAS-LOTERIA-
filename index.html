@@ -823,7 +823,7 @@
         socket.emit("seleccionar-carta", { carta: id, sala: salaActual });
         if (seleccionadas.length >= 2) btnIniciar.style.display = "block";
       }
-    });
+    }
 
     btnIniciar.onclick = () => {
       cambiarPantalla("juego");
@@ -876,8 +876,9 @@
       socket.emit("loteria", { nickname, sala: salaActual, estadoJuego });
     }
 
+    // ✅ ¡CORRECCIÓN AQUÍ! Se añadió el par de llaves a la función.
     function mostrarLoteriaMensaje() {
-      // Lógica de confeti...
+        // Lógica de confeti...
     }
 
     socket.on("cartas-desactivadas", ids => {
