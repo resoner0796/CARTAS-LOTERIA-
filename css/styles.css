@@ -1,0 +1,481 @@
+:root {
+  --primary-bg: #1e2a38;
+  --secondary-bg: #2d3e50;
+  --text-color: #f0f8ff;
+  --accent-blue: #4dd0e1;
+  --accent-green: #aed581;
+  --accent-yellow: gold;
+  --border-color: #444;
+  --box-shadow-color: rgba(0, 0, 0, 0.4);
+}
+
+body {
+  margin: 0;
+  background-color: var(--primary-bg);
+  color: var(--text-color);
+  font-family: 'Segoe UI', 'Roboto', sans-serif;
+  overflow: hidden;
+  min-height: 100vh;
+  width: 100vw;
+}
+
+.pantalla {
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  overflow-y: auto;
+  padding: 1rem;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  transition: opacity 0.5s ease-in;
+  box-sizing: border-box;
+}
+
+.pantalla.activa {
+  display: flex;
+}
+
+/* RUTA ACTUALIZADA: salimos de css (../) y entramos a assets */
+#pantallaSplash {
+  background-image: url("../assets/imagenes/ui/splash.PNG");
+}
+
+#pantallaSplash h1 {
+  position: absolute;
+  bottom: 2rem;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 1.5rem;
+  text-align: center;
+  text-shadow: 0 0 8px black;
+  font-weight: 300;
+}
+
+#pantallaSala, #pantallaNickname {
+  background-color: var(--secondary-bg);
+}
+ 
+/* RUTA ACTUALIZADA */
+#pantallaSeleccion, #pantallaJuego {
+  background-image: url("../assets/imagenes/ui/fondo-seleccion.PNG");
+}
+
+.cartas-container, .juego-cartas {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 1.25rem;
+  padding: 1rem 0;
+}
+
+.carta-img {
+  width: 180px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  max-width: 100%;
+  height: auto;
+  border: 3px solid transparent;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.carta-img.seleccionada {
+  transform: scale(1.08);
+  border-color: var(--accent-yellow);
+  box-shadow: 0 0 15px 5px var(--accent-yellow);
+}
+
+.carta-img:not(.seleccionada):hover {
+  transform: scale(1.05);
+}
+
+.carta-juego {
+  position: relative;
+  width: 183px;
+  transition: transform 0.2s ease;
+}
+
+.carta-juego img {
+  width: 100%;
+  border-radius: 6px;
+}
+ 
+.carta-juego:active {
+  transform: scale(0.98);
+}
+
+.ficha {
+  position: absolute;
+  pointer-events: none;
+  width: 53px; 
+  height: auto;
+  max-width: 50px;
+  max-height: 50px;
+  transform: translate(-50%, -50%);
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
+}
+
+button {
+  padding: 0.8rem 1.6rem;
+  font-size: 1rem;
+  margin: 0.5rem;
+  border-radius: 8px;
+  border: none;
+  background-color: var(--accent-yellow);
+  color: var(--primary-bg);
+  cursor: pointer;
+  font-weight: bold;
+  transition: transform 0.1s ease, background-color 0.2s ease, box-shadow 0.2s ease;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+}
+
+button:hover {
+  background-color: #ffda00;
+  box-shadow: 0 4px 12px rgba(255, 215, 0, 0.4);
+}
+
+button:active {
+  transform: translateY(2px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+button:disabled {
+  background-color: var(--border-color);
+  color: #999;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+#jugadoresLista {
+  margin-top: 1.5rem;
+  font-size: 1rem;
+  text-align: center;
+  background-color: var(--secondary-bg);
+  padding: 0.8rem;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px var(--box-shadow-color);
+}
+
+#jugadoresLista div {
+  padding: 0.25rem 0;
+}
+
+#loteriaMensaje {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(1);
+  font-size: 4rem;
+  color: var(--accent-yellow);
+  font-weight: bold;
+  background-color: rgba(0, 0, 0, 0.7);
+  padding: 20px 40px;
+  border-radius: 20px;
+  z-index: 9999;
+  display: none;
+  user-select: none;
+  animation: pulsate 1s infinite alternate;
+}
+
+@keyframes pulsate {
+  from { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+  to { transform: translate(-50%, -50%) scale(1.1); opacity: 0.9; }
+}
+
+.confeti {
+  position: fixed;
+  width: 10px;
+  height: 10px;
+  background-color: var(--accent-yellow);
+  z-index: 9998;
+  animation: caer 4s linear forwards;
+  border-radius: 50%;
+}
+
+@keyframes caer {
+  to {
+    transform: translateY(100vh) rotate(360deg);
+    opacity: 0;
+  }
+}
+ 
+.historial-container {
+  width: 100%;
+  padding: 8px;
+  background-color: rgba(0, 0, 0, 0.3);
+  border-radius: 12px;
+  box-shadow: 0 4px 8px var(--box-shadow-color);
+  margin-bottom: 20px;
+}
+
+#historial {
+  display: flex;
+  overflow-x: auto;
+  gap: 10px;
+  padding: 6px;
+  white-space: nowrap;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+#historial::-webkit-scrollbar {
+  display: none;
+}
+
+#historial img {
+  width: 50px;
+  height: 70px;
+  border-radius: 8px;
+  border: 2px solid var(--border-color);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+  transition: transform 0.2s ease;
+}
+ 
+#historial img:hover {
+  transform: translateY(-4px);
+}
+ 
+#apuestasUI {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 16px;
+  padding: 1rem;
+  background-color: var(--secondary-bg);
+  border-radius: 12px;
+  box-shadow: 0 4px 8px var(--box-shadow-color);
+  flex-direction: row;
+  gap: 1rem;
+  width: 90%;
+}
+ 
+.saldo-jugador, .apuesta-control {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.monedas-apiladas {
+  display: flex;
+  flex-direction: column;
+  margin-right: -10px;
+}
+ 
+.moneda-stack {
+  width: 44px;
+  height: 44px;
+  margin-top: -30px;
+  filter: drop-shadow(0 2px 2px rgba(0,0,0,0.4));
+}
+ 
+.moneda-stack:first-of-type {
+  margin-top: 0;
+}
+ 
+.monedas-apiladas:last-of-type {
+  margin-right: 0;
+}
+ 
+#monedas-valor {
+  color: var(--accent-yellow);
+  font-size: 2rem;
+  font-weight: bold;
+  margin-top: 0.5rem;
+}
+ 
+.bote-monedas {
+  position: relative;
+  width: 55px;
+  height: 55px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+ 
+.bote-monedas img {
+  position: absolute;
+  width: 40px;
+  height: 40px;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
+}
+
+/* Posiciones de monedas en el bote */
+.bote-monedas img:nth-child(2) { transform: translate(18px, 10px); z-index: 2; }
+.bote-monedas img:nth-child(3) { transform: translate(10px, 18px); z-index: 3; }
+.bote-monedas img:nth-child(4) { transform: translate(0px, 20px); z-index: 4; }
+/* ... puedes dejar los demás estilos igual ... */
+ 
+#bote-valor {
+  color: var(--accent-yellow);
+  font-weight: bold;
+  font-size: 1.2rem;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 13;
+  text-shadow: 0 0 5px rgba(0,0,0,0.8);
+}
+ 
+#btnApostar {
+  background-color: var(--accent-green);
+  color: var(--primary-bg);
+  border-radius: 8px;
+  padding: 0.6rem 1.2rem;
+}
+
+#btnApostar:hover {
+  background-color: #c9e6a0;
+}
+
+#btnLimpiarCartas { background-color: var(--accent-blue); color: white; }
+#btnBarajear { background-color: var(--accent-blue); color: white; }
+#btnIniciarJuego { background-color: var(--accent-green); color: white; }
+#btnDetenerJuego { background-color: #dc3545; color: white; }
+#btnReiniciar { background-color: var(--accent-yellow); color: black; }
+#btnLoteria { background-color: var(--accent-green); color: black; }
+#btnSalirSala { background-color: #dc3545; color: white; }
+
+.modal {
+  display: none;
+  position: fixed;
+  z-index: 10000;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.8);
+  justify-content: center;
+  align-items: center;
+  transition: opacity 0.3s ease;
+  opacity: 0;
+}
+
+.modal.active {
+  display: flex;
+  opacity: 1;
+}
+
+.modal-content {
+  background-color: var(--secondary-bg);
+  padding: 2rem;
+  border-radius: 12px;
+  text-align: center;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.4);
+  animation: modal-fadein 0.3s ease-out;
+}
+
+@keyframes modal-fadein {
+  from { transform: scale(0.9); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+.modal-buttons {
+  margin-top: 1.5rem;
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+}
+
+/* Estilos para móviles en vertical */
+.juego-cartas {
+    display: flex;
+    flex-wrap: wrap; 
+    justify-content: center;
+    width: 100%;
+    gap: 1.25rem;
+    padding: 0 1rem;
+    box-sizing: border-box;
+}
+
+.juego-cartas .carta-juego {
+    flex-basis: 45%; 
+    max-width: 45%;
+}
+
+/* Media query para orientación horizontal */
+@media (orientation: landscape) {
+    .juego-cartas {
+        flex-wrap: nowrap; 
+    }
+
+    .juego-cartas .carta-juego {
+        flex-basis: 25%;
+        max-width: 25%;
+    }
+}
+ 
+/* Estilos para computadoras y pantallas grandes */
+@media (min-width: 768px) {
+  body {
+    max-width: 1000px;
+    margin: auto;
+    border-left: 2px solid var(--border-color);
+    border-right: 2px solid var(--border-color);
+  }
+  
+  .juego-cartas {
+    max-width: 800px;
+    padding: 0 20px;
+    flex-wrap: nowrap;
+  }
+  
+  .juego-cartas .carta-juego {
+    flex-basis: 183px;
+    max-width: 183px;
+  }
+  
+  .carta-img {
+    width: 200px;
+  }
+  
+  .carta-juego {
+    width: 200px;
+  }
+  
+  .historial-container {
+    width: 800px;
+  }
+
+  #apuestasUI {
+    width: 800px;
+    max-width: 100%;
+    justify-content: space-around;
+  }
+
+  .saldo-jugador, .apuesta-control {
+    flex-direction: row;
+    gap: 1rem;
+  }
+
+  #monedas-valor {
+    font-size: 2.5rem;
+  }
+  
+  .moneda-stack {
+    width: 50px;
+    height: 50px;
+    margin-top: -35px;
+  }
+  
+  .bote-monedas {
+    width: 70px;
+    height: 70px;
+  }
+
+  .bote-monedas img {
+    width: 55px;
+    height: 55px;
+  }
+  
+  #bote-valor {
+    font-size: 1.8rem;
+  }
+}
