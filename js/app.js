@@ -310,8 +310,7 @@ socket.on('bote-actualizado', (bote) => {
 socket.on("carta-cantada", (cartaId) => {
   const img = document.createElement("img");
   const formattedId = String(cartaId).padStart(2, '0');
-  // RUTA ACTUALIZADA: Carpeta Cartas
-  img.src = `assets/imagenes/cartas/${formattedId}.jpg`; // OJO: Tu backend emitia .png, pero arriba usas .jpg, revisa la extensión
+  img.src = `assets/imagenes/barajas/${formattedId}.png`;
   historial.prepend(img);
   historial.scrollLeft = 0;
   

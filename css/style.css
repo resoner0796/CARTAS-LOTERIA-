@@ -23,15 +23,22 @@ body {
   display: none;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  min-height: 100vh;
-  overflow-y: auto;
+  justify-content: flex-start; /* Cambio importante: alineación arriba */
+  height: 100vh;             /* Cambio clave: Altura fija al tamaño de pantalla */
+  max-height: 100vh;         /* Asegura que no crezca más */
+  overflow-y: auto;          /* Habilita el scroll interno */
   padding: 1rem;
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
   transition: opacity 0.5s ease-in;
   box-sizing: border-box;
+  -webkit-overflow-scrolling: touch; /* Suaviza el scroll en iPhone */
+}
+
+/* Agrega esto extra para que el último renglón de cartas no quede tapado */
+.cartas-container {
+  padding-bottom: 80px; 
 }
 
 .pantalla.activa {
