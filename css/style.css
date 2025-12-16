@@ -30,6 +30,7 @@ body {
   padding: 1rem;
   background-size: cover;
   background-position: center;
+  background-attachment: fixed;
   background-repeat: no-repeat;
   transition: opacity 0.5s ease-in;
   box-sizing: border-box;
@@ -419,70 +420,71 @@ button:disabled {
     }
 }
  
+/* css/style.css - Ve al final del archivo */
+
 /* Estilos para computadoras y pantallas grandes */
 @media (min-width: 768px) {
+  
+  /* 1. Quitamos el límite al cuerpo para que el fondo ocupe TODA la pantalla */
   body {
-    max-width: 1000px;
-    margin: auto;
-    border-left: 2px solid var(--border-color);
-    border-right: 2px solid var(--border-color);
+    max-width: 100%;  /* Antes era 1000px, ahora es 100% */
+    margin: 0;
+    border: none;     /* Quitamos los bordes grises */
   }
   
-  .juego-cartas {
-    max-width: 800px;
-    padding: 0 20px;
-    flex-wrap: nowrap;
+  /* 2. Controlamos las cartas para que no se estiren de orilla a orilla */
+  /* Esto mantiene el juego centrado y bonito, pero con el fondo full screen */
+  .juego-cartas, .cartas-container {
+    max-width: 1200px; /* Ancho máximo del tablero de cartas */
+    margin: 0 auto;    /* Centrar el tablero horizontalmente */
+    padding: 0 40px;
   }
-  
-  .juego-cartas .carta-juego {
-    flex-basis: 183px;
-    max-width: 183px;
-  }
-  
+
+  /* 3. Hacemos las cartas un poco más grandes en PC */
   .carta-img {
-    width: 200px;
+    width: 220px; /* Un poco más grandes para que luzcan en monitor */
   }
   
   .carta-juego {
-    width: 200px;
+    flex-basis: 220px;
+    max-width: 220px;
   }
   
-  .historial-container {
-    width: 800px;
-  }
-
+  /* 4. Ajustamos la UI de apuestas para que no se pegue a los bordes */
   #apuestasUI {
     width: 800px;
-    max-width: 100%;
+    max-width: 90%;
+    margin: 20px auto; /* Centrado */
     justify-content: space-around;
   }
 
   .saldo-jugador, .apuesta-control {
     flex-direction: row;
-    gap: 1rem;
+    gap: 1.5rem;
   }
 
   #monedas-valor {
-    font-size: 2.5rem;
+    font-size: 3rem;
   }
   
+  /* Hacemos las monedas más grandes en PC */
   .moneda-stack {
-    width: 50px;
-    height: 50px;
-    margin-top: -35px;
+    width: 60px;
+    height: 60px;
+    margin-top: -40px;
   }
   
   .bote-monedas {
-    width: 70px;
-    height: 70px;
+    width: 80px;
+    height: 80px;
   }
 
   .bote-monedas img {
-    width: 55px;
-    height: 55px;
+    width: 65px;
+    height: 65px;
   }
   
   #bote-valor {
-    font-size: 1.8rem;
+    font-size: 2rem;
   }
 }
