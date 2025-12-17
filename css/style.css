@@ -174,30 +174,41 @@ button:disabled {
   box-shadow: none;
 }
 
-/* LISTA DE JUGADORES GLASS */
+/* REEMPLAZA ESTO EN css/style.css */
+
 #jugadoresLista, #jugadoresListaIngame {
-  margin-top: 1.5rem;
-  font-size: 1rem;
-  text-align: center;
-  background: rgba(0, 0, 0, 0.5); /* Fondo oscuro transparente */
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  padding: 1rem;
-  border-radius: 16px;
-  border: var(--glass-border);
-  box-shadow: var(--box-shadow-glass);
-  width: 90%;
-  max-width: 600px;
+  margin-top: 20px;
+  width: 90%;             /* Mismo ancho que el panel de apuestas */
+  max-width: 500px;       /* Que no se estire demasiado en PC */
   margin-left: auto;
   margin-right: auto;
+  text-align: center;
+  padding: 1rem;
+  
+  /* --- EFECTO GLASS PREMIUM (Igual que Apuestas) --- */
+  background: rgba(255, 255, 255, 0.1);  /* Transparencia sutil */
+  backdrop-filter: blur(16px);           /* Desenfoque fuerte */
+  -webkit-backdrop-filter: blur(16px);   /* Para iPhone */
+  border: 1px solid rgba(255, 255, 255, 0.2); /* Borde fino brillante */
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3); /* Sombra suave */
+  border-radius: 20px;
+  
+  /* Texto */
+  color: #fff;
+  font-weight: 500;
+  letter-spacing: 0.5px;
 }
 
-#jugadoresLista div {
-  padding: 0.4rem 0;
-  border-bottom: 1px solid rgba(255,255,255,0.05);
+/* Líneas divisorias sutiles entre nombres */
+#jugadoresLista div, #jugadoresListaIngame div {
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
-#jugadoresLista div:last-child { border-bottom: none; }
 
+/* Quitamos la línea del último nombre para que se vea limpio */
+#jugadoresLista div:last-child, #jugadoresListaIngame div:last-child {
+  border-bottom: none;
+}
 #loteriaMensaje {
   position: fixed;
   top: 50%;
