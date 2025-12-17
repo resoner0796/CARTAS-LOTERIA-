@@ -160,16 +160,24 @@
   <div id="loteriaMensaje">¡LOTERÍA!</div>
 
   <div id="loteriaModal" class="modal">
-    <div class="modal-content">
-      <h2 id="modalLoteriaTitulo"></h2>
-      <p id="modalLoteriaTexto"></p>
-      <div id="modalVerificationArea" class="juego-cartas" style="margin-top: 1rem; margin-bottom: 1rem; transform: scale(0.8); gap: 0.8rem;"></div>
-      <div class="modal-buttons">
-        <button id="btnAceptarGanador">Aceptar</button>
-        <button id="btnRechazarGanador">Rechazar</button>
-      </div>
+  <div class="modal-content">
+    <h3 id="modalLoteriaTitulo" style="margin-top:0; color: gold;">Validar Lotería</h3>
+    <p id="modalLoteriaTexto">El jugador X dice Lotería.</p>
+    
+    <div style="text-align: left; margin-bottom: 5px; font-weight: bold; color: var(--accent-yellow);">Historial de cartas cantadas:</div>
+    <div class="historial-container-modal">
+        <div id="modalHistorialFlex">
+            </div>
+    </div>
+    <div style="text-align: left; margin-top: 15px; font-weight: bold; color: var(--accent-yellow);">Tabla del Jugador:</div>
+    <div id="modalVerificationArea" class="juego-cartas" style="margin-top: 10px; justify-content: center;"></div>
+    
+    <div class="modal-buttons">
+      <button id="btnRechazarGanador" style="background-color: #dc3545; color: white;">Rechazar ❌</button>
+      <button id="btnAceptarGanador" style="background-color: #aed581; color: black;">Confirmar ✅</button>
     </div>
   </div>
+</div>
   <div id="modalSistema" class="modal">
   <div class="modal-content">
     <h3 id="modalSistemaTitulo" style="margin-top:0; color:var(--accent-yellow);">Aviso</h3>
