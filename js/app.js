@@ -645,3 +645,36 @@ socket.on("juego-detenido", () => {
         audioCorre.pause();
     }
 });
+
+function cambiarCartas() {
+    // 1. Validar que no estemos a medio juego (para no arruinar la partida)
+    // Usaremos una variable global o checamos si el botón 'btnDetenerJuego' está visible (significa que está corriendo)
+    const btnDetener = document.getElementById("btnDetenerJuego");
+    if(btnDetener && btnDetener.style.display !== "none" && soyHost) {
+        if(!confirm("El juego está corriendo. ¿Seguro que quieres pausar y cambiar cartas?")) return;
+        socket.emit("detener-juego", salaActual);
+    }
+
+    // 2. Liberar las cartas actuales en el servidor
+    seleccionadas.forEach(id => {
+        socket.emit("deseleccionar-carta", { carta: id, sala: salaActual });
+    });
+
+    // 3. Limpiar localmente
+    seleccionadas = [];
+    limpiarFichas();
+    juegoCartas.innerHTML = "";
+    
+    // 4. Regresar a pantalla de selección
+    btnIniciar.style.display = "none";
+    
+    // Forzamos actualización visual de cartas disponibles
+    document.querySelectorAll("#contenedorCartas .carta-img").forEach(img => {
+        img.classList.remove("seleccionada");
+        // Quitamos opacidad temporalmente hasta que el server nos actualice
+        img.style.opacity = 1; 
+        img.style.pointerEvents = "auto";
+    });
+
+    cambiarPantalla("seleccion");
+}
