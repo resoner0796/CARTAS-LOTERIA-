@@ -123,7 +123,7 @@
       <button id="btnBarajear" onclick="socket.emit('barajear', salaActual)">Barajear</button>
       <button id="btnIniciarJuego" onclick="socket.emit('iniciar-juego', salaActual)">Iniciar juego</button>
       <button id="btnDetenerJuego" onclick="socket.emit('detener-juego', salaActual)">Detener juego</button>
-      <button id="btnReiniciar" onclick="socket.emit('reiniciar-partida', salaActual)">Reiniciar partida</button>
+      <button id="btnCambiarCartas" onclick="cambiarCartas()">Cambiar Cartas</button>
       <button id="btnLoteria" onclick="emitirLoteria()">Lotería</button>
       <button onclick="salirDeSalaEnJuego()" style="background-color: #dc3545; color: white;">Salir</button>
     </div>
