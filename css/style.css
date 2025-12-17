@@ -1,6 +1,8 @@
+/* css/style.css COMPLETO Y PULIDO */
+
 :root {
   --primary-bg: #1e2a38;
-  --secondary-bg: rgba(45, 62, 80, 0.7); /* Transparente para efecto Glass */
+  --secondary-bg: rgba(45, 62, 80, 0.7); 
   --text-color: #f0f8ff;
   --accent-blue: #4dd0e1;
   --accent-green: #aed581;
@@ -16,16 +18,17 @@ body {
   color: var(--text-color);
   font-family: 'Segoe UI', 'Roboto', sans-serif;
   min-height: 100vh;
-  /* CORRECCIÓN DE CENTRADO: */
-  width: 100%;          /* Antes era 100vw */
-  overflow-x: hidden;   /* Evita que se mueva a los lados */
+  width: 100%;          
+  overflow-x: hidden;   
 }
 
+/* Configuración General de Pantallas */
 .pantalla {
   display: none;
   flex-direction: column;
   align-items: center;
-  justify-content: flex-start;
+  /* Por defecto centrado verticalmente (Login, Menu, Sala Espera) */
+  justify-content: center; 
   height: 100vh;            
   max-height: 100vh;        
   overflow-y: auto;          
@@ -39,16 +42,23 @@ body {
   -webkit-overflow-scrolling: touch;
 }
 
-.cartas-container {
-  padding-bottom: 80px; 
+/* EXCEPCIÓN: Pantallas de Juego y Selección van alineadas arriba */
+#pantallaSeleccion, #pantallaJuego {
+    justify-content: flex-start;
+    padding-top: 20px;
 }
 
 .pantalla.activa {
   display: flex;
 }
 
+/* FONDOS */
 #pantallaSplash {
   background-image: url("../assets/imagenes/ui/splash.PNG");
+}
+
+#pantallaSeleccion, #pantallaJuego {
+  background-image: url("../assets/imagenes/ui/fondo-seleccion.PNG");
 }
 
 #pantallaSplash h1 {
@@ -62,39 +72,62 @@ body {
   font-weight: 300;
 }
 
-/* Efecto Glass para Login, Registro y Menu */
-#pantallaLogin .auth-container, 
-#pantallaRegistro .auth-container,
-#pantallaMenu .menu-acciones .sala-box,
-#pantallaSala .sala-box {
-    background: rgba(255, 255, 255, 0.1);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    border-radius: 16px;
+/* --- GLASSMORPHISM GLOBAL (Cajas de Login, Menu, Sala, Jugadores) --- */
+.auth-container, 
+.sala-box, 
+.menu-acciones,
+#jugadoresLista, 
+#jugadoresListaIngame {
+    background: rgba(255, 255, 255, 0.1); /* Transparencia real */
+    backdrop-filter: blur(16px);           /* Efecto borroso fuerte */
+    -webkit-backdrop-filter: blur(16px);
+    border-radius: 20px;
     border: var(--glass-border);
     box-shadow: var(--box-shadow-glass);
     padding: 1.5rem;
     color: white;
+    width: 100%;
+    max-width: 350px;
+    margin: 10px auto; /* Centrado horizontal automático */
+    box-sizing: border-box;
+    text-align: center;
 }
 
-/* Fondos */
-#pantallaSeleccion, #pantallaJuego {
-  background-image: url("../assets/imagenes/ui/fondo-seleccion.PNG");
+/* Ajuste específico para la lista dentro del juego */
+#jugadoresLista, #jugadoresListaIngame {
+    max-width: 500px; /* Un poco más ancha */
+    margin-top: 20px;
 }
 
+/* Inputs y Selects */
+input[type="text"], input[type="email"], input[type="password"], select {
+    width: 100%;
+    padding: 12px;
+    border-radius: 8px;
+    border: 1px solid rgba(255,255,255,0.3);
+    background: rgba(0,0,0,0.3);
+    color: white;
+    font-size: 1rem;
+    box-sizing: border-box;
+    margin-bottom: 15px;
+}
+
+/* CARTAS */
 .cartas-container, .juego-cartas {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
-  gap: 1.25rem;
+  gap: 1rem;
   padding: 1rem 0;
+  width: 100%;
+  padding-bottom: 100px; /* Espacio extra abajo */
 }
 
 .carta-img {
   width: 180px;
   border-radius: 8px;
   cursor: pointer;
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  transition: transform 0.2s ease;
   max-width: 100%;
   height: auto;
   border: 3px solid transparent;
@@ -107,26 +140,17 @@ body {
   box-shadow: 0 0 20px 5px rgba(255, 215, 0, 0.6);
 }
 
-.carta-img:not(.seleccionada):hover {
-  transform: scale(1.02);
-}
-
 .carta-juego {
   position: relative;
-  width: 183px;
-  transition: transform 0.2s ease;
+  flex-basis: 45%; 
+  max-width: 45%;
 }
 
 .carta-juego img.carta-img {
     width: 100%;
     border-radius: 8px;
 }
- 
-.carta-juego:active {
-  transform: scale(0.98);
-}
 
-/* Fichas sin pointer events para la nueva lógica */
 .ficha {
   position: absolute;
   width: 53px; 
@@ -136,17 +160,16 @@ body {
   transform: translate(-50%, -50%);
   filter: drop-shadow(0 4px 6px rgba(0,0,0,0.6));
   z-index: 10;
-  /* pointer-events: auto; (Por defecto es auto, no poner none) */
 }
 
-/* Botones Glassy Modernos */
+/* BOTONES GLASSY */
 button {
   padding: 0.8rem 1.6rem;
   font-size: 1rem;
   margin: 0.5rem;
   border-radius: 12px;
   border: none;
-  background-color: rgba(255, 215, 0, 0.9); /* Gold con transparencia */
+  background-color: rgba(255, 215, 0, 0.9);
   color: #1a1a1a;
   cursor: pointer;
   font-weight: 700;
@@ -157,100 +180,86 @@ button {
   letter-spacing: 0.5px;
 }
 
-button:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(255, 215, 0, 0.4);
+button:active { transform: translateY(1px); }
+
+/* CONTROLES GRID (Botones ordenados) */
+#controlesJuego {
+    display: grid;
+    grid-template-columns: 1fr 1fr; 
+    gap: 12px;                     
+    width: 100%;
+    max-width: 500px;             
+    margin: 15px auto;             
+    padding: 0 10px;
+    box-sizing: border-box;
 }
 
-button:active {
-  transform: translateY(1px);
+#controlesJuego button {
+    width: 100%;
+    height: 55px;       
+    margin: 0;          
+    font-size: 0.85rem;  
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    white-space: nowrap;
 }
 
-button:disabled {
-  background-color: rgba(100, 100, 100, 0.5);
-  color: #ccc;
-  cursor: not-allowed;
-  transform: none;
-  box-shadow: none;
+#btnSalirSala {
+    grid-column: 1 / -1; 
+    background-color: rgba(220, 53, 69, 0.8) !important;
+    margin-top: 5px !important;
+    color: white !important;
 }
 
-/* REEMPLAZA ESTO EN css/style.css */
+/* Colores Específicos */
+#btnApostar { background-color: var(--accent-green); color: #0f3d0f; }
+#btnLimpiarCartas, #btnBarajear { background-color: rgba(77, 208, 225, 0.9); color: #003333; }
+#btnIniciarJuego, #btnLoteria { background-color: rgba(174, 213, 129, 0.9); color: #0f3d0f; }
+#btnDetenerJuego { background-color: rgba(220, 53, 69, 0.9); color: white; }
+#btnCambiarCartas { background-color: var(--accent-yellow); color: black; }
 
-#jugadoresLista, #jugadoresListaIngame {
+/* APUESTAS UI (GLASS) */
+#apuestasUI {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   margin-top: 20px;
-  width: 90%;             /* Mismo ancho que el panel de apuestas */
-  max-width: 500px;       /* Que no se estire demasiado en PC */
+  padding: 1.2rem;
+  background: rgba(255, 255, 255, 0.1); 
+  backdrop-filter: blur(16px);          
+  -webkit-backdrop-filter: blur(16px);
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+  flex-direction: row;
+  gap: 1rem;
+  width: 90%;
+  max-width: 500px; /* Para que coincida con lo demás */
   margin-left: auto;
   margin-right: auto;
-  text-align: center;
-  padding: 1rem;
-  
-  /* --- EFECTO GLASS PREMIUM (Igual que Apuestas) --- */
-  background: rgba(255, 255, 255, 0.1);  /* Transparencia sutil */
-  backdrop-filter: blur(16px);           /* Desenfoque fuerte */
-  -webkit-backdrop-filter: blur(16px);   /* Para iPhone */
-  border: 1px solid rgba(255, 255, 255, 0.2); /* Borde fino brillante */
-  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3); /* Sombra suave */
-  border-radius: 20px;
-  
-  /* Texto */
-  color: #fff;
-  font-weight: 500;
-  letter-spacing: 0.5px;
 }
 
-/* Líneas divisorias sutiles entre nombres */
-#jugadoresLista div, #jugadoresListaIngame div {
-  padding: 8px 0;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+.saldo-jugador, .apuesta-control {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
-/* Quitamos la línea del último nombre para que se vea limpio */
-#jugadoresLista div:last-child, #jugadoresListaIngame div:last-child {
-  border-bottom: none;
-}
-#loteriaMensaje {
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%) scale(1);
-  font-size: 4rem;
-  color: var(--accent-yellow);
-  font-weight: bold;
-  background-color: rgba(0, 0, 0, 0.85);
-  backdrop-filter: blur(5px);
-  padding: 30px 60px;
-  border-radius: 20px;
-  z-index: 9999;
-  display: none;
-  user-select: none;
-  animation: pulsate 1s infinite alternate;
-  border: 2px solid gold;
-}
+.monedas-apiladas { display: flex; flex-direction: column; margin-right: -10px; }
+.moneda-stack { width: 44px; height: 44px; margin-top: -30px; filter: drop-shadow(0 4px 4px rgba(0,0,0,0.5)); }
+.moneda-stack:first-of-type { margin-top: 0; }
+#monedas-valor { color: var(--accent-yellow); font-size: 2rem; font-weight: 800; margin-top: 0.5rem; text-shadow: 0 2px 4px rgba(0,0,0,0.5); }
 
-@keyframes pulsate {
-  from { transform: translate(-50%, -50%) scale(1); opacity: 1; }
-  to { transform: translate(-50%, -50%) scale(1.1); opacity: 0.9; }
-}
+.bote-monedas { position: relative; width: 55px; height: 55px; display: flex; justify-content: center; align-items: center; margin-bottom: 0.5rem; }
+.bote-monedas img { position: absolute; width: 40px; height: 40px; filter: drop-shadow(0 4px 4px rgba(0,0,0,0.5)); }
+.bote-monedas img:nth-child(2) { transform: translate(18px, 10px); z-index: 2; }
+.bote-monedas img:nth-child(3) { transform: translate(10px, 18px); z-index: 3; }
+.bote-monedas img:nth-child(4) { transform: translate(0px, 20px); z-index: 4; }
+#bote-valor { color: var(--accent-yellow); font-weight: 800; font-size: 1.4rem; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 13; text-shadow: 0 0 8px rgba(0,0,0,0.9); }
 
-.confeti {
-  position: fixed;
-  width: 10px;
-  height: 10px;
-  background-color: var(--accent-yellow);
-  z-index: 9998;
-  animation: caer 4s linear forwards;
-  border-radius: 50%;
-}
-
-@keyframes caer {
-  to {
-    transform: translateY(100vh) rotate(360deg);
-    opacity: 0;
-  }
-}
- 
-/* HISTORIAL GLASS */
+/* HISTORIAL */
 .historial-container {
   width: 100%;
   padding: 10px;
@@ -258,302 +267,40 @@ button:disabled {
   backdrop-filter: blur(8px);
   border-radius: 16px;
   border: var(--glass-border);
-  box-shadow: 0 4px 15px rgba(0,0,0,0.2);
   margin-bottom: 20px;
   box-sizing: border-box;
 }
 
-#historial {
-  display: flex;
-  overflow-x: auto;
-  gap: 12px;
-  padding: 5px;
-  white-space: nowrap;
-  scrollbar-width: none;
-  -ms-overflow-style: none;
-}
+#historial { display: flex; overflow-x: auto; gap: 12px; padding: 5px; white-space: nowrap; scrollbar-width: none; }
+#historial img { width: 55px; height: 78px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.2); box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
 
-#historial::-webkit-scrollbar {
-  display: none;
+/* LISTA JUGADORES (Detalles internos) */
+#jugadoresLista div, #jugadoresListaIngame div {
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
+#jugadoresLista div:last-child, #jugadoresListaIngame div:last-child { border-bottom: none; }
 
-#historial img {
-  width: 55px;
-  height: 78px;
-  border-radius: 6px;
-  border: 1px solid rgba(255,255,255,0.2);
-  box-shadow: 0 4px 6px rgba(0,0,0,0.3);
-  transition: transform 0.2s ease;
-}
- 
-#historial img:hover {
-  transform: translateY(-4px) scale(1.1);
-}
- 
-/* APUESTAS UI - GLASSMOPRHISM PURO */
-#apuestasUI {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-top: 20px;
-  padding: 1.2rem;
-  
-  /* ESTILO GLASS */
-  background: rgba(255, 255, 255, 0.1); /* Blanco muy transparente */
-  backdrop-filter: blur(16px);          /* Desenfoque fuerte */
-  -webkit-backdrop-filter: blur(16px);
-  border-radius: 20px;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
-  
-  flex-direction: row;
-  gap: 1rem;
-  width: 90%;
-  margin-left: auto;
-  margin-right: auto;
-}
- 
-.saldo-jugador, .apuesta-control {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-}
+/* MODAL Y EXTRAS */
+#loteriaMensaje { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 4rem; color: var(--accent-yellow); font-weight: bold; background-color: rgba(0,0,0,0.85); backdrop-filter: blur(5px); padding: 30px 60px; border-radius: 20px; z-index: 9999; display: none; border: 2px solid gold; animation: pulsate 1s infinite alternate; }
+@keyframes pulsate { from { transform: translate(-50%, -50%) scale(1); } to { transform: translate(-50%, -50%) scale(1.1); } }
+.confeti { position: fixed; width: 10px; height: 10px; background-color: var(--accent-yellow); z-index: 9998; animation: caer 4s linear forwards; border-radius: 50%; }
+@keyframes caer { to { transform: translateY(100vh) rotate(360deg); opacity: 0; } }
 
-.monedas-apiladas {
-  display: flex;
-  flex-direction: column;
-  margin-right: -10px;
-}
- 
-.moneda-stack {
-  width: 44px;
-  height: 44px;
-  margin-top: -30px;
-  filter: drop-shadow(0 4px 4px rgba(0,0,0,0.5));
-  transition: transform 0.3s;
-}
+.modal { display: none; position: fixed; z-index: 10000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.7); backdrop-filter: blur(5px); justify-content: center; align-items: center; opacity: 0; transition: opacity 0.3s ease; }
+.modal.active { display: flex; opacity: 1; }
+.modal-content { background: rgba(30, 42, 56, 0.95); padding: 2rem; border-radius: 20px; text-align: center; border: 1px solid rgba(255,255,255,0.1); color: white; }
+.modal-buttons { margin-top: 1.5rem; display: flex; justify-content: center; gap: 1rem; }
 
-/* Efecto hover en monedas */
-.monedas-apiladas:hover .moneda-stack {
-    transform: translateY(-5px);
-}
- 
-.moneda-stack:first-of-type {
-  margin-top: 0;
-}
- 
-.monedas-apiladas:last-of-type {
-  margin-right: 0;
-}
- 
-#monedas-valor {
-  color: var(--accent-yellow);
-  font-size: 2rem;
-  font-weight: 800;
-  margin-top: 0.5rem;
-  text-shadow: 0 2px 4px rgba(0,0,0,0.5);
-}
- 
-.bote-monedas {
-  position: relative;
-  width: 55px;
-  height: 55px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  margin-bottom: 0.5rem;
-}
- 
-.bote-monedas img {
-  position: absolute;
-  width: 40px;
-  height: 40px;
-  filter: drop-shadow(0 4px 4px rgba(0,0,0,0.5));
-}
-
-.bote-monedas img:nth-child(2) { transform: translate(18px, 10px); z-index: 2; }
-.bote-monedas img:nth-child(3) { transform: translate(10px, 18px); z-index: 3; }
-.bote-monedas img:nth-child(4) { transform: translate(0px, 20px); z-index: 4; }
- 
-#bote-valor {
-  color: var(--accent-yellow);
-  font-weight: 800;
-  font-size: 1.4rem;
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  z-index: 13;
-  text-shadow: 0 0 8px rgba(0,0,0,0.9);
-}
- 
-/* Colores de botones específicos */
-#btnApostar {
-  background-color: var(--accent-green);
-  color: #0f3d0f;
-  box-shadow: 0 4px 10px rgba(174, 213, 129, 0.4);
-}
-#btnApostar:hover { background-color: #c5e1a5; }
-
-#btnLimpiarCartas, #btnBarajear { 
-    background-color: rgba(77, 208, 225, 0.9); 
-    color: #003333; 
-}
-#btnIniciarJuego, #btnLoteria { 
-    background-color: rgba(174, 213, 129, 0.9); 
-    color: #0f3d0f; 
-}
-#btnDetenerJuego, #btnSalirSala { 
-    background-color: rgba(220, 53, 69, 0.9); 
-    color: white; 
-}
-/* El nuevo botón */
-#btnCambiarCartas { 
-    background-color: var(--accent-yellow); 
-    color: black; 
-}
-
-/* Modal Glass */
-.modal {
-  display: none;
-  position: fixed;
-  z-index: 10000;
-  left: 0;
-  top: 0;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(0, 0, 0, 0.7);
-  backdrop-filter: blur(5px);
-  justify-content: center;
-  align-items: center;
-  transition: opacity 0.3s ease;
-  opacity: 0;
-}
-
-.modal.active {
-  display: flex;
-  opacity: 1;
-}
-
-.modal-content {
-  background: rgba(30, 42, 56, 0.95);
-  padding: 2rem;
-  border-radius: 20px;
-  text-align: center;
-  border: 1px solid rgba(255,255,255,0.1);
-  box-shadow: 0 20px 50px rgba(0,0,0,0.5);
-  animation: modal-fadein 0.3s ease-out;
-  color: white;
-}
-
-@keyframes modal-fadein {
-  from { transform: scale(0.9); opacity: 0; }
-  to { transform: scale(1); opacity: 1; }
-}
-
-.modal-buttons {
-  margin-top: 1.5rem;
-  display: flex;
-  justify-content: center;
-  gap: 1rem;
-}
-
-/* RESPONSIVE */
-.juego-cartas {
-    display: flex;
-    flex-wrap: wrap; 
-    justify-content: center;
-    width: 100%;
-    gap: 1rem;
-    padding: 0 1rem;
-    box-sizing: border-box;
-}
-
-.juego-cartas .carta-juego {
-    flex-basis: 45%; 
-    max-width: 45%;
-}
-
-@media (orientation: landscape) {
-    .juego-cartas { flex-wrap: nowrap; }
-    .juego-cartas .carta-juego { flex-basis: 25%; max-width: 25%; }
-}
- 
+/* PC / TABLET */
 @media (min-width: 768px) {
-  body { max-width: 100%; border: none; }
-  
-  .juego-cartas, .cartas-container {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 0 40px;
-  }
-
+  .juego-cartas, .cartas-container { max-width: 1200px; margin: 0 auto; }
   .carta-img { width: 220px; }
   .carta-juego { flex-basis: 220px; max-width: 220px; }
-  
-  #apuestasUI {
-    width: 800px;
-    max-width: 90%;
-    margin: 30px auto;
-    justify-content: space-around;
-  }
-
-  .saldo-jugador, .apuesta-control {
-    flex-direction: row;
-    gap: 2rem;
-  }
-
+  #apuestasUI { width: 800px; max-width: 90%; }
   #monedas-valor { font-size: 3rem; }
   .moneda-stack { width: 60px; height: 60px; margin-top: -40px; }
   .bote-monedas { width: 80px; height: 80px; }
   .bote-monedas img { width: 65px; height: 65px; }
   #bote-valor { font-size: 2rem; }
-}
-
-/* Agrega esto en tu CSS */
-.auth-container, .sala-box, .menu-acciones {
-    width: 100%;
-    max-width: 350px; /* Tope de ancho para que se vea centrado y bonito */
-    margin: 0 auto;   /* Centrado automático */
-    box-sizing: border-box;
-}
-
-/* Asegura que los inputs no se salgan */
-input[type="text"], input[type="email"], input[type="password"], select {
-    width: 100%;
-    box-sizing: border-box; /* Clave para que el padding no rompa el ancho */
-    margin-bottom: 10px;
-}
-
-/* --- NUEVOS ESTILOS PARA LA botonera --- */
-#controlesJuego {
-    display: grid;
-    grid-template-columns: 1fr 1fr; /* Dos columnas EXACTAMENTE iguales */
-    gap: 12px;                      /* Espacio entre botones */
-    width: 100%;
-    max-width: 500px;               /* Que no se haga gigante en PC */
-    margin: 15px auto;              /* Centrado */
-    padding: 0 10px;
-    box-sizing: border-box;
-}
-
-/* Forzamos que todos los botones del juego sean iguales */
-#controlesJuego button {
-    width: 100%;
-    height: 55px;        /* Altura fija para uniformidad */
-    margin: 0;           /* Quitamos márgenes viejos */
-    font-size: 0.9rem;   /* Letra legible */
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    white-space: nowrap; /* Que el texto no se baje de renglón */
-}
-
-/* El botón SALIR ocupará todo el ancho abajo */
-#btnSalirSala {
-    grid-column: 1 / -1; /* Expande de la columna 1 a la última */
-    background-color: rgba(220, 53, 69, 0.8) !important;
-    margin-top: 5px !important;
 }
