@@ -133,15 +133,17 @@
     
     <div id="apuestasUI">
       <div class="saldo-jugador">
-          <div style="display:flex;align-items:flex-end;">
-              <div class="monedas-apiladas">
-                  <img src="assets/imagenes/ui/peso.png" alt="peso" class="moneda-stack">
-                  <img src="assets/imagenes/ui/peso.png" alt="peso" class="moneda-stack">
-                  <img src="assets/imagenes/ui/peso.png" alt="peso" class="moneda-stack">
-              </div>
-          </div>
-          <strong id="monedas-valor">30</strong>
-      </div>
+    <div style="display:flex;align-items:flex-end;">
+        <div class="monedas-apiladas">
+            <img src="assets/imagenes/ui/peso.png" alt="peso" class="moneda-stack">
+            <img src="assets/imagenes/ui/peso.png" alt="peso" class="moneda-stack">
+            <img src="assets/imagenes/ui/peso.png" alt="peso" class="moneda-stack">
+        </div>
+    </div>
+    <strong id="monedas-valor">0</strong>
+    
+    <button id="btnRecargar" onclick="abrirModalRecarga()">Recargar ➕</button>
+</div>
       <div class="apuesta-control">
           <div class="bote-monedas">
               <img src="assets/imagenes/ui/peso.png" alt="moneda">
@@ -187,6 +189,43 @@
       <button id="btnModalCancelar" style="display:none; background-color: #dc3545; color: white;">Cancelar</button>
       <button id="btnModalAceptar">Aceptar</button>
     </div>
+  </div>
+</div>
+<div id="modalTienda" class="modal">
+  <div class="modal-content" style="max-width: 400px;">
+    <h2 style="color: gold; margin-top:0;">Tienda de Monedas</h2>
+    <p>¡No te quedes fuera de la jugada!</p>
+
+    <div class="paquetes-container" style="display:flex; flex-direction:column; gap:10px; margin: 20px 0;">
+        
+        <div class="paquete-item" onclick="iniciarPagoStripe(50)">
+            <div class="paquete-info">
+                <span style="font-size:1.5rem;">💰 50</span>
+                <span style="color:#ccc; font-size:0.9rem;">Monedas</span>
+            </div>
+            <button class="btn-precio">$29 MXN</button>
+        </div>
+
+        <div class="paquete-item destacado" onclick="iniciarPagoStripe(150)">
+            <div class="badge-pop">¡MÁS VENDIDO!</div>
+            <div class="paquete-info">
+                <span style="font-size:1.5rem;">💰 150</span>
+                <span style="color:#ccc; font-size:0.9rem;">Monedas</span>
+            </div>
+            <button class="btn-precio">$79 MXN</button>
+        </div>
+
+        <div class="paquete-item" onclick="iniciarPagoStripe(500)">
+            <div class="paquete-info">
+                <span style="font-size:1.5rem;">💰 500</span>
+                <span style="color:#ccc; font-size:0.9rem;">Monedas</span>
+            </div>
+            <button class="btn-precio">$199 MXN</button>
+        </div>
+
+    </div>
+    
+    <button onclick="document.getElementById('modalTienda').classList.remove('active')" style="background:#dc3545; color:white; width:100%;">Cancelar</button>
   </div>
 </div>
 
