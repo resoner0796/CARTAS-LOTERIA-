@@ -17,7 +17,7 @@ let haApostadoLocal = false;
 
 // Generamos IDs de cartas (del 01 al 54, asumiendo baraja estándar completa)
 // Nota: Ajusta el length si usas menos cartas (ej. 30 o 54)
-const cartasDisponibles = Array.from({ length: 54 }, (_, i) => String(i + 1).padStart(2, '0'));
+const cartasDisponibles = Array.from({ length: 30 }, (_, i) => String(i + 1).padStart(2, '0'));
 
 // Referencias DOM - Pantallas
 const pantallas = {
