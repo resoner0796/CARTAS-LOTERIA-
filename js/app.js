@@ -111,27 +111,52 @@ if(btnModalCancelar) btnModalCancelar.onclick = () => cerrarModal();
 // ======================================================
 
 window.onload = () => {
-    // Revisar sesión guardada
+    // 1. Revisar sesión guardada
     const sesionGuardada = localStorage.getItem("loteria_usuario");
     
     if (sesionGuardada) {
         usuarioActual = JSON.parse(sesionGuardada);
         configurarMenu();
         
-        // Revisar invitación por URL
+        // Obtenemos los parámetros de la URL una sola vez
         const urlParams = new URLSearchParams(window.location.search);
         const salaInvitacion = urlParams.get('sala');
+        const pagoEstado = urlParams.get('pago');
+
+        // 2. DETECTAR RETORNO DE PAGOS (STRIPE)
+        if (pagoEstado === 'exito') {
+            const cant = urlParams.get('cantidad');
+            mostrarAlerta(`¡Has recibido ${cant} monedas! 🎉`, "¡Pago Exitoso!");
+            
+            // Actualización visual inmediata y guardado local
+            if(usuarioActual) {
+                // Aseguramos que sean números para sumar bien
+                usuarioActual.monedas = (parseInt(usuarioActual.monedas) || 0) + parseInt(cant);
+                localStorage.setItem("loteria_usuario", JSON.stringify(usuarioActual));
+                configurarMenu();
+            }
+            
+            // Limpiamos la URL para borrar ?pago=exito
+            window.history.pushState({}, document.title, window.location.pathname);
         
+        } else if (pagoEstado === 'cancelado') {
+            mostrarAlerta("La compra fue cancelada. No se te cobró nada.", "Aviso");
+            window.history.pushState({}, document.title, window.location.pathname);
+        }
+
+        // 3. DETECTAR INVITACIÓN O NAVEGACIÓN NORMAL
         if(salaInvitacion) {
              unirseSalaDirecto(salaInvitacion);
         } else {
+             // Si no hay invitación, mandamos al menú
              cambiarPantalla("menu");
         }
         
-        // Reconexión socket
+        // 4. Reconexión socket
         if(socket.connected) socket.emit('reconectar', { sala: salaActual, email: usuarioActual.email });
 
     } else {
+        // Si no hay sesión, mandamos al login
         setTimeout(() => cambiarPantalla("login"), 1000);
     }
 };
@@ -709,14 +734,45 @@ function abrirModalRecarga() {
     }
 }
 
-function iniciarPagoStripe(cantidadMonedas) {
-    // AQUÍ VA LA MAGIA DE STRIPE (Próximamente)
-    // Por ahora, solo simulamos para que veas el flujo
-    cerrarModal(); // Cerramos tienda
+// Reemplaza la función iniciarPagoStripe en js/app.js
+
+async function iniciarPagoStripe(cantidadMonedas) {
+    if(!usuarioActual || !usuarioActual.email) return mostrarAlerta("Necesitas iniciar sesión para comprar.");
+
+    let precio = 0;
+    // Definimos precios igual que en el HTML
+    if(cantidadMonedas === 50) precio = 29;
+    if(cantidadMonedas === 150) precio = 79;
+    if(cantidadMonedas === 500) precio = 199;
+
+    cerrarModal();
     document.getElementById('modalTienda').classList.remove('active');
-    
-    mostrarConfirmacion(`¿Ir a pagar el paquete de ${cantidadMonedas} monedas?`, () => {
-        // Aquí redirigiremos a Stripe Checkout
-        mostrarAlerta("Próximamente: Redirección segura a Stripe...", "En construcción 🚧");
+
+    mostrarConfirmacion(`¿Ir a pagar $${precio} MXN por ${cantidadMonedas} monedas?`, async () => {
+        mostrarAlerta("Redirigiendo a Stripe...", "Procesando");
+        
+        try {
+            const res = await fetch(`${API_URL}/crear-orden`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    cantidad: cantidadMonedas, 
+                    precio: precio,
+                    email: usuarioActual.email 
+                })
+            });
+            
+            const data = await res.json();
+            
+            if(data.url) {
+                // REDIRECCIÓN MÁGICA A STRIPE
+                window.location.href = data.url;
+            } else {
+                mostrarAlerta("No se pudo generar el pago", "Error");
+            }
+        } catch (error) {
+            console.error(error);
+            mostrarAlerta("Error de conexión con el servidor de pagos", "Error");
+        }
     });
 }
