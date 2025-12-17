@@ -698,3 +698,25 @@ if(btnApostar) btnApostar.addEventListener("click", () => {
   haApostadoLocal = true;
   btnApostar.disabled = true;
 });
+
+// ==================== TIENDA / PAGOS ====================
+
+function abrirModalRecarga() {
+    const modal = document.getElementById('modalTienda');
+    if(modal) {
+        modal.classList.add('active');
+        if(navigator.vibrate) navigator.vibrate(50);
+    }
+}
+
+function iniciarPagoStripe(cantidadMonedas) {
+    // AQUÍ VA LA MAGIA DE STRIPE (Próximamente)
+    // Por ahora, solo simulamos para que veas el flujo
+    cerrarModal(); // Cerramos tienda
+    document.getElementById('modalTienda').classList.remove('active');
+    
+    mostrarConfirmacion(`¿Ir a pagar el paquete de ${cantidadMonedas} monedas?`, () => {
+        // Aquí redirigiremos a Stripe Checkout
+        mostrarAlerta("Próximamente: Redirección segura a Stripe...", "En construcción 🚧");
+    });
+}
