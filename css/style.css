@@ -329,3 +329,75 @@ button:active { transform: translateY(1px); }
     border: 1px solid rgba(255,255,255,0.3);
     box-shadow: 0 2px 4px rgba(0,0,0,0.3);
 }
+
+/* Agrega esto al final de css/style.css */
+
+#btnRecargar {
+    font-size: 0.75rem;       /* Letra chiquita */
+    padding: 4px 12px;        /* Botón delgado */
+    margin-top: 5px;          /* Separación del número */
+    background-color: #00e676; /* Verde Stripe / Cash */
+    color: #004d40;           /* Texto oscuro para contraste */
+    border-radius: 20px;      /* Pill shape (redondito) */
+    box-shadow: 0 4px 10px rgba(0, 230, 118, 0.4); /* Resplandor verde */
+    text-transform: uppercase;
+    font-weight: 800;
+    width: auto;              /* Que se ajuste al texto */
+    border: 1px solid rgba(255,255,255,0.4);
+    animation: palpito 2s infinite; /* Para que llame la atención sutilmente */
+}
+
+#btnRecargar:hover {
+    transform: scale(1.1);
+    background-color: #69f0ae;
+}
+
+@keyframes palpito {
+    0% { box-shadow: 0 0 0 0 rgba(0, 230, 118, 0.7); }
+    70% { box-shadow: 0 0 0 10px rgba(0, 230, 118, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(0, 230, 118, 0); }
+}
+
+/* Estilos de la Tienda */
+.paquete-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,255,255,0.2);
+    padding: 15px;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: transform 0.2s;
+    position: relative;
+}
+
+.paquete-item:hover {
+    background: rgba(255,255,255,0.2);
+    transform: translateX(5px);
+}
+
+.paquete-item.destacado {
+    border: 2px solid gold;
+    background: rgba(255, 215, 0, 0.15);
+}
+
+.badge-pop {
+    position: absolute;
+    top: -10px;
+    left: 10px;
+    background: gold;
+    color: black;
+    font-size: 0.7rem;
+    font-weight: bold;
+    padding: 2px 8px;
+    border-radius: 10px;
+}
+
+.btn-precio {
+    background: #00e676;
+    color: #004d40;
+    margin: 0;
+    width: auto;
+    font-size: 0.9rem;
+}
