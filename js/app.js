@@ -433,29 +433,39 @@ btnIniciar.onclick = () => {
 };
 
 function marcarFicha(e, contenedor) {
-  // Obtenemos coordenadas relativas al contenedor de la carta
-  const img = contenedor.querySelector("img");
+  // 1. INTELIGENCIA: ¿A qué le dimos clic exactamenete?
+  const elementoClickeado = e.target;
+
+  // 2. CASO BORRAR: Si lo que tocamos YA TIENE la clase "ficha", lo borramos
+  if (elementoClickeado.classList.contains("ficha")) {
+      // Vibración de borrado
+      if(navigator.vibrate) navigator.vibrate(10);
+      elementoClickeado.remove();
+      return; // ¡IMPORTANTE! Nos salimos aquí para que NO ponga otra ficha
+  }
+
+  // 3. CASO PONER: Si no era ficha, calculamos dónde poner la nueva
+  const img = contenedor.querySelector("img.carta-img"); // Buscamos la imagen base de la carta
+  
+  // Protección por si algo falla al buscar la imagen
+  if (!img) return;
+
   const bounds = img.getBoundingClientRect();
   const x = e.clientX - bounds.left;
   const y = e.clientY - bounds.top;
+  
+  // Convertimos a porcentajes para que se adapte a cualquier pantalla
   const px = (x / bounds.width) * 100;
   const py = (y / bounds.height) * 100;
   
-  // Vibración ligera
+  // Vibración de poner
   if(navigator.vibrate) navigator.vibrate(30);
 
-  // Crear la ficha visual
   const ficha = document.createElement("img");
   ficha.src = "assets/imagenes/ui/ficha.PNG";
   ficha.classList.add("ficha");
   ficha.style.left = `${px}%`;
   ficha.style.top = `${py}%`;
-  
-  // --- MAGIA NUEVA: BORRAR FICHA AL TOCARLA ---
-  ficha.onclick = (eventoClick) => {
-      eventoClick.stopPropagation(); // Evita que se ponga otra ficha al intentar borrar esta
-      ficha.remove(); // Se borra a sí misma del DOM
-  };
   
   contenedor.appendChild(ficha);
 }
