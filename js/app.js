@@ -14,6 +14,7 @@ let soyHost = false;
 let seleccionadas = [];
 let salaActual = "";
 let haApostadoLocal = false;
+let historialIdsGlobal = [];
 
 // Generamos IDs de cartas (del 01 al 54, asumiendo baraja estándar completa)
 // Nota: Ajusta el length si usas menos cartas (ej. 30 o 54)
@@ -522,6 +523,7 @@ socket.on("barajear", () => {
   audioBarajear.currentTime = 0;
   audioBarajear.play().catch(e => console.warn("Audio:", e));
   historial.innerHTML = "";
+  historialIdsGlobal = [];
 });
 
 socket.on("campana", () => { audioCampana.currentTime = 0; audioCampana.play().catch(()=>{}); });
@@ -530,6 +532,7 @@ socket.on("corre", () => { audioCorre.currentTime = 0; audioCorre.play().catch((
 socket.on("partida-reiniciada", () => {
   limpiarFichas();
   historial.innerHTML = "";
+  historialIdsGlobal = [];
 });
 
 socket.on("carta-cantada", (cartaId) => {
@@ -538,6 +541,7 @@ socket.on("carta-cantada", (cartaId) => {
   img.src = `assets/imagenes/barajas/${formattedId}.png`; 
   historial.prepend(img);
   historial.scrollLeft = 0;
+  historialIdsGlobal.unshift(formattedId);
   
   const audioVoz = new Audio(`assets/audios/${formattedId}.mp3`);
   audioVoz.play();
@@ -600,12 +604,27 @@ function mostrarLoteriaMensaje() {
   setTimeout(() => { loteriaMensaje.style.display = "none"; }, 4000);
 }
 
+// Reemplaza toda la función socket.on("loteria-anunciada"...) por esta:
+
 socket.on("loteria-anunciada", (nicknameGanador, idGanador, boardState) => {
     if (soyHost) {
         ganadorTempId = idGanador;
-        modalLoteriaTitulo.textContent = "¡Lotería anunciada!";
-        modalLoteriaTexto.textContent = `${nicknameGanador} dice ¡LOTERÍA! Revisa su tabla:`;
+        modalLoteriaTitulo.textContent = "¡Validar Lotería!";
+        modalLoteriaTexto.textContent = `${nicknameGanador} grita ¡LOTERÍA! Revisa su tabla contra el historial.`;
         
+        // --- NUEVO: LLENAR EL HISTORIAL DEL MODAL ---
+        const modalHistorialFlex = document.getElementById("modalHistorialFlex");
+        modalHistorialFlex.innerHTML = ""; // Limpiamos basura vieja
+        
+        // Llenamos con las cartas que tenemos en memoria global
+        historialIdsGlobal.forEach(cartaId => {
+             const img = document.createElement("img");
+             // Usamos las imágenes de la BARAJA (las que salen cantadas)
+             img.src = `assets/imagenes/barajas/${cartaId}.png`;
+             modalHistorialFlex.appendChild(img);
+        });
+        // --------------------------------------------
+
         modalVerificationArea.innerHTML = ''; 
 
         if (boardState && boardState.cards) {
@@ -616,6 +635,8 @@ socket.on("loteria-anunciada", (nicknameGanador, idGanador, boardState) => {
                 const cardImg = document.createElement('img');
                 cardImg.src = `assets/imagenes/cartas/${cardId}.jpg`;
                 cardImg.className = 'carta-img seleccionada';
+                // Importante: quitar pointer-events en el modal para que no se puedan mover fichas ahí
+                cardImg.style.pointerEvents = "none"; 
                 cardContainer.appendChild(cardImg);
 
                 if (boardState.chips && boardState.chips[cardId]) {
@@ -625,6 +646,7 @@ socket.on("loteria-anunciada", (nicknameGanador, idGanador, boardState) => {
                         ficha.className = "ficha";
                         ficha.style.left = chipPos.left;
                         ficha.style.top = chipPos.top;
+                        ficha.style.pointerEvents = "none"; // Fichas estáticas en el modal
                         cardContainer.appendChild(ficha);
                     });
                 }
