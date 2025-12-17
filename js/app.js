@@ -390,12 +390,31 @@ function generarCartas() {
 
 function seleccionarCarta(img) {
   const id = img.dataset.id;
-  if (seleccionadas.includes(id)) return;
+  
+  // 1. CASO: DESELECCIONAR (Si ya la tengo, la quito)
+  if (seleccionadas.includes(id)) {
+      // La borramos del array local
+      seleccionadas = seleccionadas.filter(c => c !== id);
+      // Le quitamos el borde verde visual
+      img.classList.remove("seleccionada");
+      // Le avisamos al servidor que la solté
+      socket.emit("deseleccionar-carta", { carta: id, sala: salaActual });
+      
+      // Si bajo de 2 cartas, escondo el botón de iniciar
+      if (seleccionadas.length < 2) btnIniciar.style.display = "none";
+      return;
+  }
+
+  // 2. VALIDACIONES (Si la carta está ocupada por otro o bloqueada)
   if (img.style.pointerEvents === 'none') return; 
+  
+  // 3. CASO: SELECCIONAR (Si tengo espacio, la agrego)
   if (seleccionadas.length < 4) {
     img.classList.add("seleccionada");
     seleccionadas.push(id);
     socket.emit("seleccionar-carta", { carta: id, sala: salaActual });
+    
+    // Si ya tengo al menos 2, muestro el botón para arrancar
     if (seleccionadas.length >= 2) btnIniciar.style.display = "block";
   }
 }
@@ -414,6 +433,7 @@ btnIniciar.onclick = () => {
 };
 
 function marcarFicha(e, contenedor) {
+  // Obtenemos coordenadas relativas al contenedor de la carta
   const img = contenedor.querySelector("img");
   const bounds = img.getBoundingClientRect();
   const x = e.clientX - bounds.left;
@@ -421,14 +441,22 @@ function marcarFicha(e, contenedor) {
   const px = (x / bounds.width) * 100;
   const py = (y / bounds.height) * 100;
   
-  // Haptic feedback (Vibración simple al poner ficha)
+  // Vibración ligera
   if(navigator.vibrate) navigator.vibrate(30);
 
+  // Crear la ficha visual
   const ficha = document.createElement("img");
   ficha.src = "assets/imagenes/ui/ficha.PNG";
   ficha.classList.add("ficha");
   ficha.style.left = `${px}%`;
   ficha.style.top = `${py}%`;
+  
+  // --- MAGIA NUEVA: BORRAR FICHA AL TOCARLA ---
+  ficha.onclick = (eventoClick) => {
+      eventoClick.stopPropagation(); // Evita que se ponga otra ficha al intentar borrar esta
+      ficha.remove(); // Se borra a sí misma del DOM
+  };
+  
   contenedor.appendChild(ficha);
 }
 
