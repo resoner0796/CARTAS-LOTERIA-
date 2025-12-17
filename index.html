@@ -10,25 +10,100 @@
   <title>Lotería WebApp</title>
   
   <link rel="stylesheet" href="css/style.css">
+  <style>
+    /* Estilos rápidos para las nuevas pantallas de auth (puedes moverlos a style.css luego) */
+    .auth-container, .menu-acciones, .sala-box {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      width: 100%;
+      max-width: 320px;
+      text-align: center;
+    }
+    .auth-container input, .sala-box input {
+      padding: 12px;
+      border-radius: 8px;
+      border: 1px solid #444;
+      background: #2d3e50;
+      color: white;
+      font-size: 1rem;
+    }
+    .stats-resumen {
+      font-size: 2rem;
+      margin: 1rem 0;
+      color: gold;
+    }
+    .sala-box {
+      background: rgba(0,0,0,0.3);
+      padding: 1rem;
+      border-radius: 12px;
+      margin-bottom: 1rem;
+    }
+    a { color: #4dd0e1; text-decoration: none; }
+  </style>
 </head>
 <body>
   <div id="pantallaSplash" class="pantalla activa"><h1>Cargando...</h1></div>
   
-  <div id="pantallaSala" class="pantalla">
-    <h2>Selecciona una sala</h2>
-    <select id="salaSelect">
-      <option value="Amigos">Amigos</option>
-      <option value="Familia">Familia</option>
-      <option value="Oficina">Oficina</option>
-      <option value="Sala 1">Sala 1</option>
-    </select>
-    <button onclick="irANickname()">Continuar</button>
+  <div id="pantallaLogin" class="pantalla">
+    <div class="auth-container">
+        <h2>Iniciar Sesión</h2>
+        <input type="email" id="loginEmail" placeholder="Correo electrónico">
+        <input type="password" id="loginPass" placeholder="Contraseña">
+        <button onclick="login()">Entrar</button>
+        <p>¿No tienes cuenta? <a href="#" onclick="cambiarPantalla('registro')">Regístrate aquí</a></p>
+    </div>
   </div>
 
-  <div id="pantallaNickname" class="pantalla">
-    <h2>Ingresa tu nickname</h2>
-    <input type="text" id="nicknameInput" placeholder="¿Quién eres?" />
-    <button onclick="entrarJuego()">Entrar</button>
+  <div id="pantallaRegistro" class="pantalla">
+    <div class="auth-container">
+        <h2>Crear Cuenta</h2>
+        <input type="text" id="regNickname" placeholder="Tu Nickname (Apodo)">
+        <input type="email" id="regEmail" placeholder="Correo electrónico">
+        <input type="password" id="regPass" placeholder="Contraseña">
+        <button onclick="registro()">Registrarme</button>
+        <p>¿Ya tienes cuenta? <a href="#" onclick="cambiarPantalla('login')">Inicia sesión</a></p>
+    </div>
+  </div>
+
+  <div id="pantallaMenu" class="pantalla">
+    <h1 id="menuBienvenida">Hola, Jugador</h1>
+    <div class="stats-resumen">
+        <span id="menuMonedas">💰 0</span>
+    </div>
+    
+    <div class="menu-acciones">
+        <div class="sala-box">
+            <h3>Crear Sala</h3>
+            <p>Ponle nombre a tu mesa:</p>
+            <input type="text" id="inputCrearSala" placeholder="Ej: Familia Perez">
+            <button onclick="crearSalaPropia()">Crear y Jugar</button>
+        </div>
+        
+        <div class="sala-box">
+            <h3>Unirse a Sala</h3>
+            <p>Ingresa el nombre exacto:</p>
+            <input type="text" id="inputUnirseSala" placeholder="Nombre de sala">
+            <button onclick="unirseSalaExistente()">Unirse</button>
+        </div>
+    </div>
+    
+    <button onclick="cerrarSesion()" style="background-color: #dc3545; margin-top: 2rem;">Cerrar Sesión</button>
+  </div>
+
+  <div id="pantallaSala" class="pantalla">
+    <h2 id="tituloSalaActual">Sala: ...</h2>
+    
+    <div class="sala-box">
+        <p>¡Invita a más jugadores!</p>
+        <button onclick="compartirSala()" id="btnCompartir" style="background-color: #4dd0e1; color: #000;">🔗 Compartir Enlace</button>
+    </div>
+
+    <button onclick="cambiarPantalla('seleccion')" style="background-color: gold; color: black; font-weight: bold; margin-top: 10px;">Elegir Cartas 🎴</button>
+    
+    <div id="jugadoresLista" style="width: 100%; margin-top: 20px;"></div>
+    
+    <button id="btnSalirSala" style="background-color: #dc3545; margin-top: 20px;">Salir al Menú</button>
   </div>
 
   <div id="pantallaSeleccion" class="pantalla">
@@ -50,7 +125,7 @@
       <button id="btnDetenerJuego" onclick="socket.emit('detener-juego', salaActual)">Detener juego</button>
       <button id="btnReiniciar" onclick="socket.emit('reiniciar-partida', salaActual)">Reiniciar partida</button>
       <button id="btnLoteria" onclick="emitirLoteria()">Lotería</button>
-      <button id="btnSalirSala">Salir de sala</button>
+      <button onclick="salirDeSalaEnJuego()" style="background-color: #dc3545; color: white;">Salir</button>
     </div>
     
     <div id="apuestasUI">
@@ -76,7 +151,7 @@
       </div>
     </div>
     
-    <div id="jugadoresLista"></div>
+    <div id="jugadoresListaIngame" style="margin-top: 1.5rem; font-size: 1rem; text-align: center; background-color: #2d3e50; padding: 0.8rem; border-radius: 8px;"></div>
   </div>
 
   <div id="loteriaMensaje">¡LOTERÍA!</div>
