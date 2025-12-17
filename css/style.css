@@ -302,3 +302,30 @@ button:active { transform: translateY(1px); }
   .bote-monedas img { width: 65px; height: 65px; }
   #bote-valor { font-size: 2rem; }
 }
+
+/* Agrega al final de css/style.css */
+
+/* Estilos para el historial dentro del modal de verificación */
+.historial-container-modal {
+    width: 100%;
+    padding: 8px;
+    background: rgba(0, 0, 0, 0.4); /* Fondo oscurito */
+    border-radius: 12px;
+    margin-bottom: 15px;
+    overflow-x: auto; /* Scroll horizontal si son muchas */
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+#modalHistorialFlex {
+    display: flex;
+    gap: 8px;
+    white-space: nowrap; /* Que queden en una sola fila */
+}
+
+#modalHistorialFlex img {
+    width: 45px; /* Cartas pequeñitas para validar rápido */
+    height: auto;
+    border-radius: 4px;
+    border: 1px solid rgba(255,255,255,0.3);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+}
