@@ -1,12 +1,13 @@
 :root {
   --primary-bg: #1e2a38;
-  --secondary-bg: #2d3e50;
+  --secondary-bg: rgba(45, 62, 80, 0.7); /* Transparente para efecto Glass */
   --text-color: #f0f8ff;
   --accent-blue: #4dd0e1;
   --accent-green: #aed581;
   --accent-yellow: gold;
-  --border-color: #444;
-  --box-shadow-color: rgba(0, 0, 0, 0.4);
+  --border-color: rgba(255, 255, 255, 0.1);
+  --glass-border: 1px solid rgba(255, 255, 255, 0.15);
+  --box-shadow-glass: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
 }
 
 body {
@@ -23,10 +24,10 @@ body {
   display: none;
   flex-direction: column;
   align-items: center;
-  justify-content: flex-start; /* Cambio importante: alineación arriba */
-  height: 100vh;             /* Cambio clave: Altura fija al tamaño de pantalla */
-  max-height: 100vh;         /* Asegura que no crezca más */
-  overflow-y: auto;          /* Habilita el scroll interno */
+  justify-content: flex-start;
+  height: 100vh;            
+  max-height: 100vh;        
+  overflow-y: auto;          
   padding: 1rem;
   background-size: cover;
   background-position: center;
@@ -34,10 +35,9 @@ body {
   background-repeat: no-repeat;
   transition: opacity 0.5s ease-in;
   box-sizing: border-box;
-  -webkit-overflow-scrolling: touch; /* Suaviza el scroll en iPhone */
+  -webkit-overflow-scrolling: touch;
 }
 
-/* Agrega esto extra para que el último renglón de cartas no quede tapado */
 .cartas-container {
   padding-bottom: 80px; 
 }
@@ -46,7 +46,6 @@ body {
   display: flex;
 }
 
-/* RUTA ACTUALIZADA: salimos de css (../) y entramos a assets */
 #pantallaSplash {
   background-image: url("../assets/imagenes/ui/splash.PNG");
 }
@@ -62,11 +61,22 @@ body {
   font-weight: 300;
 }
 
-#pantallaSala, #pantallaNickname {
-  background-color: var(--secondary-bg);
+/* Efecto Glass para Login, Registro y Menu */
+#pantallaLogin .auth-container, 
+#pantallaRegistro .auth-container,
+#pantallaMenu .menu-acciones .sala-box,
+#pantallaSala .sala-box {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border-radius: 16px;
+    border: var(--glass-border);
+    box-shadow: var(--box-shadow-glass);
+    padding: 1.5rem;
+    color: white;
 }
- 
-/* RUTA ACTUALIZADA */
+
+/* Fondos */
 #pantallaSeleccion, #pantallaJuego {
   background-image: url("../assets/imagenes/ui/fondo-seleccion.PNG");
 }
@@ -81,23 +91,23 @@ body {
 
 .carta-img {
   width: 180px;
-  border-radius: 6px;
+  border-radius: 8px;
   cursor: pointer;
   transition: transform 0.3s ease, box-shadow 0.3s ease;
   max-width: 100%;
   height: auto;
   border: 3px solid transparent;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
 }
 
 .carta-img.seleccionada {
-  transform: scale(1.08);
+  transform: scale(1.05);
   border-color: var(--accent-yellow);
-  box-shadow: 0 0 15px 5px var(--accent-yellow);
+  box-shadow: 0 0 20px 5px rgba(255, 215, 0, 0.6);
 }
 
 .carta-img:not(.seleccionada):hover {
-  transform: scale(1.05);
+  transform: scale(1.02);
 }
 
 .carta-juego {
@@ -106,15 +116,16 @@ body {
   transition: transform 0.2s ease;
 }
 
-.carta-juego img {
-  width: 100%;
-  border-radius: 6px;
+.carta-juego img.carta-img {
+    width: 100%;
+    border-radius: 8px;
 }
  
 .carta-juego:active {
   transform: scale(0.98);
 }
 
+/* Fichas sin pointer events para la nueva lógica */
 .ficha {
   position: absolute;
   width: 53px; 
@@ -122,54 +133,69 @@ body {
   max-width: 50px;
   max-height: 50px;
   transform: translate(-50%, -50%);
-  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
+  filter: drop-shadow(0 4px 6px rgba(0,0,0,0.6));
+  z-index: 10;
+  /* pointer-events: auto; (Por defecto es auto, no poner none) */
 }
 
+/* Botones Glassy Modernos */
 button {
   padding: 0.8rem 1.6rem;
   font-size: 1rem;
   margin: 0.5rem;
-  border-radius: 8px;
+  border-radius: 12px;
   border: none;
-  background-color: var(--accent-yellow);
-  color: var(--primary-bg);
+  background-color: rgba(255, 215, 0, 0.9); /* Gold con transparencia */
+  color: #1a1a1a;
   cursor: pointer;
-  font-weight: bold;
-  transition: transform 0.1s ease, background-color 0.2s ease, box-shadow 0.2s ease;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+  font-weight: 700;
+  backdrop-filter: blur(4px);
+  box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+  transition: all 0.2s ease;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 button:hover {
-  background-color: #ffda00;
-  box-shadow: 0 4px 12px rgba(255, 215, 0, 0.4);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(255, 215, 0, 0.4);
 }
 
 button:active {
-  transform: translateY(2px);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  transform: translateY(1px);
 }
 
 button:disabled {
-  background-color: var(--border-color);
-  color: #999;
+  background-color: rgba(100, 100, 100, 0.5);
+  color: #ccc;
   cursor: not-allowed;
   transform: none;
   box-shadow: none;
 }
 
-#jugadoresLista {
+/* LISTA DE JUGADORES GLASS */
+#jugadoresLista, #jugadoresListaIngame {
   margin-top: 1.5rem;
   font-size: 1rem;
   text-align: center;
-  background-color: var(--secondary-bg);
-  padding: 0.8rem;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px var(--box-shadow-color);
+  background: rgba(0, 0, 0, 0.5); /* Fondo oscuro transparente */
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  padding: 1rem;
+  border-radius: 16px;
+  border: var(--glass-border);
+  box-shadow: var(--box-shadow-glass);
+  width: 90%;
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 #jugadoresLista div {
-  padding: 0.25rem 0;
+  padding: 0.4rem 0;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
 }
+#jugadoresLista div:last-child { border-bottom: none; }
 
 #loteriaMensaje {
   position: fixed;
@@ -179,13 +205,15 @@ button:disabled {
   font-size: 4rem;
   color: var(--accent-yellow);
   font-weight: bold;
-  background-color: rgba(0, 0, 0, 0.7);
-  padding: 20px 40px;
+  background-color: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(5px);
+  padding: 30px 60px;
   border-radius: 20px;
   z-index: 9999;
   display: none;
   user-select: none;
   animation: pulsate 1s infinite alternate;
+  border: 2px solid gold;
 }
 
 @keyframes pulsate {
@@ -210,20 +238,24 @@ button:disabled {
   }
 }
  
+/* HISTORIAL GLASS */
 .historial-container {
   width: 100%;
-  padding: 8px;
-  background-color: rgba(0, 0, 0, 0.3);
-  border-radius: 12px;
-  box-shadow: 0 4px 8px var(--box-shadow-color);
+  padding: 10px;
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(8px);
+  border-radius: 16px;
+  border: var(--glass-border);
+  box-shadow: 0 4px 15px rgba(0,0,0,0.2);
   margin-bottom: 20px;
+  box-sizing: border-box;
 }
 
 #historial {
   display: flex;
   overflow-x: auto;
-  gap: 10px;
-  padding: 6px;
+  gap: 12px;
+  padding: 5px;
   white-space: nowrap;
   scrollbar-width: none;
   -ms-overflow-style: none;
@@ -234,30 +266,39 @@ button:disabled {
 }
 
 #historial img {
-  width: 50px;
-  height: 70px;
-  border-radius: 8px;
-  border: 2px solid var(--border-color);
-  box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+  width: 55px;
+  height: 78px;
+  border-radius: 6px;
+  border: 1px solid rgba(255,255,255,0.2);
+  box-shadow: 0 4px 6px rgba(0,0,0,0.3);
   transition: transform 0.2s ease;
 }
  
 #historial img:hover {
-  transform: translateY(-4px);
+  transform: translateY(-4px) scale(1.1);
 }
  
+/* APUESTAS UI - GLASSMOPRHISM PURO */
 #apuestasUI {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-top: 16px;
-  padding: 1rem;
-  background-color: var(--secondary-bg);
-  border-radius: 12px;
-  box-shadow: 0 4px 8px var(--box-shadow-color);
+  margin-top: 20px;
+  padding: 1.2rem;
+  
+  /* ESTILO GLASS */
+  background: rgba(255, 255, 255, 0.1); /* Blanco muy transparente */
+  backdrop-filter: blur(16px);          /* Desenfoque fuerte */
+  -webkit-backdrop-filter: blur(16px);
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+  
   flex-direction: row;
   gap: 1rem;
   width: 90%;
+  margin-left: auto;
+  margin-right: auto;
 }
  
 .saldo-jugador, .apuesta-control {
@@ -278,7 +319,13 @@ button:disabled {
   width: 44px;
   height: 44px;
   margin-top: -30px;
-  filter: drop-shadow(0 2px 2px rgba(0,0,0,0.4));
+  filter: drop-shadow(0 4px 4px rgba(0,0,0,0.5));
+  transition: transform 0.3s;
+}
+
+/* Efecto hover en monedas */
+.monedas-apiladas:hover .moneda-stack {
+    transform: translateY(-5px);
 }
  
 .moneda-stack:first-of-type {
@@ -292,8 +339,9 @@ button:disabled {
 #monedas-valor {
   color: var(--accent-yellow);
   font-size: 2rem;
-  font-weight: bold;
+  font-weight: 800;
   margin-top: 0.5rem;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.5);
 }
  
 .bote-monedas {
@@ -310,46 +358,52 @@ button:disabled {
   position: absolute;
   width: 40px;
   height: 40px;
-  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
+  filter: drop-shadow(0 4px 4px rgba(0,0,0,0.5));
 }
 
-/* Posiciones de monedas en el bote */
 .bote-monedas img:nth-child(2) { transform: translate(18px, 10px); z-index: 2; }
 .bote-monedas img:nth-child(3) { transform: translate(10px, 18px); z-index: 3; }
 .bote-monedas img:nth-child(4) { transform: translate(0px, 20px); z-index: 4; }
-/* ... puedes dejar los demás estilos igual ... */
  
 #bote-valor {
   color: var(--accent-yellow);
-  font-weight: bold;
-  font-size: 1.2rem;
+  font-weight: 800;
+  font-size: 1.4rem;
   position: absolute;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
   z-index: 13;
-  text-shadow: 0 0 5px rgba(0,0,0,0.8);
+  text-shadow: 0 0 8px rgba(0,0,0,0.9);
 }
  
+/* Colores de botones específicos */
 #btnApostar {
   background-color: var(--accent-green);
-  color: var(--primary-bg);
-  border-radius: 8px;
-  padding: 0.6rem 1.2rem;
+  color: #0f3d0f;
+  box-shadow: 0 4px 10px rgba(174, 213, 129, 0.4);
+}
+#btnApostar:hover { background-color: #c5e1a5; }
+
+#btnLimpiarCartas, #btnBarajear { 
+    background-color: rgba(77, 208, 225, 0.9); 
+    color: #003333; 
+}
+#btnIniciarJuego, #btnLoteria { 
+    background-color: rgba(174, 213, 129, 0.9); 
+    color: #0f3d0f; 
+}
+#btnDetenerJuego, #btnSalirSala { 
+    background-color: rgba(220, 53, 69, 0.9); 
+    color: white; 
+}
+/* El nuevo botón */
+#btnCambiarCartas { 
+    background-color: var(--accent-yellow); 
+    color: black; 
 }
 
-#btnApostar:hover {
-  background-color: #c9e6a0;
-}
-
-#btnLimpiarCartas { background-color: var(--accent-blue); color: white; }
-#btnBarajear { background-color: var(--accent-blue); color: white; }
-#btnIniciarJuego { background-color: var(--accent-green); color: white; }
-#btnDetenerJuego { background-color: #dc3545; color: white; }
-#btnReiniciar { background-color: var(--accent-yellow); color: black; }
-#btnLoteria { background-color: var(--accent-green); color: black; }
-#btnSalirSala { background-color: #dc3545; color: white; }
-
+/* Modal Glass */
 .modal {
   display: none;
   position: fixed;
@@ -358,7 +412,8 @@ button:disabled {
   top: 0;
   width: 100%;
   height: 100%;
-  background-color: rgba(0, 0, 0, 0.8);
+  background-color: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(5px);
   justify-content: center;
   align-items: center;
   transition: opacity 0.3s ease;
@@ -371,12 +426,14 @@ button:disabled {
 }
 
 .modal-content {
-  background-color: var(--secondary-bg);
+  background: rgba(30, 42, 56, 0.95);
   padding: 2rem;
-  border-radius: 12px;
+  border-radius: 20px;
   text-align: center;
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255,255,255,0.1);
+  box-shadow: 0 20px 50px rgba(0,0,0,0.5);
   animation: modal-fadein 0.3s ease-out;
+  color: white;
 }
 
 @keyframes modal-fadein {
@@ -391,13 +448,13 @@ button:disabled {
   gap: 1rem;
 }
 
-/* Estilos para móviles en vertical */
+/* RESPONSIVE */
 .juego-cartas {
     display: flex;
     flex-wrap: wrap; 
     justify-content: center;
     width: 100%;
-    gap: 1.25rem;
+    gap: 1rem;
     padding: 0 1rem;
     box-sizing: border-box;
 }
@@ -407,83 +464,38 @@ button:disabled {
     max-width: 45%;
 }
 
-/* Media query para orientación horizontal */
 @media (orientation: landscape) {
-    .juego-cartas {
-        flex-wrap: nowrap; 
-    }
-
-    .juego-cartas .carta-juego {
-        flex-basis: 25%;
-        max-width: 25%;
-    }
+    .juego-cartas { flex-wrap: nowrap; }
+    .juego-cartas .carta-juego { flex-basis: 25%; max-width: 25%; }
 }
  
-/* css/style.css - Ve al final del archivo */
-
-/* Estilos para computadoras y pantallas grandes */
 @media (min-width: 768px) {
+  body { max-width: 100%; border: none; }
   
-  /* 1. Quitamos el límite al cuerpo para que el fondo ocupe TODA la pantalla */
-  body {
-    max-width: 100%;  /* Antes era 1000px, ahora es 100% */
-    margin: 0;
-    border: none;     /* Quitamos los bordes grises */
-  }
-  
-  /* 2. Controlamos las cartas para que no se estiren de orilla a orilla */
-  /* Esto mantiene el juego centrado y bonito, pero con el fondo full screen */
   .juego-cartas, .cartas-container {
-    max-width: 1200px; /* Ancho máximo del tablero de cartas */
-    margin: 0 auto;    /* Centrar el tablero horizontalmente */
+    max-width: 1200px;
+    margin: 0 auto;
     padding: 0 40px;
   }
 
-  /* 3. Hacemos las cartas un poco más grandes en PC */
-  .carta-img {
-    width: 220px; /* Un poco más grandes para que luzcan en monitor */
-  }
+  .carta-img { width: 220px; }
+  .carta-juego { flex-basis: 220px; max-width: 220px; }
   
-  .carta-juego {
-    flex-basis: 220px;
-    max-width: 220px;
-  }
-  
-  /* 4. Ajustamos la UI de apuestas para que no se pegue a los bordes */
   #apuestasUI {
     width: 800px;
     max-width: 90%;
-    margin: 20px auto; /* Centrado */
+    margin: 30px auto;
     justify-content: space-around;
   }
 
   .saldo-jugador, .apuesta-control {
     flex-direction: row;
-    gap: 1.5rem;
+    gap: 2rem;
   }
 
-  #monedas-valor {
-    font-size: 3rem;
-  }
-  
-  /* Hacemos las monedas más grandes en PC */
-  .moneda-stack {
-    width: 60px;
-    height: 60px;
-    margin-top: -40px;
-  }
-  
-  .bote-monedas {
-    width: 80px;
-    height: 80px;
-  }
-
-  .bote-monedas img {
-    width: 65px;
-    height: 65px;
-  }
-  
-  #bote-valor {
-    font-size: 2rem;
-  }
+  #monedas-valor { font-size: 3rem; }
+  .moneda-stack { width: 60px; height: 60px; margin-top: -40px; }
+  .bote-monedas { width: 80px; height: 80px; }
+  .bote-monedas img { width: 65px; height: 65px; }
+  #bote-valor { font-size: 2rem; }
 }
