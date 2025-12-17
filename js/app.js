@@ -86,7 +86,7 @@ function mostrarConfirmacion(mensaje, callbackAceptar) {
     modalTitulo.textContent = "¿Estás seguro?";
     modalMensaje.textContent = mensaje;
     btnModalCancelar.style.display = "inline-block";
-    btnModalAceptar.textContent = "Sí, dale";
+    btnModalAceptar.textContent = "Sí";
     
     onModalAceptar = () => {
         callbackAceptar();
