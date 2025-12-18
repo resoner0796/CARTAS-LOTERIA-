@@ -401,3 +401,26 @@ button:active { transform: translateY(1px); }
     width: auto;
     font-size: 0.9rem;
 }
+
+/* AJUSTES PARA EL MODAL DE PAGO EN MÓVIL */
+
+/* Hacemos que el contenido del modal sea scrolleable si es muy alto */
+.modal-content {
+    max-height: 90vh;       /* Que nunca sea más alto que el 90% de la pantalla */
+    overflow-y: auto;       /* Si se pasa, aparece barra de scroll DENTRO del modal */
+    overflow-x: hidden;
+}
+
+/* Ajustes específicos para cuando la pantalla es chica (celulares) */
+@media (max-width: 480px) {
+    #modalTienda .modal-content {
+        width: 95% !important;   /* Usar todo el ancho disponible */
+        padding: 15px 10px;      /* Menos relleno para ganar espacio */
+        margin: 0 auto;
+    }
+    
+    /* Aseguramos que el contenedor de Stripe tenga altura mínima */
+    #checkout {
+        min-height: 500px; 
+    }
+}
