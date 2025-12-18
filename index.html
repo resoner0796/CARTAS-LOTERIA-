@@ -11,7 +11,7 @@
    
   <link rel="stylesheet" href="css/style.css">
   <style>
-    /* Estilos rápidos para las nuevas pantallas de auth (puedes moverlos a style.css luego) */
+    /* Estilos rápidos para auth y estructura */
     .auth-container, .menu-acciones, .sala-box {
       display: flex;
       flex-direction: column;
@@ -87,19 +87,6 @@
             <p>Ingresa el nombre exacto:</p>
             <input type="text" id="inputUnirseSala" placeholder="Nombre de sala">
             <button onclick="unirseSalaExistente()">Unirse</button>
-        </div>
-        
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; width: 100%; margin-top: 10px;">
-            <div onclick="reclamarBonoDiario()" class="sala-box" style="margin:0; padding:10px; cursor:pointer; background: linear-gradient(135deg, #6a1b9a, #4a148c) !important; border: 2px solid gold;">
-                <div style="font-size: 2rem;">🎁</div>
-                <div style="font-size: 0.9rem; font-weight:bold; color:gold;">Regalo Diario</div>
-                <div id="cronometroBono" style="font-size: 0.7rem; color:#ccc;">¡Reclamar!</div>
-            </div>
-            <div onclick="mostrarAlerta('Próximamente: ¡Tienda de Máscaras y Avatares!', 'En construcción 🚧')" class="sala-box" style="margin:0; padding:10px; cursor:pointer; background: linear-gradient(135deg, #006064, #00838f) !important;">
-                <div style="font-size: 2rem;">👹</div>
-                <div style="font-size: 0.9rem; font-weight:bold; color:cyan;">Mis Máscaras</div>
-                <div style="font-size: 0.7rem; color:#ccc;">Personalizar</div>
-            </div>
         </div>
     </div>
     
@@ -279,6 +266,7 @@
       </div>
     </div>
   </div>
+
   <audio id="audioBarajear" src="assets/audios/barajar.mp3"></audio>
   <audio id="audioCampana" src="assets/audios/campana.mp3"></audio>
   <audio id="audioCorre" src="assets/audios/corre.mp3"></audio>
