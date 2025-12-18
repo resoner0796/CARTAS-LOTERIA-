@@ -77,8 +77,18 @@
     <div class="menu-acciones">
         <div class="sala-box">
             <h3>Crear Sala</h3>
-            <p>Ponle nombre a tu mesa:</p>
-            <input type="text" id="inputCrearSala" placeholder="Ej: Amigos ">
+            
+            <p style="margin-bottom:5px;">Nombre de la mesa:</p>
+            <input type="text" id="inputCrearSala" placeholder="Ej: Familia">
+            
+            <p style="margin-bottom:5px;">Modo de Juego:</p>
+            <select id="inputModoJuego" style="background:rgba(0,0,0,0.5); border:1px solid gold; color:white; margin-bottom:15px;">
+                <option value="clasico">🏆 Clásica (Tabla Llena)</option>
+                <option value="esquinas">🧱 4 Esquinas</option>
+                <option value="centro">🎯 El Pozo (Centro)</option>
+                <option value="linea">➖ Línea (Cualquiera)</option>
+            </select>
+
             <button onclick="crearSalaPropia()">Crear y Jugar</button>
         </div>
         
