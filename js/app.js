@@ -478,11 +478,20 @@ socket.on("rol-asignado", ({ host }) => {
   soyHost = host;
   generarCartas();
   
-  // Mostrar/Ocultar controles de Host
-  const controles = ["btnBarajear", "btnIniciarJuego", "btnDetenerJuego", "btnReiniciar"]; // btnReiniciar ya no existe en HTML nuevo pero por si acaso
-  controles.forEach(id => {
+  // Lista de controles exclusivos del Host
+  // AGREGAMOS "divVelocidad" A LA LISTA
+  const controlesHost = ["btnBarajear", "btnIniciarJuego", "btnDetenerJuego", "divVelocidad"]; 
+  
+  controlesHost.forEach(id => {
       const el = document.getElementById(id);
-      if (el) el.style.display = soyHost ? "block" : "none";
+      if (el) {
+          // Si soy host lo muestro (flex para el div de velocidad, block para botones)
+          if (soyHost) {
+              el.style.display = (id === "divVelocidad") ? "flex" : "block"; // O "inline-block" según tu CSS
+          } else {
+              el.style.display = "none";
+          }
+      }
   });
 });
 
