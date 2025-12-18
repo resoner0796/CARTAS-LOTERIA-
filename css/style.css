@@ -236,7 +236,7 @@ input::placeholder { color: rgba(255,255,255,0.6); }
 .ficha {
   position: absolute;
   width: 35%; 
-  max-width: 80px;
+  max-width: 40px;
   height: auto;
   top: 50%; left: 50%;
   transform: translate(-50%, -50%);
