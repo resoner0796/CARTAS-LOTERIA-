@@ -171,11 +171,12 @@
     <div class="historial-container">
       <div id="historial"></div>
     </div>
+    
     <div class="juego-cartas" id="juegoCartas"></div>
     
-    <div id="controlesJuego" style="display:flex; flex-direction:column; gap:10px;">
+    <div id="controlesJuego">
       
-      <div id="divVelocidad" style="display:none; align-items:center; background:rgba(0,0,0,0.5); padding:8px; border-radius:10px; justify-content:center; border: 1px solid gold;">
+      <div id="divVelocidad" style="display:none; align-items:center; background:rgba(0,0,0,0.5); padding:8px; border-radius:10px; justify-content:center; border: 1px solid gold; margin-bottom: 10px;">
           <label style="font-size:0.9rem; margin-right:10px; color:gold; font-weight:bold;">Velocidad:</label>
           <select id="velocidadJuego" style="width:auto; margin:0; padding:5px; background:#333; color:white; border:1px solid #555;">
               <option value="6000">Lenta (6s)</option>
@@ -185,7 +186,7 @@
           </select>
       </div>
 
-      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+      <div class="botones-grid">
           <button id="btnLimpiarCartas" onclick="limpiarFichas()">Limpiar</button>
           <button id="btnBarajear" onclick="socket.emit('barajear', salaActual)">Barajear</button>
 
@@ -195,38 +196,45 @@
           <button id="btnCambiarCartas" onclick="cambiarCartas()">Cambiar</button>
           <button id="btnLoteria" onclick="emitirLoteria()">¡LOTERÍA!</button>
           
-          <button id="btnSalirSala" onclick="salirDeSalaEnJuego()">Salir de Sala</button>
+          <button id="btnSalirSala" onclick="salirDeSalaEnJuego()">Salir</button>
       </div>
     </div>
     
-    <div id="apuestasUI">
-      <div class="saldo-jugador">
-        <div style="display:flex;align-items:flex-end;">
-            <div class="monedas-apiladas">
-                <img src="assets/imagenes/ui/peso.png" alt="peso" class="moneda-stack">
-                <img src="assets/imagenes/ui/peso.png" alt="peso" class="moneda-stack">
-                <img src="assets/imagenes/ui/peso.png" alt="peso" class="moneda-stack">
+    <div id="panelInferior">
+        
+        <div class="panel-seccion" id="seccionJugadores">
+            <div id="jugadoresListaIngame"></div>
+        </div>
+
+        <div class="panel-seccion" id="seccionApuestas">
+            <div id="apuestasUI">
+              <div class="saldo-jugador">
+                <div style="display:flex;align-items:flex-end;">
+                    <div class="monedas-apiladas">
+                        <img src="assets/imagenes/ui/peso.png" alt="peso" class="moneda-stack">
+                        <img src="assets/imagenes/ui/peso.png" alt="peso" class="moneda-stack">
+                        <img src="assets/imagenes/ui/peso.png" alt="peso" class="moneda-stack">
+                    </div>
+                </div>
+                <strong id="monedas-valor">0</strong>
+                <button class="btn-recargar-verde" onclick="abrirModalRecarga()">Recargar ➕</button>
+              </div>
+              <div class="apuesta-control">
+                  <div class="bote-monedas">
+                      <img src="assets/imagenes/ui/peso.png" alt="moneda">
+                      <img src="assets/imagenes/ui/peso.png" alt="moneda">
+                      <img src="assets/imagenes/ui/peso.png" alt="moneda">
+                      <strong id="bote-valor">0</strong>
+                  </div>
+                  <span style="font-weight:600;font-size:0.8rem">Bote</span>
+                  <button id="btnApostar">Apostar</button>
+              </div>
             </div>
         </div>
-        <strong id="monedas-valor">0</strong>
-    
-        <button class="btn-recargar-verde" onclick="abrirModalRecarga()">Recargar ➕</button>
-      </div>
-      <div class="apuesta-control">
-          <div class="bote-monedas">
-              <img src="assets/imagenes/ui/peso.png" alt="moneda">
-              <img src="assets/imagenes/ui/peso.png" alt="moneda">
-              <img src="assets/imagenes/ui/peso.png" alt="moneda">
-              <strong id="bote-valor">0</strong>
-          </div>
-          <span style="font-weight:600;font-size:0.8rem">Bote</span>
-          <button id="btnApostar">Apostar</button>
-      </div>
-    </div>
-    
-    <div id="jugadoresListaIngame" style="margin-top: 1.5rem; font-size: 1rem; text-align: center; background-color: #2d3e50; padding: 0.8rem; border-radius: 8px;"></div>
-  </div>
 
+    </div>
+  </div>
+  
   <div id="loteriaMensaje">¡LOTERÍA!</div>
 
   <div id="loteriaModal" class="modal">

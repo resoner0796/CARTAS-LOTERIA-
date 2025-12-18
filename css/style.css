@@ -470,3 +470,110 @@ button[onclick*="unirseSala"], #btnBarajear, #btnLimpiarCartas {
         min-height: 500px; 
     }
 }
+/* =========================================
+   ESTILOS BASE (Móvil - Se mantienen igual)
+   ========================================= */
+
+/* Definimos la grid de botones por defecto para móvil (2 columnas) */
+.botones-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    width: 100%;
+}
+
+/* El botón de salir en móvil ocupa todo el ancho abajo */
+#btnSalirSala {
+    grid-column: 1 / -1; 
+    margin-top: 5px !important;
+}
+
+/* El panel inferior en móvil es columna (uno abajo del otro) */
+#panelInferior {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    margin-top: 15px;
+}
+
+#seccionJugadores, #seccionApuestas {
+    width: 100%;
+    margin-bottom: 10px;
+}
+
+/* =========================================
+   ESTILOS ESCRITORIO (Pantallas Grandes) 🖥️
+   ========================================= */
+
+@media (min-width: 1024px) {
+
+    /* 1. BOTONES EN UNA SOLA LÍNEA */
+    #controlesJuego {
+        max-width: 1200px; /* Que coincida con el ancho de las cartas */
+        margin: 10px auto;
+    }
+
+    .botones-grid {
+        display: flex; /* Usamos flex para ponerlos en fila */
+        flex-direction: row;
+        justify-content: center; /* Centrados */
+        align-items: center;
+        gap: 15px; /* Más espacio entre botones */
+    }
+
+    .botones-grid button {
+        width: auto; /* Que el botón se ajuste al texto */
+        min-width: 120px; /* Un ancho mínimo decente */
+        height: 50px;
+        margin: 0;
+        font-size: 0.9rem;
+    }
+
+    /* El botón salir ya no necesita ser gigante en escritorio */
+    #btnSalirSala {
+        margin-top: 0 !important;
+        background: linear-gradient(to bottom, #ff5252, #d50000); /* Rojo */
+    }
+
+    /* 2. PANEL DIVIDIDO (IZQ: JUGADORES | DER: APUESTAS) */
+    #panelInferior {
+        display: flex;
+        flex-direction: row; /* Lado a lado */
+        justify-content: space-between;
+        align-items: flex-start;
+        max-width: 1200px;
+        margin: 20px auto; /* Centrado */
+        gap: 20px;
+    }
+
+    /* Lado Izquierdo: Jugadores */
+    #seccionJugadores {
+        flex: 1; /* Ocupa el 50% disponible */
+        display: flex;
+        justify-content: flex-start; /* Alinear contenido a la izq */
+    }
+
+    /* Ajustamos la lista para que se vea bien en el panel izquierdo */
+    #jugadoresListaIngame {
+        width: 100%;
+        margin-top: 0; /* Quitamos margen superior */
+        height: 100%;
+        min-height: 160px; /* Misma altura aprox que apuestas */
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-start;
+    }
+
+    /* Lado Derecho: Apuestas */
+    #seccionApuestas {
+        flex: 1; /* Ocupa el otro 50% */
+        display: flex;
+        justify-content: flex-end; /* Alinear contenido a la derecha */
+    }
+
+    #apuestasUI {
+        width: 100%;
+        margin-top: 0;
+        /* Aseguramos que se expanda bien */
+    }
+}
