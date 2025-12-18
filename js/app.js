@@ -920,3 +920,100 @@ function iniciarJuegoConVelocidad() {
     socket.emit('iniciar-juego', { sala: salaActual, velocidad: velocidad });
 }
 
+// ==================== PANEL DE ADMINISTRADOR ====================
+
+// PON AQUÍ EL MISMO CORREO QUE PUSISTE EN EL SERVER
+const MI_EMAIL_ADMIN = "admin@loteria.com"; 
+
+function verificarSiSoyAdmin() {
+    const btnAdmin = document.getElementById("btnPanelAdmin");
+    if (usuarioActual && usuarioActual.email === MI_EMAIL_ADMIN) {
+        btnAdmin.style.display = "block"; // ¡Muestra el botón secreto!
+    } else {
+        btnAdmin.style.display = "none";
+    }
+}
+
+// Llama a esta función dentro de 'configurarMenu()'
+// ...
+// usuarioActual.monedas = ...
+// verificarSiSoyAdmin();  <--- AGREGA ESTA LÍNEA ALLÁ ARRIBA
+// ...
+
+function abrirPanelAdmin() {
+    cambiarPantalla("pantallaAdmin");
+    cargarUsuariosAdmin();
+}
+
+async function cargarUsuariosAdmin() {
+    const tbody = document.getElementById("tablaUsuariosAdmin");
+    tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;">Cargando...</td></tr>';
+
+    try {
+        const res = await fetch(`${API_URL}/admin/usuarios`, {
+            method: 'GET',
+            headers: { 'admin-email': usuarioActual.email }
+        });
+        
+        if (!res.ok) throw new Error("Sin permiso");
+        
+        const usuarios = await res.json();
+        tbody.innerHTML = ""; // Limpiar
+
+        usuarios.forEach(u => {
+            const tr = document.createElement("tr");
+            tr.innerHTML = `
+                <td style="padding:8px; font-weight:bold;">${u.nickname}</td>
+                <td style="padding:8px; font-size:0.8rem; color:#ccc;">${u.email}</td>
+                <td style="padding:8px; color:gold;">${u.monedas}</td>
+                <td style="padding:8px;">
+                    <button onclick="prepararRecarga('${u.email}')" style="padding:2px 8px; font-size:0.7rem; margin:0;">➕</button>
+                </td>
+            `;
+            tbody.appendChild(tr);
+        });
+
+    } catch (error) {
+        console.error(error);
+        mostrarAlerta("Error cargando usuarios.", "Error Admin");
+    }
+}
+
+function prepararRecarga(email) {
+    document.getElementById("adminInputEmail").value = email;
+    document.getElementById("adminInputMonedas").focus();
+}
+
+async function ejecutarRecargaAdmin() {
+    const targetEmail = document.getElementById("adminInputEmail").value;
+    const cantidad = document.getElementById("adminInputMonedas").value;
+
+    if (!targetEmail || !cantidad) return mostrarAlerta("Faltan datos");
+
+    mostrarConfirmacion(`¿Dar ${cantidad} monedas a ${targetEmail}?`, async () => {
+        try {
+            const res = await fetch(`${API_URL}/admin/recargar-manual`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    adminEmail: usuarioActual.email,
+                    targetEmail: targetEmail,
+                    cantidad: parseInt(cantidad)
+                })
+            });
+
+            const data = await res.json();
+            if (data.success) {
+                mostrarAlerta("Recarga exitosa", "Hecho");
+                cargarUsuariosAdmin(); // Refrescar la tabla
+                document.getElementById("adminInputMonedas").value = "";
+            } else {
+                mostrarAlerta("Error: " + data.error);
+            }
+        } catch (e) {
+            mostrarAlerta("Error de conexión", "Fallo");
+        }
+    });
+}
+
+
