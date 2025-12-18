@@ -41,10 +41,11 @@ body {
   -webkit-overflow-scrolling: touch;
 }
 
-/* EXCEPCIÓN: En el juego, alineamos arriba y compactamos */
-#pantallaSeleccion, #pantallaJuego {
+/* REEMPLÁZALO POR ESTO: */
+/* Alineamos arriba el Menú, Selección y Juego para evitar scroll inicial raro */
+#pantallaMenu, #pantallaSeleccion, #pantallaJuego {
     justify-content: flex-start;
-    padding-top: 15px; /* Menos espacio arriba */
+    padding-top: 40px; /* Un buen espacio arriba para que no se pegue al techo */
     padding-bottom: 20px;
 }
 
@@ -332,24 +333,27 @@ button:active { transform: translateY(1px); }
 
 /* Agrega esto al final de css/style.css */
 
-#btnRecargar {
-    font-size: 0.75rem;       /* Letra chiquita */
-    padding: 4px 12px;        /* Botón delgado */
-    margin-top: 5px;          /* Separación del número */
-    background-color: #00e676; /* Verde Stripe / Cash */
-    color: #004d40;           /* Texto oscuro para contraste */
-    border-radius: 20px;      /* Pill shape (redondito) */
-    box-shadow: 0 4px 10px rgba(0, 230, 118, 0.4); /* Resplandor verde */
+.btn-recargar-verde {
+    font-size: 0.8rem;
+    padding: 6px 16px;
+    margin-top: 10px; /* Un poco más de aire */
+    background-color: #00e676;
+    color: #004d40;
+    border-radius: 20px;
+    box-shadow: 0 4px 10px rgba(0, 230, 118, 0.4);
     text-transform: uppercase;
     font-weight: 800;
-    width: auto;              /* Que se ajuste al texto */
+    width: auto;
     border: 1px solid rgba(255,255,255,0.4);
-    animation: palpito 2s infinite; /* Para que llame la atención sutilmente */
+    animation: palpito 2s infinite;
+    cursor: pointer;
+    transition: all 0.2s ease;
 }
 
-#btnRecargar:hover {
-    transform: scale(1.1);
+.btn-recargar-verde:hover {
+    transform: scale(1.05);
     background-color: #69f0ae;
+    box-shadow: 0 6px 15px rgba(0, 230, 118, 0.6);
 }
 
 @keyframes palpito {
