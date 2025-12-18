@@ -89,7 +89,7 @@
             <button onclick="unirseSalaExistente()">Unirse</button>
         </div>
     </div>
-    
+    <button id="btnPanelAdmin" onclick="abrirPanelAdmin()" style="display:none; background: #212121; color: gold; border: 1px solid gold; margin-top: 10px;">👑 Panel Admin</button>
     <button onclick="cerrarSesion()" style="background-color: #dc3545; margin-top: 2rem;">Cerrar Sesión</button>
   </div>
 
@@ -119,6 +119,43 @@
     <div class="cartas-container" id="contenedorCartas"></div>
     <button id="btnIniciar" style="display:none">Continuar</button>
   </div>
+
+<div id="pantallaAdmin" class="pantalla">
+    <h1 style="color: gold;">Panel de Control 👑</h1>
+    
+    <div class="sala-box" style="border: 2px solid gold;">
+        <h3 style="margin-top:0;">Recarga Manual</h3>
+        <input type="email" id="adminInputEmail" placeholder="Correo del usuario a recargar">
+        <div style="display:flex; gap:10px;">
+            <input type="number" id="adminInputMonedas" placeholder="Cantidad" style="margin-bottom:0;">
+            <button onclick="ejecutarRecargaAdmin()" style="background:var(--verde-limon); color:black; margin:0;">Enviar 💸</button>
+        </div>
+    </div>
+
+    <div class="sala-box" style="max-width: 600px;">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+            <h3>Usuarios Registrados</h3>
+            <button onclick="cargarUsuariosAdmin()" style="padding:5px 10px; font-size:0.8rem; background:var(--azul-cielo);">🔄 Actualizar</button>
+        </div>
+        
+        <div class="historial-container-modal" style="max-height: 400px; overflow-y: auto;">
+            <table style="width:100%; text-align:left; border-collapse: collapse;">
+                <thead>
+                    <tr style="color:var(--amarillo-maiz); border-bottom:1px solid white;">
+                        <th style="padding:5px;">Nick</th>
+                        <th style="padding:5px;">Email</th>
+                        <th style="padding:5px;">💰</th>
+                        <th style="padding:5px;">Acción</th>
+                    </tr>
+                </thead>
+                <tbody id="tablaUsuariosAdmin">
+                    </tbody>
+            </table>
+        </div>
+    </div>
+
+    <button onclick="cambiarPantalla('menu')" style="background:#dc3545; margin-top:20px;">Volver al Menú</button>
+</div>
 
   <div id="pantallaJuego" class="pantalla">
     <div class="historial-container">
