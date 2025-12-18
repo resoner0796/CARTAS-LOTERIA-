@@ -5,10 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <meta name="theme-color" content="#111111" />
   <link rel="manifest" href="manifest.json" />
-  
+   
   <link rel="apple-touch-icon" href="assets/imagenes/ui/icon-192.png">
   <title>Lotería WebApp</title>
-  
+   
   <link rel="stylesheet" href="css/style.css">
   <style>
     /* Estilos rápidos para las nuevas pantallas de auth (puedes moverlos a style.css luego) */
@@ -44,7 +44,7 @@
 </head>
 <body>
   <div id="pantallaSplash" class="pantalla activa"><h1>Cargando...</h1></div>
-  
+   
   <div id="pantallaLogin" class="pantalla">
     <div class="auth-container">
         <h2>Iniciar Sesión</h2>
@@ -87,6 +87,19 @@
             <p>Ingresa el nombre exacto:</p>
             <input type="text" id="inputUnirseSala" placeholder="Nombre de sala">
             <button onclick="unirseSalaExistente()">Unirse</button>
+        </div>
+        
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; width: 100%; margin-top: 10px;">
+            <div onclick="reclamarBonoDiario()" class="sala-box" style="margin:0; padding:10px; cursor:pointer; background: linear-gradient(135deg, #6a1b9a, #4a148c) !important; border: 2px solid gold;">
+                <div style="font-size: 2rem;">🎁</div>
+                <div style="font-size: 0.9rem; font-weight:bold; color:gold;">Regalo Diario</div>
+                <div id="cronometroBono" style="font-size: 0.7rem; color:#ccc;">¡Reclamar!</div>
+            </div>
+            <div onclick="mostrarAlerta('Próximamente: ¡Tienda de Máscaras y Avatares!', 'En construcción 🚧')" class="sala-box" style="margin:0; padding:10px; cursor:pointer; background: linear-gradient(135deg, #006064, #00838f) !important;">
+                <div style="font-size: 2rem;">👹</div>
+                <div style="font-size: 0.9rem; font-weight:bold; color:cyan;">Mis Máscaras</div>
+                <div style="font-size: 0.7rem; color:#ccc;">Personalizar</div>
+            </div>
         </div>
     </div>
     
@@ -148,22 +161,23 @@
           <button id="btnCambiarCartas" onclick="cambiarCartas()">Cambiar</button>
           <button id="btnLoteria" onclick="emitirLoteria()">¡LOTERÍA!</button>
           
-  <button id="btnSalirSala" onclick="salirDeSalaEnJuego()">Salir de Sala</button>
-</div>
+          <button id="btnSalirSala" onclick="salirDeSalaEnJuego()">Salir de Sala</button>
+      </div>
+    </div>
     
     <div id="apuestasUI">
       <div class="saldo-jugador">
-    <div style="display:flex;align-items:flex-end;">
-        <div class="monedas-apiladas">
-            <img src="assets/imagenes/ui/peso.png" alt="peso" class="moneda-stack">
-            <img src="assets/imagenes/ui/peso.png" alt="peso" class="moneda-stack">
-            <img src="assets/imagenes/ui/peso.png" alt="peso" class="moneda-stack">
+        <div style="display:flex;align-items:flex-end;">
+            <div class="monedas-apiladas">
+                <img src="assets/imagenes/ui/peso.png" alt="peso" class="moneda-stack">
+                <img src="assets/imagenes/ui/peso.png" alt="peso" class="moneda-stack">
+                <img src="assets/imagenes/ui/peso.png" alt="peso" class="moneda-stack">
+            </div>
         </div>
-    </div>
-    <strong id="monedas-valor">0</strong>
+        <strong id="monedas-valor">0</strong>
     
-    <button class="btn-recargar-verde" onclick="abrirModalRecarga()">Recargar ➕</button>
-</div>
+        <button class="btn-recargar-verde" onclick="abrirModalRecarga()">Recargar ➕</button>
+      </div>
       <div class="apuesta-control">
           <div class="bote-monedas">
               <img src="assets/imagenes/ui/peso.png" alt="moneda">
@@ -182,84 +196,95 @@
   <div id="loteriaMensaje">¡LOTERÍA!</div>
 
   <div id="loteriaModal" class="modal">
-  <div class="modal-content">
-    <h3 id="modalLoteriaTitulo" style="margin-top:0; color: gold;">Validar Lotería</h3>
-    <p id="modalLoteriaTexto">El jugador X dice Lotería.</p>
-    
-    <div style="text-align: left; margin-bottom: 5px; font-weight: bold; color: var(--accent-yellow);">Historial de cartas cantadas:</div>
-    <div class="historial-container-modal">
-        <div id="modalHistorialFlex">
-            </div>
-    </div>
-    <div style="text-align: left; margin-top: 15px; font-weight: bold; color: var(--accent-yellow);">Tabla del Jugador:</div>
-    <div id="modalVerificationArea" class="juego-cartas" style="margin-top: 10px; justify-content: center;"></div>
-    
-    <div class="modal-buttons">
-      <button id="btnRechazarGanador" style="background-color: #dc3545; color: white;">Rechazar ❌</button>
-      <button id="btnAceptarGanador" style="background-color: #aed581; color: black;">Confirmar ✅</button>
+    <div class="modal-content">
+      <h3 id="modalLoteriaTitulo" style="margin-top:0; color: gold;">Validar Lotería</h3>
+      <p id="modalLoteriaTexto">El jugador X dice Lotería.</p>
+      
+      <div style="text-align: left; margin-bottom: 5px; font-weight: bold; color: var(--accent-yellow);">Historial de cartas cantadas:</div>
+      <div class="historial-container-modal">
+          <div id="modalHistorialFlex">
+          </div>
+      </div>
+      <div style="text-align: left; margin-top: 15px; font-weight: bold; color: var(--accent-yellow);">Tabla del Jugador:</div>
+      <div id="modalVerificationArea" class="juego-cartas" style="margin-top: 10px; justify-content: center;"></div>
+      
+      <div class="modal-buttons">
+        <button id="btnRechazarGanador" style="background-color: #dc3545; color: white;">Rechazar ❌</button>
+        <button id="btnAceptarGanador" style="background-color: #aed581; color: black;">Confirmar ✅</button>
+      </div>
     </div>
   </div>
-</div>
+
   <div id="modalSistema" class="modal">
-  <div class="modal-content">
-    <h3 id="modalSistemaTitulo" style="margin-top:0; color:var(--accent-yellow);">Aviso</h3>
-    <p id="modalSistemaMensaje" style="font-size: 1.1rem; margin: 20px 0;">Mensaje del sistema</p>
-    
-    <div class="modal-buttons">
-      <button id="btnModalCancelar" style="display:none; background-color: #dc3545; color: white;">Cancelar</button>
-      <button id="btnModalAceptar">Aceptar</button>
+    <div class="modal-content">
+      <h3 id="modalSistemaTitulo" style="margin-top:0; color:var(--accent-yellow);">Aviso</h3>
+      <p id="modalSistemaMensaje" style="font-size: 1.1rem; margin: 20px 0;">Mensaje del sistema</p>
+      
+      <div class="modal-buttons">
+        <button id="btnModalCancelar" style="display:none; background-color: #dc3545; color: white;">Cancelar</button>
+        <button id="btnModalAceptar">Aceptar</button>
+      </div>
     </div>
   </div>
-</div>
-<div id="modalTienda" class="modal">
-  <div class="modal-content" style="max-width: 500px; width: 95%;"> <h2 id="tituloTienda" style="color: gold; margin-top:0;">Tienda de Monedas</h2>
-    
-    <div id="seccionPaquetes">
-        <p>¡No te quedes fuera de la jugada!</p>
-        <div class="paquetes-container" style="display:flex; flex-direction:column; gap:10px; margin: 20px 0;">
-            <div class="paquete-item" onclick="iniciarPagoEmbedded(50)">
-                <div class="paquete-info">
-                    <span style="font-size:1.5rem;">💰 50</span>
-                    <span style="color:#ccc; font-size:0.9rem;">Monedas</span>
-                </div>
-                <button class="btn-precio">$29.99 MXN</button>
-            </div>
 
-            <div class="paquete-item destacado" onclick="iniciarPagoEmbedded(150)">
-                <div class="badge-pop">¡MÁS VENDIDO!</div>
-                <div class="paquete-info">
-                    <span style="font-size:1.5rem;">💰 150</span>
-                    <span style="color:#ccc; font-size:0.9rem;">Monedas</span>
-                </div>
-                <button class="btn-precio">$79.99 MXN</button>
-            </div>
+  <div id="modalTienda" class="modal">
+    <div class="modal-content" style="max-width: 500px; width: 95%;"> 
+      <h2 id="tituloTienda" style="color: gold; margin-top:0;">Tienda de Monedas</h2>
+      
+      <div id="seccionPaquetes">
+          <p>¡No te quedes fuera de la jugada!</p>
+          <div class="paquetes-container" style="display:flex; flex-direction:column; gap:10px; margin: 20px 0;">
+              <div class="paquete-item" onclick="iniciarPagoEmbedded(50)">
+                  <div class="paquete-info">
+                      <span style="font-size:1.5rem;">💰 50</span>
+                      <span style="color:#ccc; font-size:0.9rem;">Monedas</span>
+                  </div>
+                  <button class="btn-precio">$29.99 MXN</button>
+              </div>
 
-            <div class="paquete-item" onclick="iniciarPagoEmbedded(500)">
-                <div class="paquete-info">
-                    <span style="font-size:1.5rem;">💰 500</span>
-                    <span style="color:#ccc; font-size:0.9rem;">Monedas</span>
-                </div>
-                <button class="btn-precio">$199.99 MXN</button>
-            </div>
-        </div>
-        <button onclick="cerrarTienda()" style="background:#dc3545; color:white; width:100%;">Cancelar</button>
+              <div class="paquete-item destacado" onclick="iniciarPagoEmbedded(150)">
+                  <div class="badge-pop">¡MÁS VENDIDO!</div>
+                  <div class="paquete-info">
+                      <span style="font-size:1.5rem;">💰 150</span>
+                      <span style="color:#ccc; font-size:0.9rem;">Monedas</span>
+                  </div>
+                  <button class="btn-precio">$79.99 MXN</button>
+              </div>
+
+              <div class="paquete-item" onclick="iniciarPagoEmbedded(500)">
+                  <div class="paquete-info">
+                      <span style="font-size:1.5rem;">💰 500</span>
+                      <span style="color:#ccc; font-size:0.9rem;">Monedas</span>
+                  </div>
+                  <button class="btn-precio">$199.99 MXN</button>
+              </div>
+          </div>
+          <button onclick="cerrarTienda()" style="background:#dc3545; color:white; width:100%;">Cancelar</button>
+      </div>
+
+      <div id="checkout" style="display: none; min-height: 400px;">
+      </div>
+      
+      <button id="btnVolverPaquetes" onclick="volverAPaquetes()" style="display:none; background:#6c757d; color:white; width:100%; margin-top:10px;">⬅ Volver a paquetes</button>
     </div>
-
-    <div id="checkout" style="display: none; min-height: 400px;">
-        </div>
-    
-    <button id="btnVolverPaquetes" onclick="volverAPaquetes()" style="display:none; background:#6c757d; color:white; width:100%; margin-top:10px;">⬅ Volver a paquetes</button>
-
   </div>
-</div>
 
+  <div id="modalSalir" class="modal">
+    <div class="modal-content">
+      <h3 style="color:var(--accent-yellow)">¿Salir de la sala?</h3>
+      <p>Si sales ahora perderás tu lugar.</p>
+      <div class="modal-buttons">
+          <button onclick="confirmarSalida()" style="background-color: #dc3545;">Sí, salir</button>
+          <button onclick="cerrarModalSalir()">Cancelar</button>
+      </div>
+    </div>
+  </div>
   <audio id="audioBarajear" src="assets/audios/barajar.mp3"></audio>
   <audio id="audioCampana" src="assets/audios/campana.mp3"></audio>
   <audio id="audioCorre" src="assets/audios/corre.mp3"></audio>
   <audio id="audioAplausos" src="assets/audios/aplausos.mp3"></audio>
 
-
-<script src="https://js.stripe.com/v3/"></script>
+  <script src="https://js.stripe.com/v3/"></script>
   <script src="https://loteria-backend-3nde.onrender.com/socket.io/socket.io.js"></script>
   <script src="js/app.js"></script>
 </body>
