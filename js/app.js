@@ -817,9 +817,9 @@ async function iniciarPagoEmbedded(cantidadMonedas) {
     if(!usuarioActual || !usuarioActual.email) return mostrarAlerta("Necesitas iniciar sesión.");
 
     let precio = 0;
-    if(cantidadMonedas === 50) precio = 29;
-    if(cantidadMonedas === 150) precio = 79;
-    if(cantidadMonedas === 500) precio = 199;
+    if(cantidadMonedas === 50) precio = 29.99;
+    if(cantidadMonedas === 150) precio = 79.99;
+    if(cantidadMonedas === 500) precio = 199.99;
 
     // 1. UI: Cambiamos vista a "Cargando..."
     document.getElementById("seccionPaquetes").style.display = "none";
