@@ -68,8 +68,10 @@
 
   <div id="pantallaMenu" class="pantalla">
     <h1 id="menuBienvenida">Hola, Jugador</h1>
-    <div class="stats-resumen">
-        <span id="menuMonedas">💰 0</span>
+    
+    <div class="stats-resumen" style="display: flex; flex-direction: column; align-items: center; margin: 2rem 0;">
+        <span id="menuMonedas" style="font-size: 2.5rem; color: gold; text-shadow: 0 2px 4px rgba(0,0,0,0.5);">💰 0</span>
+        <button class="btn-recargar-verde" onclick="abrirModalRecarga()">Recargar Ahora</button>
     </div>
     
     <div class="menu-acciones">
@@ -142,7 +144,7 @@
     </div>
     <strong id="monedas-valor">0</strong>
     
-    <button id="btnRecargar" onclick="abrirModalRecarga()">Recargar ➕</button>
+    <button class="btn-recargar-verde" onclick="abrirModalRecarga()">Recargar ➕</button>
 </div>
       <div class="apuesta-control">
           <div class="bote-monedas">
