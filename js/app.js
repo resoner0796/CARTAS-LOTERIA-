@@ -237,6 +237,7 @@ function configurarMenu() {
     if(usuarioActual) {
         document.getElementById("menuBienvenida").textContent = `Hola, ${usuarioActual.nickname}`;
         document.getElementById("menuMonedas").textContent = `💰 ${usuarioActual.monedas}`;
+        verificarSiSoyAdmin();
     }
 }
 
