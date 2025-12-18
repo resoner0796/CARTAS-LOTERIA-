@@ -853,6 +853,7 @@ async function iniciarPagoEmbedded(cantidadMonedas) {
         // (stripePromise viene de la variable global que pusiste al inicio)
         checkoutInstance = await stripePromise.initEmbeddedCheckout({
             clientSecret,
+            appearance: { theme: 'night' }
         });
 
         // ¡BOOM! Aquí aparece el formulario mágico
