@@ -16,8 +16,7 @@ let salaActual = "";
 let haApostadoLocal = false;
 let historialIdsGlobal = [];
 
-// Generamos IDs de cartas (del 01 al 54, asumiendo baraja estándar completa)
-// Nota: Ajusta el length si usas menos cartas (ej. 30 o 54)
+// Generamos IDs de cartas (del 01 al 54)
 const cartasDisponibles = Array.from({ length: 30 }, (_, i) => String(i + 1).padStart(2, '0'));
 
 const stripePromise = Stripe("pk_live_51SfOSHHRnABvTmoyGETt893p5wdCWGOmKQOiW4YCkbquy0Vp0mx97dVdfgXlhPszaZ40iXNFW4NveUq4Lilv83wd00gCQpzFmR");
@@ -149,7 +148,7 @@ window.onload = () => {
 
         // 3. DETECTAR INVITACIÓN O NAVEGACIÓN NORMAL
         if(salaInvitacion) {
-             unirseSalaDirecto(salaInvitacion);
+             unirseSalaDirecto(salaInvitacion, null); // Invitados no eligen modo
         } else {
              // Si no hay invitación, mandamos al menú
              cambiarPantalla("menu");
@@ -193,7 +192,7 @@ async function login() {
             
             const urlParams = new URLSearchParams(window.location.search);
             const salaInvitacion = urlParams.get('sala');
-            if(salaInvitacion) unirseSalaDirecto(salaInvitacion);
+            if(salaInvitacion) unirseSalaDirecto(salaInvitacion, null);
             else cambiarPantalla("menu");
 
         } else {
@@ -243,30 +242,31 @@ function configurarMenu() {
 }
 
 // ======================================================
-// GESTIÓN DE SALAS
+// GESTIÓN DE SALAS (ACTUALIZADO: MODOS DE JUEGO)
 // ======================================================
 
 function crearSalaPropia() {
     const nombreSala = document.getElementById("inputCrearSala").value.trim();
+    // Leemos el modo del select que agregaste al HTML
+    const selectModo = document.getElementById("inputModoJuego");
+    const modoJuego = selectModo ? selectModo.value : "clasico"; 
+    
     if(!nombreSala) return mostrarAlerta("Ponle nombre a tu sala");
-    unirseSalaDirecto(nombreSala);
+    unirseSalaDirecto(nombreSala, modoJuego);
 }
 
 function unirseSalaExistente() {
     const nombreSala = document.getElementById("inputUnirseSala").value.trim();
     if(!nombreSala) return mostrarAlerta("Escribe el nombre de la sala");
-    unirseSalaDirecto(nombreSala);
+    // Al unirse como invitado, el modo no importa (lo define la sala), mandamos null
+    unirseSalaDirecto(nombreSala, null);
 }
 
-function unirseSalaDirecto(nombreSala) {
+function unirseSalaDirecto(nombreSala, modo) {
     salaActual = nombreSala;
     
     // Configurar Fondos
     const basePath = "assets/imagenes/ui/";
-    const temaElegido = document.getElementById("temaVisual") ? document.getElementById("temaVisual").value : "default";
-
-    // Puedes usar switch por nombre de sala o por el selector de tema
-    // Aquí priorizamos el selector si existe, si no, lógica simple
     switch(salaActual) { 
       case "Familia":
         aplicarFondo(pantallas.seleccion, basePath + "fondo-seleccion-familia.PNG");
@@ -285,11 +285,12 @@ function unirseSalaDirecto(nombreSala) {
         aplicarFondo(pantallas.juego, basePath + "fondo-juego.PNG");
     }
 
-    // Unirse al socket
+    // Unirse al socket enviando el modo (si existe)
     socket.emit("unirse-sala", { 
         nickname: usuarioActual.nickname, 
         email: usuarioActual.email,
-        sala: salaActual 
+        sala: salaActual,
+        modo: modo
     });
 
     document.getElementById("tituloSalaActual").textContent = `Sala: ${salaActual}`;
@@ -357,7 +358,7 @@ function generarCartas() {
 
 function seleccionarCarta(img) {
   const id = img.dataset.id;
-  
+   
   // 1. DESELECCIONAR
   if (seleccionadas.includes(id)) {
       seleccionadas = seleccionadas.filter(c => c !== id);
@@ -370,7 +371,7 @@ function seleccionarCarta(img) {
 
   // 2. VALIDAR
   if (img.style.pointerEvents === 'none') return; 
-  
+   
   // 3. SELECCIONAR
   if (seleccionadas.length < 4) {
     img.classList.add("seleccionada");
@@ -412,10 +413,10 @@ function marcarFicha(e, contenedor) {
   const bounds = img.getBoundingClientRect();
   const x = e.clientX - bounds.left;
   const y = e.clientY - bounds.top;
-  
+   
   const px = (x / bounds.width) * 100;
   const py = (y / bounds.height) * 100;
-  
+   
   if(navigator.vibrate) navigator.vibrate(30);
 
   const ficha = document.createElement("img");
@@ -423,7 +424,7 @@ function marcarFicha(e, contenedor) {
   ficha.classList.add("ficha");
   ficha.style.left = `${px}%`;
   ficha.style.top = `${py}%`;
-  
+   
   contenedor.appendChild(ficha);
 }
 
@@ -479,17 +480,16 @@ socket.on('connect', () => {
 socket.on("rol-asignado", ({ host }) => {
   soyHost = host;
   generarCartas();
-  
+   
   // Lista de controles exclusivos del Host
-  // AGREGAMOS "divVelocidad" A LA LISTA
   const controlesHost = ["btnBarajear", "btnIniciarJuego", "btnDetenerJuego", "divVelocidad"]; 
-  
+   
   controlesHost.forEach(id => {
       const el = document.getElementById(id);
       if (el) {
           // Si soy host lo muestro (flex para el div de velocidad, block para botones)
           if (soyHost) {
-              el.style.display = (id === "divVelocidad") ? "flex" : "block"; // O "inline-block" según tu CSS
+              el.style.display = (id === "divVelocidad") ? "flex" : "block"; 
           } else {
               el.style.display = "none";
           }
@@ -526,7 +526,7 @@ socket.on('estado-sala-restaurado', (estado) => {
 
 socket.on("jugadores-actualizados", jugadores => {
   jugadoresGlobal = jugadores;
-  
+   
   const misDatos = Object.values(jugadores).find(j => j.email === usuarioActual?.email);
   if (misDatos) {
     monedasEl.textContent = misDatos.monedas;
@@ -535,13 +535,12 @@ socket.on("jugadores-actualizados", jugadores => {
     localStorage.setItem("loteria_usuario", JSON.stringify(usuarioActual));
     configurarMenu();
   }
-  
+   
   if (btnApostar) btnApostar.disabled = haApostadoLocal;
-  
+   
   const htmlLista = "<h3>Jugadores en sala:</h3>" +
     Object.values(jugadores).map(j => {
       const check = j.apostado ? "💸" : "";
-      // --- CAMBIO: Detectar si es Host y poner corona ---
       const crown = j.host ? "👑" : ""; 
       return `<div>${crown} ${j.nickname} ${check}</div>`;
     }).join("");
@@ -582,7 +581,7 @@ socket.on("carta-cantada", (cartaId) => {
   historial.prepend(img);
   historial.scrollLeft = 0;
   historialIdsGlobal.unshift(formattedId);
-  
+   
   const audioVoz = new Audio(`assets/audios/${formattedId}.mp3`);
   audioVoz.play();
 });
@@ -604,15 +603,15 @@ socket.on("juego-detenido", () => {
 });
 
 // ======================================================
-// LOTERÍA (GANADORES)
+// LOTERÍA (GANADORES) - NUEVA LÓGICA DE EMPATES
 // ======================================================
 
 function emitirLoteria() {
   audioCorre.pause();
   audioCampana.pause();
   audioBarajear.pause();
-  mostrarLoteriaMensaje();
-  
+  // El mensaje ya no lo mostramos aquí, lo dispara el server con 'pausa-empate'
+   
   const boardState = { cards: seleccionadas, chips: {} };
 
   document.querySelectorAll('#juegoCartas .carta-juego').forEach(cardContainer => {
@@ -627,107 +626,147 @@ function emitirLoteria() {
   socket.emit("loteria", { nickname: usuarioActual.nickname, sala: salaActual, boardState });
 }
 
-function mostrarLoteriaMensaje() {
-  loteriaMensaje.style.display = "block";
-  if(navigator.vibrate) navigator.vibrate([200, 100, 200]);
-  
-  for (let i = 0; i < 100; i++) {
-    const confeti = document.createElement("div");
-    confeti.classList.add("confeti");
-    confeti.style.left = Math.random() * 100 + "vw";
-    confeti.style.top = "-10px";
-    confeti.style.backgroundColor = `hsl(${Math.random()*360}, 100%, 50%)`;
-    confeti.style.animationDelay = (Math.random() * 2) + "s";
-    document.body.appendChild(confeti);
-    confeti.addEventListener("animationend", () => confeti.remove());
-  }
-  setTimeout(() => { loteriaMensaje.style.display = "none"; }, 4000);
+// 1. INICIO DE LA VENTANA DE EMPATE (Cuenta regresiva)
+socket.on("pausa-empate", ({ primerGanador, tiempo }) => {
+    loteriaMensaje.style.display = "block";
+    loteriaMensaje.innerHTML = `
+        <div style="font-size:2rem; color: gold; text-shadow: 2px 2px 0 #000;">¡${primerGanador} gritó BUENAS!</div>
+        <div style="font-size:1.2rem; margin-top:20px; color: white;">Esperando empates... <span id="contadorEmpate" style="font-weight:bold; font-size:1.5rem;">${tiempo}</span>s</div>
+    `;
+    
+    // Animación visual de cuenta regresiva
+    let timeLeft = tiempo;
+    const timer = setInterval(() => {
+        timeLeft--;
+        const el = document.getElementById("contadorEmpate");
+        if(el) el.textContent = timeLeft;
+        if(timeLeft <= 0) clearInterval(timer);
+    }, 1000);
+});
+
+socket.on("notificar-otro-ganador", (otroNick) => {
+    loteriaMensaje.innerHTML += `<div style="font-size:1.5rem; color:#ff4081; font-weight:bold; margin-top:10px; animation: pulsate 0.5s infinite;">¡${otroNick} TAMBIÉN GRITÓ!</div>`;
+    if(navigator.vibrate) navigator.vibrate([100, 100]);
+});
+
+// 2. HOST: INICIAR VALIDACIÓN SECUENCIAL
+socket.on("iniciar-validacion-secuencial", (listaReclamantes) => {
+    loteriaMensaje.style.display = "none"; 
+    procesarSiguienteValidacion(listaReclamantes);
+});
+
+socket.on("continuar-validacion", (listaReclamantes) => {
+    procesarSiguienteValidacion(listaReclamantes);
+});
+
+function procesarSiguienteValidacion(lista) {
+    const siguiente = lista.find(r => r.status === 'pendiente');
+    
+    if (siguiente) {
+        const total = lista.length;
+        const index = lista.filter(r => r.status !== 'pendiente').length + 1;
+        
+        abrirModalValidacionHost(siguiente, index, total);
+    }
 }
 
-// Reemplaza toda la función socket.on("loteria-anunciada"...) por esta:
+function abrirModalValidacionHost(candidato, index, total) {
+    ganadorTempId = candidato.id;
+    
+    modalLoteriaTitulo.textContent = `Validando Ganador (${index} de ${total})`;
+    modalLoteriaTexto.textContent = `${candidato.nickname} reclama victoria. Revisa su tabla.`;
+    
+    // Llenar historial visual
+    const modalHistorialFlex = document.getElementById("modalHistorialFlex");
+    modalHistorialFlex.innerHTML = "";
+    historialIdsGlobal.forEach(cartaId => {
+         const img = document.createElement("img");
+         img.src = `assets/imagenes/barajas/${cartaId}.png`;
+         modalHistorialFlex.appendChild(img);
+    });
 
-socket.on("loteria-anunciada", (nicknameGanador, idGanador, boardState) => {
-    if (soyHost) {
-        ganadorTempId = idGanador;
-        modalLoteriaTitulo.textContent = "¡Validar Lotería!";
-        modalLoteriaTexto.textContent = `${nicknameGanador} grita ¡LOTERÍA! Revisa su tabla contra el historial.`;
-        
-        // --- NUEVO: LLENAR EL HISTORIAL DEL MODAL ---
-        const modalHistorialFlex = document.getElementById("modalHistorialFlex");
-        modalHistorialFlex.innerHTML = ""; // Limpiamos basura vieja
-        
-        // Llenamos con las cartas que tenemos en memoria global
-        historialIdsGlobal.forEach(cartaId => {
-             const img = document.createElement("img");
-             // Usamos las imágenes de la BARAJA (las que salen cantadas)
-             img.src = `assets/imagenes/barajas/${cartaId}.png`;
-             modalHistorialFlex.appendChild(img);
+    // Llenar tabla del jugador
+    modalVerificationArea.innerHTML = '';
+    const bs = candidato.boardState;
+    if (bs && bs.cards) {
+        bs.cards.forEach(cardId => {
+            const cardContainer = document.createElement('div');
+            cardContainer.className = 'carta-juego';
+            const cardImg = document.createElement('img');
+            cardImg.src = `assets/imagenes/cartas/${cardId}.jpg`;
+            cardImg.className = 'carta-img seleccionada';
+            cardImg.style.pointerEvents = "none";
+            cardContainer.appendChild(cardImg);
+            
+            if (bs.chips && bs.chips[cardId]) {
+                bs.chips[cardId].forEach(chipPos => {
+                    const ficha = document.createElement("img");
+                    ficha.src = "assets/imagenes/ui/ficha.PNG";
+                    ficha.className = "ficha";
+                    ficha.style.left = chipPos.left;
+                    ficha.style.top = chipPos.top;
+                    ficha.style.pointerEvents = "none";
+                    cardContainer.appendChild(ficha);
+                });
+            }
+            modalVerificationArea.appendChild(cardContainer);
         });
-        // --------------------------------------------
-
-        modalVerificationArea.innerHTML = ''; 
-
-        if (boardState && boardState.cards) {
-            boardState.cards.forEach(cardId => {
-                const cardContainer = document.createElement('div');
-                cardContainer.className = 'carta-juego';
-
-                const cardImg = document.createElement('img');
-                cardImg.src = `assets/imagenes/cartas/${cardId}.jpg`;
-                cardImg.className = 'carta-img seleccionada';
-                // Importante: quitar pointer-events en el modal para que no se puedan mover fichas ahí
-                cardImg.style.pointerEvents = "none"; 
-                cardContainer.appendChild(cardImg);
-
-                if (boardState.chips && boardState.chips[cardId]) {
-                    boardState.chips[cardId].forEach(chipPos => {
-                        const ficha = document.createElement("img");
-                        ficha.src = "assets/imagenes/ui/ficha.PNG";
-                        ficha.className = "ficha";
-                        ficha.style.left = chipPos.left;
-                        ficha.style.top = chipPos.top;
-                        ficha.style.pointerEvents = "none"; // Fichas estáticas en el modal
-                        cardContainer.appendChild(ficha);
-                    });
-                }
-                modalVerificationArea.appendChild(cardContainer);
-            });
-        }
-        loteriaModal.classList.add("active");
     }
-});
+    
+    loteriaModal.classList.add("active");
+}
 
-if(btnAceptarGanador) btnAceptarGanador.addEventListener("click", () => {
+// BOTONES DEL MODAL
+if(btnAceptarGanador) btnAceptarGanador.onclick = () => {
     if (ganadorTempId) {
-        socket.emit("confirmar-ganador", { sala: salaActual, ganadorId: ganadorTempId, esValido: true });
-        loteriaModal.classList.remove("active");
-        modalVerificationArea.innerHTML = '';
-        ganadorTempId = "";
+        // Emitimos el nuevo evento 'veredicto-host'
+        socket.emit("veredicto-host", { sala: salaActual, candidatoId: ganadorTempId, esValido: true });
+        loteriaModal.classList.remove("active"); 
     }
-});
+};
 
-if(btnRechazarGanador) btnRechazarGanador.addEventListener("click", () => {
+if(btnRechazarGanador) btnRechazarGanador.onclick = () => {
     if (ganadorTempId) {
-        socket.emit("confirmar-ganador", { sala: salaActual, ganadorId: ganadorTempId, esValido: false });
+        socket.emit("veredicto-host", { sala: salaActual, candidatoId: ganadorTempId, esValido: false });
         loteriaModal.classList.remove("active");
-        modalVerificationArea.innerHTML = '';
-        ganadorTempId = "";
+    }
+};
+
+// 3. RESULTADOS FINALES
+socket.on("ganadores-multiples", ({ ganadores, premio }) => {
+    loteriaMensaje.style.display = "none";
+    let msg = "";
+    if (ganadores.length > 1) {
+        msg = `¡EMPATE! 🤝\nGanadores: ${ganadores.join(", ")}\nSe llevan ${premio} monedas cada uno.`;
+    } else {
+        msg = `¡TENEMOS GANADOR! 🏆\n${ganadores[0]} se lleva ${premio} monedas.`;
+    }
+    mostrarAlerta(msg, "¡RESULTADO FINAL!");
+    
+    // Confeti y audio final
+    audioAplausos.currentTime = 0;
+    audioAplausos.play().catch(()=>{});
+    if(navigator.vibrate) navigator.vibrate([100,50,100,50,500]);
+
+    // Efecto visual confeti (mismo que antes)
+    for (let i = 0; i < 100; i++) {
+        const confeti = document.createElement("div");
+        confeti.classList.add("confeti");
+        confeti.style.left = Math.random() * 100 + "vw";
+        confeti.style.top = "-10px";
+        confeti.style.backgroundColor = `hsl(${Math.random()*360}, 100%, 50%)`;
+        confeti.style.animationDelay = (Math.random() * 2) + "s";
+        document.body.appendChild(confeti);
+        confeti.addEventListener("animationend", () => confeti.remove());
     }
 });
 
-socket.on("ganador-confirmado", (ganadorId) => {
-    if (jugadoresGlobal[ganadorId]) {
-        mostrarAlerta(`🎉 ${jugadoresGlobal[ganadorId].nickname} ganó el bote!`, "¡GANADOR!");
-        audioAplausos.play().catch(() => {});
-        if(navigator.vibrate) navigator.vibrate([100,50,100,50,500]);
-    }
+socket.on("falsa-alarma-masiva", () => {
     loteriaMensaje.style.display = "none";
+    mostrarAlerta("Todos los reclamos fueron rechazados. ¡Sigue el juego!", "Falsa Alarma 🤡");
+    audioCorre.play().catch(()=>{});
 });
 
-socket.on("ganador-rechazado", (ganadorId) => {
-    mostrarAlerta(`${jugadoresGlobal[ganadorId]?.nickname || "Jugador"} fue rechazado.`, "Falsa Alarma");
-    loteriaMensaje.style.display = "none";
-});
 
 // APUESTAS
 if(btnApostar) btnApostar.addEventListener("click", () => {
@@ -745,62 +784,7 @@ function abrirModalRecarga() {
     const modal = document.getElementById('modalTienda');
     if(modal) {
         modal.classList.add('active');
-        if(navigator.vibrate) navigator.vibrate(50);
-    }
-}
-
-// Reemplaza la función iniciarPagoStripe en js/app.js
-
-async function iniciarPagoStripe(cantidadMonedas) {
-    if(!usuarioActual || !usuarioActual.email) return mostrarAlerta("Necesitas iniciar sesión para comprar.");
-
-    let precio = 0;
-    // Definimos precios igual que en el HTML
-    if(cantidadMonedas === 50) precio = 29;
-    if(cantidadMonedas === 150) precio = 79;
-    if(cantidadMonedas === 500) precio = 199;
-
-    cerrarModal();
-    document.getElementById('modalTienda').classList.remove('active');
-
-    mostrarConfirmacion(`¿Ir a pagar $${precio} MXN por ${cantidadMonedas} monedas?`, async () => {
-        mostrarAlerta("Redirigiendo a Stripe...", "Procesando");
-        
-        try {
-            const res = await fetch(`${API_URL}/crear-orden`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ 
-                    cantidad: cantidadMonedas, 
-                    precio: precio,
-                    email: usuarioActual.email 
-                })
-            });
-            
-            const data = await res.json();
-            
-            if(data.url) {
-                // REDIRECCIÓN MÁGICA A STRIPE
-                window.location.href = data.url;
-            } else {
-                mostrarAlerta("No se pudo generar el pago", "Error");
-            }
-        } catch (error) {
-            console.error(error);
-            mostrarAlerta("Error de conexión con el servidor de pagos", "Error");
-        }
-    });
-}
-
-// ==================== TIENDA EMBEDDED (NATIVO) ====================
-
-let checkoutInstance = null; // Para guardar la instancia de Stripe
-
-function abrirModalRecarga() {
-    const modal = document.getElementById('modalTienda');
-    if(modal) {
-        modal.classList.add('active');
-        volverAPaquetes(); // Siempre abrir mostrando paquetes
+        volverAPaquetes(); 
         if(navigator.vibrate) navigator.vibrate(50);
     }
 }
@@ -808,7 +792,6 @@ function abrirModalRecarga() {
 function cerrarTienda() {
     const modal = document.getElementById('modalTienda');
     if(modal) modal.classList.remove('active');
-    // Destruimos el form para que no se duplique si vuelven a entrar
     if(checkoutInstance) {
         checkoutInstance.destroy();
         checkoutInstance = null;
@@ -834,7 +817,6 @@ async function iniciarPagoEmbedded(cantidadMonedas) {
     if(cantidadMonedas === 150) precio = 79.99;
     if(cantidadMonedas === 500) precio = 199.99;
 
-    // 1. UI: Cambiamos vista a "Cargando..."
     document.getElementById("seccionPaquetes").style.display = "none";
     const checkoutDiv = document.getElementById("checkout");
     checkoutDiv.style.display = "block";
@@ -843,7 +825,6 @@ async function iniciarPagoEmbedded(cantidadMonedas) {
     document.getElementById("btnVolverPaquetes").style.display = "block";
 
     try {
-        // 2. BACKEND: Pedimos el clientSecret
         const res = await fetch(`${API_URL}/crear-orden`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -858,17 +839,10 @@ async function iniciarPagoEmbedded(cantidadMonedas) {
         
         if(!clientSecret) throw new Error("No se recibió clave de pago");
 
-        // 3. STRIPE: Montamos el formulario en el div #checkout
-        // Limpiamos el texto de "Cargando..."
         checkoutDiv.innerHTML = ""; 
         
-        // Inicializamos el checkout integrado
-        // (stripePromise viene de la variable global que pusiste al inicio)
-        checkoutInstance = await stripePromise.initEmbeddedCheckout({
-    clientSecret, 
-});
-
-checkoutInstance.mount('#checkout');
+        checkoutInstance = await stripePromise.initEmbeddedCheckout({ clientSecret });
+        checkoutInstance.mount('#checkout');
 
     } catch (error) {
         console.error(error);
@@ -891,19 +865,15 @@ function cargarSetFavorito() {
     
     const idsFavoritos = JSON.parse(guardadas);
     
-    // Primero limpiamos lo que tenga seleccionado actualmente
     seleccionadas.forEach(id => {
         socket.emit("deseleccionar-carta", { carta: id, sala: salaActual });
     });
     seleccionadas = [];
     
-    // Limpiamos visualmente
     document.querySelectorAll("#contenedorCartas .carta-img").forEach(img => {
         img.classList.remove("seleccionada");
     });
 
-    // Seleccionamos las favoritas una por una
-    // (Un pequeño delay para no saturar al socket si son muchas)
     idsFavoritos.forEach((id, index) => {
         setTimeout(() => {
             const img = document.querySelector(`.carta-img[data-id="${id}"]`);
@@ -917,8 +887,6 @@ function cargarSetFavorito() {
 function iniciarJuegoConVelocidad() {
     const selector = document.getElementById("velocidadJuego");
     const velocidad = selector ? parseInt(selector.value) : 3000;
-    
-    // Emitimos al servidor con el parámetro extra 'velocidad'
     socket.emit('iniciar-juego', { sala: salaActual, velocidad: velocidad });
 }
 
@@ -930,17 +898,11 @@ const MI_EMAIL_ADMIN = "admin@loteria.com";
 function verificarSiSoyAdmin() {
     const btnAdmin = document.getElementById("btnPanelAdmin");
     if (usuarioActual && usuarioActual.email === MI_EMAIL_ADMIN) {
-        btnAdmin.style.display = "block"; // ¡Muestra el botón secreto!
+        btnAdmin.style.display = "block";
     } else {
         btnAdmin.style.display = "none";
     }
 }
-
-// Llama a esta función dentro de 'configurarMenu()'
-// ...
-// usuarioActual.monedas = ...
-// verificarSiSoyAdmin();  <--- AGREGA ESTA LÍNEA ALLÁ ARRIBA
-// ...
 
 function abrirPanelAdmin() {
     cambiarPantalla("pantallaAdmin");
@@ -949,6 +911,8 @@ function abrirPanelAdmin() {
 
 async function cargarUsuariosAdmin() {
     const tbody = document.getElementById("tablaUsuariosAdmin");
+    if(!tbody) return;
+    
     tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;">Cargando...</td></tr>';
 
     try {
@@ -960,7 +924,7 @@ async function cargarUsuariosAdmin() {
         if (!res.ok) throw new Error("Sin permiso");
         
         const usuarios = await res.json();
-        tbody.innerHTML = ""; // Limpiar
+        tbody.innerHTML = ""; 
 
         usuarios.forEach(u => {
             const tr = document.createElement("tr");
@@ -982,8 +946,11 @@ async function cargarUsuariosAdmin() {
 }
 
 function prepararRecarga(email) {
-    document.getElementById("adminInputEmail").value = email;
-    document.getElementById("adminInputMonedas").focus();
+    const inputEmail = document.getElementById("adminInputEmail");
+    const inputMonedas = document.getElementById("adminInputMonedas");
+    
+    if(inputEmail) inputEmail.value = email;
+    if(inputMonedas) inputMonedas.focus();
 }
 
 async function ejecutarRecargaAdmin() {
@@ -1007,7 +974,7 @@ async function ejecutarRecargaAdmin() {
             const data = await res.json();
             if (data.success) {
                 mostrarAlerta("Recarga exitosa", "Hecho");
-                cargarUsuariosAdmin(); // Refrescar la tabla
+                cargarUsuariosAdmin(); 
                 document.getElementById("adminInputMonedas").value = "";
             } else {
                 mostrarAlerta("Error: " + data.error);
@@ -1017,5 +984,3 @@ async function ejecutarRecargaAdmin() {
         }
     });
 }
-
-
