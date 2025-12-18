@@ -1,423 +1,467 @@
-/* css/style.css - TEMA "FERIA NARANJA" (VIVO Y ALEGRE) PRO v3.0 FINAL */
-
-/* --- 1. IMPORTAR FUENTES PRO --- */
-@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;900&family=Poppins:wght@300;400;600&display=swap');
+/* css/style.css - TEMA "FERIA NARANJA" (VIVO Y ALEGRE) */
+/* VERSIÓN CORREGIDA Y COMPLETADA */
 
 :root {
-  /* Paleta CÁLIDA Y VIVA */
-  --primary-bg: #ff6f00;      
-  --secondary-bg: #e65100;    
-  --text-color: #ffffff;
-  
-  /* Colores de Acento */
-  --rosa-mexicano: #f50057;   
-  --amarillo-maiz: #ffea00;   
-  --verde-limon: #76ff03;     
-  --azul-cielo: #00b0ff;      
-  --rojo-fuego: #d50000;      
-  
-  --glass-bg: rgba(0, 0, 0, 0.7); 
-  --border-color: rgba(255, 234, 0, 0.5); 
-  --box-shadow-warm: 0 8px 32px 0 rgba(100, 30, 0, 0.5);
+    /* Paleta CÁLIDA Y VIVA */
+    --primary-bg: #ff6f00; /* Naranja vibrante base */
+    --secondary-bg: #e65100; /* Naranja rojizo oscuro */
+    --text-color: #ffffff;
+    
+    /* Colores de Acento (Feria Mexicana) */
+    --rosa-mexicano: #f50057; /* Para botones generales */
+    --amarillo-maiz: #ffea00; /* Dorados / Títulos */
+    --verde-limon: #76ff03; /* Acciones positivas */
+    --azul-cielo: #00b0ff; /* Acciones secundarias */
+    --rojo-fuego: #d50000; /* Salir / Cancelar */
+    
+    /* Efectos */
+    --glass-bg: rgba(0, 0, 0, 0.65); /* Fondo negro translúcido */
+    --border-color: rgba(255, 234, 0, 0.5); /* Bordes dorados */
+    --box-shadow-warm: 0 8px 32px 0 rgba(100, 30, 0, 0.5);
 }
 
 body {
-  margin: 0;
-  background: linear-gradient(135deg, #ff9100 0%, #ff3d00 100%);
-  background-attachment: fixed; 
-  color: var(--text-color);
-  font-family: 'Poppins', sans-serif; 
-  min-height: 100vh;
-  width: 100%;          
-  overflow-x: hidden;   
+    margin: 0;
+    /* DEGRADADO NARANJA TIPO ATARDECER / FERIA */
+    background: linear-gradient(135deg, #ff9100 0%, #ff3d00 100%);
+    background-attachment: fixed;
+    color: var(--text-color);
+    font-family: 'Segoe UI', 'Roboto', sans-serif;
+    min-height: 100vh;
+    width: 100%;
+    overflow-x: hidden;
 }
 
-/* --- 2. CONFIGURACIÓN DE PANTALLAS --- */
+/* --- CONFIGURACIÓN GENERAL DE PANTALLAS --- */
 .pantalla {
-  display: none;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center; 
-  min-height: 100vh;        
-  padding: 1rem; 
-  background: transparent; 
-  transition: opacity 0.5s ease-in;
-  box-sizing: border-box;
-}
-
-/* Ajuste de márgenes superiores para pantallas con contenido */
-#pantallaMenu, #pantallaSeleccion, #pantallaJuego, #pantallaAdmin {
-    justify-content: flex-start;
-    padding-top: 40px; 
-    padding-bottom: 20px;
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh; /* Asegura altura mínima */
+    padding: 1rem;
+    background: transparent;
+    transition: opacity 0.5s ease-in;
+    box-sizing: border-box;
+    -webkit-overflow-scrolling: touch;
+    width: 100%;
 }
 
 .pantalla.activa { display: flex; }
 
-/* --- 3. TIPOGRAFÍA PRO --- */
-h1, h2, h3 {
-    font-family: 'Montserrat', sans-serif; 
+/* Alineación Superior para Menús */
+#pantallaMenu, #pantallaSeleccion, #pantallaJuego {
+    justify-content: flex-start;
+    padding-top: 50px;
+    padding-bottom: 40px;
+}
+
+/* --- TIPOGRAFÍA Y TÍTULOS --- */
+h1, h3 {
     text-transform: uppercase;
     color: var(--amarillo-maiz);
-    text-shadow: 2px 2px 0px #b71c1c; 
+    text-shadow: 2px 2px 0px #b71c1c;
     margin-bottom: 15px;
     font-weight: 900;
     letter-spacing: 1px;
     text-align: center;
 }
 
-#menuBienvenida { font-size: 1.8rem; margin-bottom: 0.5rem; line-height: 1.2; }
-#menuMonedas { font-family: 'Montserrat', sans-serif; font-weight: 700; }
+/* CORRECCIÓN SOLICITADA: Hola Jugador en BLANCO */
+h2, #mensajeBienvenida {
+    text-transform: uppercase;
+    color: #ffffff !important; /* Forzamos color blanco puro */
+    text-shadow: 0 2px 5px rgba(0,0,0,0.6); /* Sombra suave para leerse bien en naranja */
+    margin-bottom: 15px;
+    font-weight: 800;
+    text-align: center;
+}
 
-/* --- 4. CONTENEDORES (GLASSMORPHISM) --- */
-.auth-container, 
-.sala-box, 
-.menu-acciones,
-#jugadoresLista, 
-#jugadoresListaIngame,
-.historial-container,
-.sala-box-admin { /* Agregamos soporte para admin */
-    background: var(--glass-bg) !important;
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border-radius: 24px; 
-    border: 1px solid rgba(255, 255, 255, 0.15); 
-    box-shadow: 0 10px 30px rgba(0,0,0,0.4);
-    padding: 1.5rem;
+#pantallaSplash h1 {
+    position: absolute;
+    bottom: 2rem;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 1.5rem;
+    text-align: center;
     color: white;
-    width: 100%;
-    max-width: 400px; 
+    text-shadow: 0 2px 5px rgba(0,0,0,0.5);
+    font-weight: 400;
+}
+
+/* --- CONTENEDORES (GLASS OSCURO) --- */
+/* Ajustados para que no se rompan */
+.auth-container,
+.sala-box,
+.menu-acciones,
+#jugadoresLista,
+#jugadoresListaIngame,
+.historial-container {
+    background: var(--glass-bg) !important;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border-radius: 20px;
+    border: 2px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+    padding: 1.5rem; /* Un poco más de aire */
+    color: white;
+    width: 95%; /* Ocupa casi todo el ancho en móvil */
+    max-width: 400px; /* Tope máximo para que no se vea gigante */
     margin: 10px auto;
     box-sizing: border-box;
     text-align: center;
 }
 
+/* Ajuste específico para listas en juego */
 #jugadoresLista, #jugadoresListaIngame {
-    max-width: 500px;
+    max-width: 600px; /* Un poco más ancho para listas */
     margin-top: 15px;
-    border-color: var(--amarillo-maiz); 
+    border-color: var(--amarillo-maiz);
 }
 
-/* --- 5. INPUTS Y FORMULARIOS --- */
-input[type="text"], input[type="email"], input[type="password"], input[type="number"], select {
+/* --- INPUTS Y FORMULARIOS --- */
+input[type="text"], input[type="email"], input[type="password"], select {
     width: 100%;
-    padding: 14px;
+    padding: 14px; /* Más gorditos para dedo */
     border-radius: 12px;
-    border: 1px solid rgba(255, 255, 255, 0.3); 
-    background: rgba(255, 255, 255, 0.1); 
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    background: rgba(255, 255, 255, 0.15);
     color: white;
     font-size: 1rem;
-    font-family: 'Poppins', sans-serif;
     box-sizing: border-box;
     margin-bottom: 15px;
     outline: none;
-    text-align: center; 
 }
 
-input:focus, select:focus {
+input:focus {
     border-color: var(--amarillo-maiz);
-    background: rgba(255, 255, 255, 0.15);
+    background: rgba(255, 255, 255, 0.25);
 }
 
-/* --- 6. CARTAS (BASE) --- */
+input::placeholder { color: rgba(255,255,255,0.7); }
+
+/* --- CARTAS --- */
 .cartas-container, .juego-cartas {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 10px;
-  padding: 10px 0;
-  width: 100%;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.8rem;
+    padding: 0.5rem 0;
+    width: 100%;
+    padding-bottom: 20px;
 }
 
 .carta-img {
-  width: 150px; 
-  border-radius: 10px;
-  cursor: pointer;
-  transition: transform 0.2s ease;
-  max-width: 100%;
-  height: auto;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
+    width: 160px; /* Tamaño base móvil */
+    border-radius: 8px;
+    cursor: pointer;
+    transition: transform 0.2s ease;
+    max-width: 100%;
+    height: auto;
+    border: 3px solid transparent;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.4);
 }
 
 .carta-img.seleccionada {
-  transform: scale(1.05);
-  border: 3px solid var(--amarillo-maiz);
-  box-shadow: 0 0 15px var(--amarillo-maiz); 
+    transform: scale(1.05);
+    border-color: var(--amarillo-maiz);
+    box-shadow: 0 0 20px var(--amarillo-maiz);
 }
 
 .carta-juego {
-  position: relative;
-  flex-basis: auto; 
-  max-width: fit-content;
+    position: relative;
+    flex-basis: 45%;
+    max-width: 45%;
+}
+
+.carta-juego img.carta-img {
+    width: 100%;
+    border-radius: 8px;
 }
 
 .ficha {
-  position: absolute;
-  width: 45px; 
-  transform: translate(-50%, -50%);
-  filter: drop-shadow(0 4px 6px rgba(0,0,0,0.6));
-  z-index: 10;
-  pointer-events: none;
+    position: absolute;
+    width: 50px;
+    height: auto;
+    transform: translate(-50%, -50%);
+    filter: drop-shadow(0 4px 6px rgba(0,0,0,0.6));
+    z-index: 10;
+    pointer-events: none; /* Para que el click pase a la carta si es necesario */
 }
 
-/* --- 7. BOTONES (COLORES Y ESTILOS) --- */
+/* --- BOTONES --- */
 button {
-  padding: 0.9rem 1.5rem; 
-  font-size: 1rem;
-  margin: 0.5rem 0; 
-  border-radius: 50px; 
-  border: none;
-  background: var(--rosa-mexicano);
-  color: white; 
-  cursor: pointer;
-  font-family: 'Montserrat', sans-serif;
-  font-weight: 700;
-  letter-spacing: 0.5px;
-  box-shadow: 0 4px 15px rgba(0,0,0,0.3); 
-  transition: transform 0.1s, box-shadow 0.1s;
-  text-transform: uppercase;
-  width: 100%; 
+    padding: 1rem 1.5rem;
+    font-size: 1rem;
+    margin: 0.5rem;
+    border-radius: 50px;
+    border: none;
+    background: var(--rosa-mexicano); /* Color base */
+    color: white;
+    cursor: pointer;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+    transition: transform 0.1s, box-shadow 0.1s;
+    text-transform: uppercase;
+    -webkit-tap-highlight-color: transparent;
 }
 
-button:active { transform: scale(0.97); }
-
-/* Variantes de Color */
-button[onclick*="crearSala"], #btnIniciarJuego, #btnApostar, .btn-recargar-verde, button[class*="confirmar"] {
-    background: linear-gradient(135deg, var(--verde-limon) 0%, #64dd17 100%);
-    color: #003300; 
+button:active {
+    transform: scale(0.95);
+    box-shadow: none;
 }
 
-button[onclick*="unirseSala"], #btnBarajear, #btnLimpiarCartas, button[onclick*="cargarUsuarios"] {
-    background: linear-gradient(135deg, var(--azul-cielo) 0%, #0091ea 100%);
+/* Colores Específicos */
+button[onclick*="crearSala"], #btnIniciarJuego, #btnApostar, #btnGuardarSet, .btn-confirmar, button[onclick*="cargarSet"] {
+    background: linear-gradient(to bottom, var(--verde-limon), #64dd17);
+    color: #003300;
+}
+
+button[onclick*="unirseSala"], #btnBarajear, #btnLimpiarCartas {
+    background: linear-gradient(to bottom, var(--azul-cielo), #0091ea);
     color: #002f6c;
 }
 
-#btnDetenerJuego, #btnSalirSala, #btnSalirLobby, button[onclick*="cerrarSesion"], button[onclick*="cerrarTienda"] {
-    background: linear-gradient(135deg, #ff5252 0%, #d50000 100%);
+#btnDetenerJuego, #btnSalirSala, #btnSalirLobby, button[onclick*="cerrarSesion"] {
+    background: linear-gradient(to bottom, #ff5252, #d50000);
     color: white;
 }
 
-#btnLoteria { 
+#btnCambiarCartas {
+    background: linear-gradient(to bottom, var(--amarillo-maiz), #fbc02d);
+    color: #3e2723;
+}
+
+/* BOTÓN LOTERÍA */
+#btnLoteria {
     background: linear-gradient(45deg, #ffea00, #ff9100, #ffea00);
     background-size: 200% 200%;
     color: #bf360c;
-    font-size: 1.1rem;
-    animation: gradientMove 2s ease infinite;
+    font-size: 1.2rem;
+    animation: palpito 1.5s infinite, gradientMove 2s ease infinite;
     border: 2px solid white;
+    width: 100%; /* Ocupa ancho completo en controles */
+    margin: 5px 0;
 }
-@keyframes gradientMove { 0% { background-position: 0% 50%; } 100% { background-position: 100% 50%; } }
 
-/* --- 8. TIENDA Y ECONOMÍA (IMPORTANTE PARA TU IDEA) --- */
-.paquete-item {
+@keyframes gradientMove {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+/* --- CONTROLES DE JUEGO (GRID) --- */
+#controlesJuego {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    width: 100%;
+    max-width: 500px;
+    margin: 10px auto;
+    padding: 0 10px;
+    box-sizing: border-box;
+}
+
+#controlesJuego button {
+    width: 100%;
+    height: 55px;
+    margin: 0;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Botones que ocupan toda la fila */
+#btnSalirLobby, #btnSalirSala {
+    grid-column: 1 / -1;
+}
+
+/* --- APUESTAS UI --- */
+#apuestasUI {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    background: rgba(255,255,255,0.1);
-    border: 1px solid rgba(255,255,255,0.1);
-    padding: 15px;
-    border-radius: 12px;
-    cursor: pointer;
-    transition: transform 0.2s;
-    position: relative;
-    margin-bottom: 10px;
-    text-align: left; /* Alineación interna */
+    margin-top: 15px;
+    padding: 1rem;
+    background: var(--glass-bg) !important;
+    backdrop-filter: blur(12px);
+    border-radius: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+    flex-direction: row;
+    gap: 1rem;
+    width: 95%;
+    max-width: 500px;
+    margin-left: auto;
+    margin-right: auto;
 }
 
-.paquete-item:hover {
-    background: rgba(255,255,255,0.2);
-    transform: translateX(5px);
-}
-
-.paquete-item.destacado {
-    border: 2px solid var(--amarillo-maiz);
-    background: rgba(255, 235, 59, 0.15);
-}
-
-.badge-pop {
-    position: absolute;
-    top: -10px;
-    left: 10px;
-    background: var(--amarillo-maiz);
-    color: black;
-    font-size: 0.7rem;
-    font-weight: bold;
-    padding: 2px 8px;
-    border-radius: 10px;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.3);
-}
-
-.btn-precio {
-    background: var(--verde-limon);
-    color: #003d00;
-    margin: 0;
-    width: auto !important; /* Excepción para que no se estire */
-    font-size: 0.9rem;
-    box-shadow: none;
-    padding: 8px 12px;
-}
-
-/* Botón pequeño de recarga verde */
-.btn-recargar-verde {
-    font-size: 0.8rem;
-    padding: 8px 16px;
-    margin-top: 10px; 
-    width: auto !important;
-    border: 2px solid white;
-    animation: palpito 2s infinite;
-}
-@keyframes palpito {
-    0% { box-shadow: 0 0 0 0 rgba(118, 255, 3, 0.7); }
-    70% { box-shadow: 0 0 0 10px rgba(118, 255, 3, 0); }
-    100% { box-shadow: 0 0 0 0 rgba(118, 255, 3, 0); }
-}
-
-/* --- 9. CONTROLES DE JUEGO (MÓVIL BASE) --- */
-#controlesJuego {
-    width: 100%;
-    max-width: 450px;
-    margin: 10px auto;
+.saldo-jugador, .apuesta-control {
+    flex: 1;
     display: flex;
     flex-direction: column;
-}
-.botones-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 12px;
-    width: 100%;
-    margin-top: 10px;
-}
-#btnSalirSala { grid-column: 1 / -1; margin-top: 5px !important; }
-
-#panelInferior {
-    display: flex;
-    flex-direction: column; 
-    width: 100%;
-    margin-top: 15px;
-}
-
-/* APUESTAS UI */
-#apuestasUI {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 1rem;
-  background: var(--glass-bg); 
-  border-radius: 20px;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  gap: 1rem;
-  width: 100%;
-  max-width: 450px;
-  margin: 0 auto;
-  box-sizing: border-box;
+    align-items: center;
 }
 
 .monedas-apiladas { display: flex; flex-direction: column; margin-right: -10px; }
-.moneda-stack { width: 40px; margin-top: -25px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5)); }
+.moneda-stack { width: 44px; height: 44px; margin-top: -30px; filter: drop-shadow(0 4px 4px rgba(0,0,0,0.5)); }
 .moneda-stack:first-of-type { margin-top: 0; }
-#monedas-valor { font-size: 1.8rem; font-weight: 800; margin-top: 0.5rem; }
+#monedas-valor { color: var(--amarillo-maiz); font-size: 2rem; font-weight: 800; margin-top: 0.5rem; text-shadow: 0 2px 4px rgba(0,0,0,0.5); }
 
-.bote-monedas img { width: 35px; }
-#bote-valor { font-size: 1.2rem; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 5; text-shadow: 0 0 5px black; }
+.bote-monedas { position: relative; width: 55px; height: 55px; display: flex; justify-content: center; align-items: center; margin-bottom: 0.5rem; }
+.bote-monedas img { position: absolute; width: 40px; height: 40px; filter: drop-shadow(0 4px 4px rgba(0,0,0,0.5)); }
+.bote-monedas img:nth-child(2) { transform: translate(18px, 10px); z-index: 2; }
+.bote-monedas img:nth-child(3) { transform: translate(10px, 18px); z-index: 3; }
+.bote-monedas img:nth-child(4) { transform: translate(0px, 20px); z-index: 4; }
+#bote-valor { color: var(--amarillo-maiz); font-weight: 800; font-size: 1.4rem; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 13; text-shadow: 0 0 8px rgba(0,0,0,0.9); }
 
-/* --- 10. MODALES, HISTORIAL Y ADMIN --- */
-#loteriaMensaje { 
-    position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); 
-    font-size: 3rem; color: var(--amarillo-maiz); font-weight: 900; font-family: 'Montserrat', sans-serif;
-    background-color: rgba(0,0,0,0.95); padding: 40px; border-radius: 30px; 
-    z-index: 9999; display: none; text-align: center; width: 80%;
+/* --- HISTORIAL --- */
+#historial { display: flex; overflow-x: auto; gap: 12px; padding: 5px; white-space: nowrap; scrollbar-width: none; justify-content: flex-start; }
+#historial img { width: 55px; height: 78px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.2); box-shadow: 0 4px 6px rgba(0,0,0,0.3); flex-shrink: 0; }
+
+/* --- LISTAS JUGADORES --- */
+#jugadoresLista div, #jugadoresListaIngame div {
+    padding: 10px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    font-weight: 500;
+    color: white;
 }
-.modal { display: none; position: fixed; z-index: 10000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.85); backdrop-filter: blur(8px); justify-content: center; align-items: center; }
-.modal.active { display: flex; }
-.modal-content { background: #e64a19; padding: 2rem; border-radius: 24px; text-align: center; border: 2px solid var(--amarillo-maiz); color: white; width: 90%; max-width: 400px; }
-#modalTienda .modal-content { width: 95%; padding: 10px; } /* Ajuste tienda móvil */
+#jugadoresLista div:last-child, #jugadoresListaIngame div:last-child { border-bottom: none; }
 
-#historial { display: flex; overflow-x: auto; gap: 8px; padding: 10px 0; scrollbar-width: none; }
-#historial img { width: 50px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.3); }
+/* --- MODALES Y EFECTOS --- */
+#loteriaMensaje {
+    position: fixed; top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 3rem; /* Ajustado para móvil */
+    color: var(--amarillo-maiz);
+    font-weight: bold;
+    background-color: rgba(0,0,0,0.95);
+    backdrop-filter: blur(5px);
+    padding: 20px 40px;
+    border-radius: 20px;
+    z-index: 9999;
+    display: none;
+    border: 3px solid var(--rosa-mexicano);
+    animation: pulsate 1s infinite alternate;
+    box-shadow: 0 0 30px var(--rosa-mexicano);
+    text-align: center;
+}
+@keyframes pulsate { from { transform: translate(-50%, -50%) scale(1); } to { transform: translate(-50%, -50%) scale(1.1); } }
 
-/* TABLA ADMIN */
-#tablaUsuariosAdmin tr td { border-bottom: 1px solid rgba(255,255,255,0.1); }
+.confeti { position: fixed; width: 10px; height: 10px; background-color: var(--amarillo-maiz); z-index: 9998; animation: caer 4s linear forwards; border-radius: 50%; pointer-events: none; }
+@keyframes caer { to { transform: translateY(100vh) rotate(360deg); opacity: 0; } }
 
-/* =========================================================
-   MEDIA QUERY: ESCRITORIO (PRO UI) 🖥️
-   ========================================================= */
+.modal { display: none; position: fixed; z-index: 10000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.8); backdrop-filter: blur(5px); justify-content: center; align-items: center; opacity: 0; transition: opacity 0.3s ease; }
+.modal.active { display: flex; opacity: 1; }
+.modal-content {
+    background: #d84315; /* Naranja Quemado */
+    padding: 2rem;
+    border-radius: 20px;
+    text-align: center;
+    border: 2px solid var(--amarillo-maiz);
+    color: white;
+    width: 90%;
+    max-width: 400px;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 0 20px rgba(0,0,0,0.5);
+    position: relative;
+}
+.modal-buttons { margin-top: 1.5rem; display: flex; justify-content: center; gap: 1rem; flex-wrap: wrap; }
+
+/* --- TIENDA --- */
+.paquete-item {
+    display: flex; justify-content: space-between; align-items: center;
+    background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.1);
+    padding: 15px; border-radius: 12px; cursor: pointer; transition: transform 0.2s;
+    position: relative; margin-bottom: 10px;
+}
+.paquete-item:hover { background: rgba(255,255,255,0.2); transform: translateX(5px); }
+.paquete-item.destacado { border: 2px solid var(--amarillo-maiz); background: rgba(255, 235, 59, 0.2); }
+.badge-pop { position: absolute; top: -10px; left: 10px; background: var(--amarillo-maiz); color: black; font-size: 0.7rem; font-weight: bold; padding: 2px 8px; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.3); }
+.btn-precio { background: var(--verde-limon); color: #003d00; margin: 0; width: auto; font-size: 0.9rem; box-shadow: none; }
+
+.btn-recargar-verde {
+    font-size: 0.8rem; padding: 8px 16px; margin-top: 10px;
+    background-color: var(--verde-limon); color: #003d00;
+    border-radius: 20px; box-shadow: 0 0 10px var(--verde-limon);
+    text-transform: uppercase; font-weight: 800; width: auto;
+    border: 2px solid white; animation: palpito 2s infinite; cursor: pointer;
+}
+
+/* =========================================
+   MEDIA QUERIES (ESCRITORIO / TABLET)
+   ========================================= */
+
+@media (min-width: 768px) {
+    .juego-cartas, .cartas-container { max-width: 1000px; margin: 0 auto; }
+    .carta-img { width: 200px; }
+    .carta-juego { flex-basis: 200px; max-width: 200px; }
+    #apuestasUI { width: 700px; max-width: 90%; }
+    #monedas-valor { font-size: 3rem; }
+    .moneda-stack { width: 60px; height: 60px; margin-top: -40px; }
+    .bote-monedas { width: 80px; height: 80px; }
+    .bote-monedas img { width: 65px; height: 65px; }
+    #bote-valor { font-size: 2rem; }
+    #loteriaMensaje { font-size: 5rem; }
+}
 
 @media (min-width: 1024px) {
-
-    /* MENÚ HORIZONTAL Y ELEGANTE */
-    .menu-acciones {
-        flex-direction: row !important; 
+    /* 1. Botones en fila */
+    #controlesJuego {
+        max-width: 1000px;
+        display: flex;
+        flex-direction: row;
         justify-content: center;
-        align-items: stretch; 
-        gap: 40px; 
-        max-width: 900px; 
-        margin: 40px auto; 
-        background: transparent !important; 
-        border: none;
-        box-shadow: none;
-        padding: 0;
+        gap: 15px;
+    }
+
+    #controlesJuego button {
+        width: auto;
+        padding: 0 30px;
+    }
+    
+    #btnLoteria {
+        width: auto; /* Ya no ocupa todo el ancho */
+        padding: 0 50px;
+    }
+
+    /* 2. Panel Inferior Dividido */
+    #panelInferior {
+        display: flex;
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: flex-start;
+        max-width: 1200px;
+        margin: 20px auto;
+        gap: 20px;
+        padding: 0 20px;
+    }
+
+    #seccionJugadores { flex: 1; display: flex; justify-content: flex-start; }
+    #seccionApuestas { flex: 1; display: flex; justify-content: flex-end; }
+    
+    #jugadoresListaIngame {
+        width: 100%;
+        margin-top: 0;
+        min-height: 160px;
+    }
+
+    /* 3. Menú de Selección (Crear/Unirse) */
+    .menu-acciones {
+        flex-direction: row !important;
+        align-items: stretch;
+        gap: 30px;
+        max-width: 900px;
     }
 
     .sala-box {
-        background: var(--glass-bg) !important;
-        flex: 1; 
-        max-width: 400px;
-        margin: 0; 
+        flex: 1;
+        margin-bottom: 0;
         display: flex;
         flex-direction: column;
         justify-content: center;
-        padding: 3rem 2rem; 
     }
-
-    h1 { font-size: 2.5rem; }
-    #menuBienvenida { font-size: 3rem; }
-
-    /* CARTAS Y LAYOUT JUEGO */
-    .juego-cartas, .cartas-container { max-width: 1400px; margin: 0 auto; }
-    .carta-img { width: 260px; } 
-    .carta-juego { flex-basis: 260px; max-width: 260px; }
-
-    #controlesJuego {
-        max-width: 1200px;
-        margin: 20px auto;
-        flex-direction: row; 
-        align-items: center;
-        justify-content: space-between;
-        gap: 20px;
-    }
-
-    #divVelocidad { width: 250px; margin-bottom: 0; height: 55px; }
-
-    .botones-grid {
-        display: flex;
-        flex-direction: row;
-        justify-content: flex-end;
-        align-items: center;
-        gap: 15px;
-        margin-top: 0;
-        width: auto;
-    }
-
-    .botones-grid button {
-        width: auto;
-        min-width: 130px;
-        height: 55px;    
-        margin: 0;
-        font-size: 1rem;
-    }
-
-    #panelInferior {
-        flex-direction: row; 
-        justify-content: space-between;
-        align-items: flex-start;
-        max-width: 1400px; 
-        margin: 40px auto;
-        gap: 40px;
-    }
-
-    #seccionJugadores { flex: 1; }
-    #seccionApuestas { flex: 1; display: flex; justify-content: flex-end; }
-    
-    #jugadoresListaIngame { width: 100%; min-height: 200px; }
-    #apuestasUI { width: 100%; max-width: 600px; padding: 2rem; }
-    #monedas-valor { font-size: 3.5rem; }
 }
