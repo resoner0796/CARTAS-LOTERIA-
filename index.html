@@ -192,40 +192,44 @@
   </div>
 </div>
 <div id="modalTienda" class="modal">
-  <div class="modal-content" style="max-width: 400px;">
-    <h2 style="color: gold; margin-top:0;">Tienda de Monedas</h2>
-    <p>¡No te quedes fuera de la jugada!</p>
-
-    <div class="paquetes-container" style="display:flex; flex-direction:column; gap:10px; margin: 20px 0;">
-        
-        <div class="paquete-item" onclick="iniciarPagoStripe(50)">
-            <div class="paquete-info">
-                <span style="font-size:1.5rem;">💰 50</span>
-                <span style="color:#ccc; font-size:0.9rem;">Monedas</span>
-            </div>
-            <button class="btn-precio">$29 MXN</button>
-        </div>
-
-        <div class="paquete-item destacado" onclick="iniciarPagoStripe(150)">
-            <div class="badge-pop">¡MÁS VENDIDO!</div>
-            <div class="paquete-info">
-                <span style="font-size:1.5rem;">💰 150</span>
-                <span style="color:#ccc; font-size:0.9rem;">Monedas</span>
-            </div>
-            <button class="btn-precio">$79 MXN</button>
-        </div>
-
-        <div class="paquete-item" onclick="iniciarPagoStripe(500)">
-            <div class="paquete-info">
-                <span style="font-size:1.5rem;">💰 500</span>
-                <span style="color:#ccc; font-size:0.9rem;">Monedas</span>
-            </div>
-            <button class="btn-precio">$199 MXN</button>
-        </div>
-
-    </div>
+  <div class="modal-content" style="max-width: 500px; width: 95%;"> <h2 id="tituloTienda" style="color: gold; margin-top:0;">Tienda de Monedas</h2>
     
-    <button onclick="document.getElementById('modalTienda').classList.remove('active')" style="background:#dc3545; color:white; width:100%;">Cancelar</button>
+    <div id="seccionPaquetes">
+        <p>¡No te quedes fuera de la jugada!</p>
+        <div class="paquetes-container" style="display:flex; flex-direction:column; gap:10px; margin: 20px 0;">
+            <div class="paquete-item" onclick="iniciarPagoEmbedded(50)">
+                <div class="paquete-info">
+                    <span style="font-size:1.5rem;">💰 50</span>
+                    <span style="color:#ccc; font-size:0.9rem;">Monedas</span>
+                </div>
+                <button class="btn-precio">$29 MXN</button>
+            </div>
+
+            <div class="paquete-item destacado" onclick="iniciarPagoEmbedded(150)">
+                <div class="badge-pop">¡MÁS VENDIDO!</div>
+                <div class="paquete-info">
+                    <span style="font-size:1.5rem;">💰 150</span>
+                    <span style="color:#ccc; font-size:0.9rem;">Monedas</span>
+                </div>
+                <button class="btn-precio">$79 MXN</button>
+            </div>
+
+            <div class="paquete-item" onclick="iniciarPagoEmbedded(500)">
+                <div class="paquete-info">
+                    <span style="font-size:1.5rem;">💰 500</span>
+                    <span style="color:#ccc; font-size:0.9rem;">Monedas</span>
+                </div>
+                <button class="btn-precio">$199 MXN</button>
+            </div>
+        </div>
+        <button onclick="cerrarTienda()" style="background:#dc3545; color:white; width:100%;">Cancelar</button>
+    </div>
+
+    <div id="checkout" style="display: none; min-height: 400px;">
+        </div>
+    
+    <button id="btnVolverPaquetes" onclick="volverAPaquetes()" style="display:none; background:#6c757d; color:white; width:100%; margin-top:10px;">⬅ Volver a paquetes</button>
+
   </div>
 </div>
 
@@ -234,6 +238,8 @@
   <audio id="audioCorre" src="assets/audios/corre.mp3"></audio>
   <audio id="audioAplausos" src="assets/audios/aplausos.mp3"></audio>
 
+
+<script src="https://js.stripe.com/v3/"></script>
   <script src="https://loteria-backend-3nde.onrender.com/socket.io/socket.io.js"></script>
   <script src="js/app.js"></script>
 </body>
