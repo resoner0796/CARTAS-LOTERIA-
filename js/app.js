@@ -20,6 +20,8 @@ let historialIdsGlobal = [];
 // Nota: Ajusta el length si usas menos cartas (ej. 30 o 54)
 const cartasDisponibles = Array.from({ length: 30 }, (_, i) => String(i + 1).padStart(2, '0'));
 
+const stripePromise = Stripe("pk_live_51SfOSHHRnABvTmoyGETt893p5wdCWGOmKQOiW4YCkbquy0Vp0mx97dVdfgXlhPszaZ40iXNFW4NveUq4Lilv83wd00gCQpzFmR");
+
 // Referencias DOM - Pantallas
 const pantallas = {
   splash: document.getElementById("pantallaSplash"),
@@ -775,4 +777,90 @@ async function iniciarPagoStripe(cantidadMonedas) {
             mostrarAlerta("Error de conexión con el servidor de pagos", "Error");
         }
     });
+}
+
+// ==================== TIENDA EMBEDDED (NATIVO) ====================
+
+let checkoutInstance = null; // Para guardar la instancia de Stripe
+
+function abrirModalRecarga() {
+    const modal = document.getElementById('modalTienda');
+    if(modal) {
+        modal.classList.add('active');
+        volverAPaquetes(); // Siempre abrir mostrando paquetes
+        if(navigator.vibrate) navigator.vibrate(50);
+    }
+}
+
+function cerrarTienda() {
+    const modal = document.getElementById('modalTienda');
+    if(modal) modal.classList.remove('active');
+    // Destruimos el form para que no se duplique si vuelven a entrar
+    if(checkoutInstance) {
+        checkoutInstance.destroy();
+        checkoutInstance = null;
+    }
+}
+
+function volverAPaquetes() {
+    document.getElementById("seccionPaquetes").style.display = "block";
+    document.getElementById("checkout").style.display = "none";
+    document.getElementById("btnVolverPaquetes").style.display = "none";
+    document.getElementById("tituloTienda").textContent = "Tienda de Monedas";
+    if(checkoutInstance) {
+        checkoutInstance.destroy();
+        checkoutInstance = null;
+    }
+}
+
+async function iniciarPagoEmbedded(cantidadMonedas) {
+    if(!usuarioActual || !usuarioActual.email) return mostrarAlerta("Necesitas iniciar sesión.");
+
+    let precio = 0;
+    if(cantidadMonedas === 50) precio = 29;
+    if(cantidadMonedas === 150) precio = 79;
+    if(cantidadMonedas === 500) precio = 199;
+
+    // 1. UI: Cambiamos vista a "Cargando..."
+    document.getElementById("seccionPaquetes").style.display = "none";
+    const checkoutDiv = document.getElementById("checkout");
+    checkoutDiv.style.display = "block";
+    checkoutDiv.innerHTML = '<p style="text-align:center; padding:20px;">Cargando pago seguro...</p>';
+    document.getElementById("tituloTienda").textContent = "Completar Compra";
+    document.getElementById("btnVolverPaquetes").style.display = "block";
+
+    try {
+        // 2. BACKEND: Pedimos el clientSecret
+        const res = await fetch(`${API_URL}/crear-orden`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+                cantidad: cantidadMonedas, 
+                precio: precio,
+                email: usuarioActual.email 
+            })
+        });
+        
+        const { clientSecret } = await res.json();
+        
+        if(!clientSecret) throw new Error("No se recibió clave de pago");
+
+        // 3. STRIPE: Montamos el formulario en el div #checkout
+        // Limpiamos el texto de "Cargando..."
+        checkoutDiv.innerHTML = ""; 
+        
+        // Inicializamos el checkout integrado
+        // (stripePromise viene de la variable global que pusiste al inicio)
+        checkoutInstance = await stripePromise.initEmbeddedCheckout({
+            clientSecret,
+        });
+
+        // ¡BOOM! Aquí aparece el formulario mágico
+        checkoutInstance.mount('#checkout');
+
+    } catch (error) {
+        console.error(error);
+        mostrarAlerta("Error al cargar el pago. Intenta de nuevo.", "Error");
+        volverAPaquetes();
+    }
 }
