@@ -1,20 +1,29 @@
-/* css/style.css - VERSIÓN CORREGIDA Y PULIDA */
+/* css/style.css - TEMA FIESTA MEXICANA (FINAL) */
 
 :root {
-  --primary-bg: #1e2a38;
-  --secondary-bg: rgba(45, 62, 80, 0.7); 
-  --text-color: #f0f8ff;
-  --accent-blue: #4dd0e1;
-  --accent-green: #aed581;
-  --accent-yellow: gold;
-  --border-color: rgba(255, 255, 255, 0.1);
-  --glass-border: 1px solid rgba(255, 255, 255, 0.15);
-  --box-shadow-glass: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+  /* Paleta "Fiesta Mexicana" */
+  --primary-bg: #2c003e;      /* Morado profundo base */
+  --secondary-bg: rgba(45, 10, 60, 0.7); 
+  --text-color: #ffffff;
+  
+  /* Colores Neón */
+  --rosa-mexicano: #ff007f;
+  --amarillo-maiz: #ffeb3b;
+  --verde-limon: #76ff03;
+  --azul-turquesa: #00e5ff;
+  --naranja-vivo: #ff6d00;
+  
+  --border-color: rgba(255, 255, 255, 0.3);
+  --glass-border: 1px solid rgba(255, 0, 127, 0.3); /* Borde rosita sutil */
+  --box-shadow-glass: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
+  --box-shadow-neon: 0 0 10px rgba(255, 0, 127, 0.5);
 }
 
 body {
   margin: 0;
   background-color: var(--primary-bg);
+  /* Mezcla el color morado con tus imágenes de fondo para darles tinte */
+  background-blend-mode: overlay; 
   color: var(--text-color);
   font-family: 'Segoe UI', 'Roboto', sans-serif;
   min-height: 100vh;
@@ -27,7 +36,7 @@ body {
   display: none;
   flex-direction: column;
   align-items: center;
-  justify-content: center; /* Centrado vertical para menús */
+  justify-content: center; 
   height: 100vh;            
   max-height: 100vh;        
   overflow-y: auto;          
@@ -41,11 +50,10 @@ body {
   -webkit-overflow-scrolling: touch;
 }
 
-/* REEMPLÁZALO POR ESTO: */
-/* Alineamos arriba el Menú, Selección y Juego para evitar scroll inicial raro */
+/* Alineación Superior para Menús (Fix de UX) */
 #pantallaMenu, #pantallaSeleccion, #pantallaJuego {
     justify-content: flex-start;
-    padding-top: 40px; /* Un buen espacio arriba para que no se pegue al techo */
+    padding-top: 40px; 
     padding-bottom: 20px;
 }
 
@@ -53,9 +61,20 @@ body {
   display: flex;
 }
 
-/* FONDOS */
+/* FONDOS (Se mantienen tus imágenes pero se verán con tinte morado por el body) */
 #pantallaSplash { background-image: url("../assets/imagenes/ui/splash.PNG"); }
 #pantallaSeleccion, #pantallaJuego { background-image: url("../assets/imagenes/ui/fondo-seleccion.PNG"); }
+
+/* Títulos con Degradado Festivo */
+h1, h2, h3 {
+    text-transform: uppercase;
+    background: linear-gradient(to right, var(--amarillo-maiz), var(--naranja-vivo));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    text-shadow: 0 2px 10px rgba(0,0,0,0.3);
+    margin-bottom: 15px;
+    font-weight: 800;
+}
 
 #pantallaSplash h1 {
   position: absolute;
@@ -64,18 +83,19 @@ body {
   transform: translateX(-50%);
   font-size: 1.5rem;
   text-align: center;
-  text-shadow: 0 0 8px black;
+  text-shadow: 0 0 8px black; /* Sombra negra para lectura */
+  -webkit-text-fill-color: white; /* Blanco sólido en splash */
   font-weight: 300;
 }
 
-/* --- GLASSMORPHISM GLOBAL --- */
-/* Aplicamos esto a Login, Crear Sala y Lista de Jugadores */
+/* --- GLASSMORPHISM MORADO --- */
 .auth-container, 
 .sala-box, 
 .menu-acciones,
 #jugadoresLista, 
-#jugadoresListaIngame {
-    background: rgba(20, 20, 20, 0.6) !important; /* Fondo oscuro semitransparente forzado */
+#jugadoresListaIngame,
+.historial-container {
+    background: rgba(40, 10, 60, 0.75) !important; /* Morado translúcido */
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
     border-radius: 20px;
@@ -90,12 +110,11 @@ body {
     text-align: center;
 }
 
-/* Ajuste específico para que la lista de jugadores se vea igual al de apuestas */
+/* Ajuste específico para listas en juego */
 #jugadoresLista, #jugadoresListaIngame {
     max-width: 500px;
     margin-top: 15px;
-    /* Un toque más de transparencia para que se vea el fondo */
-    background: rgba(0, 0, 0, 0.4) !important; 
+    background: rgba(20, 5, 30, 0.6) !important; /* Más oscuro para leer bien */
 }
 
 /* Inputs y Selects */
@@ -103,23 +122,22 @@ input[type="text"], input[type="email"], input[type="password"], select {
     width: 100%;
     padding: 12px;
     border-radius: 8px;
-    border: 1px solid rgba(255,255,255,0.3);
-    background: rgba(0,0,0,0.3);
+    border: 1px solid rgba(255, 0, 127, 0.3); /* Borde rosa suave */
+    background: rgba(0, 0, 0, 0.4);
     color: white;
     font-size: 1rem;
     box-sizing: border-box;
     margin-bottom: 15px;
 }
 
-/* --- CARTAS (Arreglo del Hueco) --- */
+/* --- CARTAS --- */
 .cartas-container, .juego-cartas {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
-  gap: 0.8rem; /* Menos espacio entre cartas */
+  gap: 0.8rem;
   padding: 0.5rem 0;
   width: 100%;
-  /* AQUÍ ESTABA EL ERROR: Quitamos el padding gigante */
   padding-bottom: 10px; 
 }
 
@@ -136,8 +154,8 @@ input[type="text"], input[type="email"], input[type="password"], select {
 
 .carta-img.seleccionada {
   transform: scale(1.05);
-  border-color: var(--accent-yellow);
-  box-shadow: 0 0 20px 5px rgba(255, 215, 0, 0.6);
+  border-color: var(--amarillo-maiz);
+  box-shadow: 0 0 15px var(--rosa-mexicano); /* Resplandor Rosa */
 }
 
 .carta-juego {
@@ -162,33 +180,68 @@ input[type="text"], input[type="email"], input[type="password"], select {
   z-index: 10;
 }
 
-/* BOTONES GLASSY */
+/* BOTONES ESTILO FIESTA (Degradados) */
 button {
   padding: 0.8rem 1.6rem;
   font-size: 1rem;
   margin: 0.5rem;
-  border-radius: 12px;
+  border-radius: 50px; /* Más redondos */
   border: none;
-  background-color: rgba(255, 215, 0, 0.9);
-  color: #1a1a1a;
+  color: white; /* Texto blanco por defecto */
   cursor: pointer;
-  font-weight: 700;
-  backdrop-filter: blur(4px);
-  box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-  transition: all 0.2s ease;
-  text-transform: uppercase;
+  font-weight: 800;
   letter-spacing: 0.5px;
+  box-shadow: 0 4px 0 rgba(0,0,0,0.2); /* Efecto 3D */
+  transition: transform 0.1s, box-shadow 0.1s;
+  text-transform: uppercase;
 }
-button:active { transform: translateY(1px); }
 
-/* CONTROLES GRID (Botones ordenados y compactos) */
+button:active {
+  transform: translateY(4px);
+  box-shadow: none;
+}
+
+/* Colores Específicos por ID/Función */
+
+/* Verdes (Iniciar, Crear) */
+button[onclick*="crearSala"], #btnIniciarJuego, #btnApostar {
+    background: linear-gradient(45deg, var(--verde-limon), #00c853);
+    color: #003d00; /* Texto oscuro para contraste */
+}
+
+/* Azules (Unirse, Barajear, Limpiar) */
+button[onclick*="unirseSala"], #btnBarajear, #btnLimpiarCartas {
+    background: linear-gradient(45deg, var(--azul-turquesa), #0091ea);
+    color: #002f6c;
+}
+
+/* Rojos (Salir, Detener, Cerrar) */
+#btnDetenerJuego, #btnSalirSala, #btnSalirLobby, button[onclick*="cerrarSesion"] {
+    background: linear-gradient(45deg, #ff5252, #d50000);
+    color: white;
+}
+
+/* Amarillos/Naranjas (Cambiar, Lotería) */
+#btnCambiarCartas {
+    background: linear-gradient(45deg, var(--amarillo-maiz), #fbc02d);
+    color: #3e2723;
+}
+
+#btnLoteria { 
+    background: linear-gradient(45deg, var(--amarillo-maiz), var(--naranja-vivo)); 
+    color: #3e2723;
+    font-size: 1.1rem;
+    animation: palpito 1.5s infinite;
+}
+
+/* CONTROLES GRID */
 #controlesJuego {
     display: grid;
     grid-template-columns: 1fr 1fr; 
-    gap: 10px;                     
+    gap: 10px;                    
     width: 100%;
     max-width: 500px;             
-    margin: 5px auto; /* Márgenes reducidos */
+    margin: 5px auto;
     padding: 0 5px;
     box-sizing: border-box;
 }
@@ -204,33 +257,23 @@ button:active { transform: translateY(1px); }
     white-space: nowrap;
 }
 
-#btnSalirSala {
+#btnSalirLobby, #btnSalirSala {
     grid-column: 1 / -1; 
-    background-color: rgba(220, 53, 69, 0.8) !important;
     margin-top: 5px !important;
-    color: white !important;
 }
 
-/* Colores Específicos */
-#btnApostar { background-color: var(--accent-green); color: #0f3d0f; }
-#btnLimpiarCartas, #btnBarajear { background-color: rgba(77, 208, 225, 0.9); color: #003333; }
-#btnIniciarJuego, #btnLoteria { background-color: rgba(174, 213, 129, 0.9); color: #0f3d0f; }
-#btnDetenerJuego { background-color: rgba(220, 53, 69, 0.9); color: white; }
-#btnCambiarCartas { background-color: var(--accent-yellow); color: black; }
-
-/* APUESTAS UI (GLASS - Idéntico al de jugadores) */
+/* APUESTAS UI */
 #apuestasUI {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-top: 15px;
   padding: 1rem;
-  /* Fondo oscuro transparente igual que jugadores */
-  background: rgba(0, 0, 0, 0.4) !important; 
+  background: rgba(20, 5, 30, 0.6) !important; 
   backdrop-filter: blur(12px);          
   -webkit-backdrop-filter: blur(12px);
   border-radius: 20px;
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 0, 127, 0.2);
   box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
   flex-direction: row;
   gap: 1rem;
@@ -250,45 +293,36 @@ button:active { transform: translateY(1px); }
 .monedas-apiladas { display: flex; flex-direction: column; margin-right: -10px; }
 .moneda-stack { width: 44px; height: 44px; margin-top: -30px; filter: drop-shadow(0 4px 4px rgba(0,0,0,0.5)); }
 .moneda-stack:first-of-type { margin-top: 0; }
-#monedas-valor { color: var(--accent-yellow); font-size: 2rem; font-weight: 800; margin-top: 0.5rem; text-shadow: 0 2px 4px rgba(0,0,0,0.5); }
+#monedas-valor { color: var(--amarillo-maiz); font-size: 2rem; font-weight: 800; margin-top: 0.5rem; text-shadow: 0 2px 4px rgba(0,0,0,0.5); }
 
 .bote-monedas { position: relative; width: 55px; height: 55px; display: flex; justify-content: center; align-items: center; margin-bottom: 0.5rem; }
 .bote-monedas img { position: absolute; width: 40px; height: 40px; filter: drop-shadow(0 4px 4px rgba(0,0,0,0.5)); }
 .bote-monedas img:nth-child(2) { transform: translate(18px, 10px); z-index: 2; }
 .bote-monedas img:nth-child(3) { transform: translate(10px, 18px); z-index: 3; }
 .bote-monedas img:nth-child(4) { transform: translate(0px, 20px); z-index: 4; }
-#bote-valor { color: var(--accent-yellow); font-weight: 800; font-size: 1.4rem; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 13; text-shadow: 0 0 8px rgba(0,0,0,0.9); }
+#bote-valor { color: var(--amarillo-maiz); font-weight: 800; font-size: 1.4rem; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 13; text-shadow: 0 0 8px rgba(0,0,0,0.9); }
 
 /* HISTORIAL */
-.historial-container {
-  width: 100%;
-  padding: 10px;
-  background: rgba(0, 0, 0, 0.4);
-  backdrop-filter: blur(8px);
-  border-radius: 16px;
-  border: var(--glass-border);
-  margin-bottom: 10px;
-  box-sizing: border-box;
-}
 #historial { display: flex; overflow-x: auto; gap: 12px; padding: 5px; white-space: nowrap; scrollbar-width: none; }
 #historial img { width: 55px; height: 78px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.2); box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
 
-/* LISTA JUGADORES (Detalles internos) */
+/* LISTA JUGADORES */
 #jugadoresLista div, #jugadoresListaIngame div {
   padding: 8px 0;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  font-weight: 500;
 }
 #jugadoresLista div:last-child, #jugadoresListaIngame div:last-child { border-bottom: none; }
 
 /* MODAL Y EXTRAS */
-#loteriaMensaje { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 4rem; color: var(--accent-yellow); font-weight: bold; background-color: rgba(0,0,0,0.85); backdrop-filter: blur(5px); padding: 30px 60px; border-radius: 20px; z-index: 9999; display: none; border: 2px solid gold; animation: pulsate 1s infinite alternate; }
+#loteriaMensaje { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 4rem; color: var(--amarillo-maiz); font-weight: bold; background-color: rgba(0,0,0,0.85); backdrop-filter: blur(5px); padding: 30px 60px; border-radius: 20px; z-index: 9999; display: none; border: 3px solid var(--rosa-mexicano); animation: pulsate 1s infinite alternate; box-shadow: 0 0 30px var(--rosa-mexicano); }
 @keyframes pulsate { from { transform: translate(-50%, -50%) scale(1); } to { transform: translate(-50%, -50%) scale(1.1); } }
-.confeti { position: fixed; width: 10px; height: 10px; background-color: var(--accent-yellow); z-index: 9998; animation: caer 4s linear forwards; border-radius: 50%; }
+.confeti { position: fixed; width: 10px; height: 10px; background-color: var(--amarillo-maiz); z-index: 9998; animation: caer 4s linear forwards; border-radius: 50%; }
 @keyframes caer { to { transform: translateY(100vh) rotate(360deg); opacity: 0; } }
 
-.modal { display: none; position: fixed; z-index: 10000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.7); backdrop-filter: blur(5px); justify-content: center; align-items: center; opacity: 0; transition: opacity 0.3s ease; }
+.modal { display: none; position: fixed; z-index: 10000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.8); backdrop-filter: blur(5px); justify-content: center; align-items: center; opacity: 0; transition: opacity 0.3s ease; }
 .modal.active { display: flex; opacity: 1; }
-.modal-content { background: rgba(30, 42, 56, 0.95); padding: 2rem; border-radius: 20px; text-align: center; border: 1px solid rgba(255,255,255,0.1); color: white; min-width: 300px; box-sizing: border-box; }
+.modal-content { background: #2c003e; padding: 2rem; border-radius: 20px; text-align: center; border: 2px solid var(--rosa-mexicano); color: white; min-width: 300px; box-sizing: border-box; box-shadow: 0 0 20px rgba(0,0,0,0.5); }
 .modal-buttons { margin-top: 1.5rem; display: flex; justify-content: center; gap: 1rem; }
 
 /* PC / TABLET */
@@ -304,47 +338,44 @@ button:active { transform: translateY(1px); }
   #bote-valor { font-size: 2rem; }
 }
 
-/* Agrega al final de css/style.css */
-
-/* Estilos para el historial dentro del modal de verificación */
+/* HISTORIAL MODAL */
 .historial-container-modal {
     width: 100%;
     padding: 8px;
-    background: rgba(0, 0, 0, 0.4); /* Fondo oscurito */
+    background: rgba(0, 0, 0, 0.4); 
     border-radius: 12px;
     margin-bottom: 15px;
-    overflow-x: auto; /* Scroll horizontal si son muchas */
+    overflow-x: auto; 
     border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 #modalHistorialFlex {
     display: flex;
     gap: 8px;
-    white-space: nowrap; /* Que queden en una sola fila */
+    white-space: nowrap; 
 }
 
 #modalHistorialFlex img {
-    width: 45px; /* Cartas pequeñitas para validar rápido */
+    width: 45px; 
     height: auto;
     border-radius: 4px;
     border: 1px solid rgba(255,255,255,0.3);
     box-shadow: 0 2px 4px rgba(0,0,0,0.3);
 }
 
-/* Agrega esto al final de css/style.css */
-
+/* --- BOTÓN RECARGAR (Estilo Neón) --- */
 .btn-recargar-verde {
     font-size: 0.8rem;
     padding: 6px 16px;
-    margin-top: 10px; /* Un poco más de aire */
-    background-color: #00e676;
-    color: #004d40;
+    margin-top: 10px; 
+    background-color: var(--verde-limon);
+    color: #003d00;
     border-radius: 20px;
-    box-shadow: 0 4px 10px rgba(0, 230, 118, 0.4);
+    box-shadow: 0 0 10px var(--verde-limon); /* Resplandor */
     text-transform: uppercase;
     font-weight: 800;
     width: auto;
-    border: 1px solid rgba(255,255,255,0.4);
+    border: 1px solid white;
     animation: palpito 2s infinite;
     cursor: pointer;
     transition: all 0.2s ease;
@@ -352,78 +383,77 @@ button:active { transform: translateY(1px); }
 
 .btn-recargar-verde:hover {
     transform: scale(1.05);
-    background-color: #69f0ae;
-    box-shadow: 0 6px 15px rgba(0, 230, 118, 0.6);
+    background-color: #b2ff59;
+    box-shadow: 0 0 20px var(--verde-limon);
 }
 
 @keyframes palpito {
-    0% { box-shadow: 0 0 0 0 rgba(0, 230, 118, 0.7); }
-    70% { box-shadow: 0 0 0 10px rgba(0, 230, 118, 0); }
-    100% { box-shadow: 0 0 0 0 rgba(0, 230, 118, 0); }
+    0% { box-shadow: 0 0 0 0 rgba(118, 255, 3, 0.7); }
+    70% { box-shadow: 0 0 0 10px rgba(118, 255, 3, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(118, 255, 3, 0); }
 }
 
-/* Estilos de la Tienda */
+/* TIENDA */
 .paquete-item {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    background: rgba(255,255,255,0.1);
-    border: 1px solid rgba(255,255,255,0.2);
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
     padding: 15px;
     border-radius: 12px;
     cursor: pointer;
     transition: transform 0.2s;
     position: relative;
+    margin-bottom: 10px;
 }
 
 .paquete-item:hover {
-    background: rgba(255,255,255,0.2);
+    background: rgba(255,255,255,0.15);
     transform: translateX(5px);
 }
 
 .paquete-item.destacado {
-    border: 2px solid gold;
-    background: rgba(255, 215, 0, 0.15);
+    border: 2px solid var(--amarillo-maiz);
+    background: rgba(255, 235, 59, 0.1);
 }
 
 .badge-pop {
     position: absolute;
     top: -10px;
     left: 10px;
-    background: gold;
+    background: var(--amarillo-maiz);
     color: black;
     font-size: 0.7rem;
     font-weight: bold;
     padding: 2px 8px;
     border-radius: 10px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.3);
 }
 
 .btn-precio {
-    background: #00e676;
-    color: #004d40;
+    background: var(--verde-limon);
+    color: #003d00;
     margin: 0;
     width: auto;
     font-size: 0.9rem;
+    box-shadow: none;
 }
 
 /* AJUSTES PARA EL MODAL DE PAGO EN MÓVIL */
-
-/* Hacemos que el contenido del modal sea scrolleable si es muy alto */
 .modal-content {
-    max-height: 90vh;       /* Que nunca sea más alto que el 90% de la pantalla */
-    overflow-y: auto;       /* Si se pasa, aparece barra de scroll DENTRO del modal */
+    max-height: 90vh;      
+    overflow-y: auto;       
     overflow-x: hidden;
 }
 
-/* Ajustes específicos para cuando la pantalla es chica (celulares) */
 @media (max-width: 480px) {
     #modalTienda .modal-content {
-        width: 95% !important;   /* Usar todo el ancho disponible */
-        padding: 15px 10px;      /* Menos relleno para ganar espacio */
+        width: 95% !important;   
+        padding: 15px 10px;      
         margin: 0 auto;
     }
     
-    /* Aseguramos que el contenedor de Stripe tenga altura mínima */
     #checkout {
         min-height: 500px; 
     }
