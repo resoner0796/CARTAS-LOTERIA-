@@ -1,4 +1,4 @@
-/* css/style.css - TEMA "FERIA NARANJA" PRO (MASTER FINAL V9 - CASCADA FLUIDA) */
+/* css/style.css - TEMA "FERIA NARANJA" PRO (MASTER FINAL V10 - PULIDO) */
 
 :root {
   /* Paleta CÁLIDA Y VIVA */
@@ -29,21 +29,12 @@ body {
   overflow-x: hidden;   
 }
 
-/* --- NUEVAS ANIMACIONES PRO (CASCADA) --- */
-
-/* Entrada suave desde abajo (para contenedores) */
+/* --- ANIMACIONES CASCADA --- */
 @keyframes slideUpEntry {
-    from { 
-        opacity: 0; 
-        transform: translateY(30px); /* Empieza 30px abajo */
-    }
-    to { 
-        opacity: 1; 
-        transform: translateY(0); /* Termina en su lugar */
-    }
+    from { opacity: 0; transform: translateY(30px); }
+    to { opacity: 1; transform: translateY(0); }
 }
 
-/* Animación de la barajita (Repartir) - LA QUE TE GUSTÓ */
 @keyframes dealCard {
     0% { opacity: 0; transform: translateX(50px) scale(0.8) rotate(10deg); }
     80% { transform: translateX(-5px) scale(1.05) rotate(-2deg); }
@@ -63,33 +54,27 @@ body {
   width: 100%;
 }
 
-/* Quitamos la animación general aburrida */
 .pantalla.activa { display: flex; }
 
-/* --- APLICACIÓN DE ANIMACIONES POR ELEMENTO (LA MAGIA) --- */
-
-/* Nivel 1: Lo de hasta arriba (Títulos, Historial) - Rápido */
+/* --- APLICACIÓN DE ANIMACIONES --- */
 h1, h2, h3, .historial-container, .menu-acciones {
     animation: slideUpEntry 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
-    opacity: 0; /* Oculto al inicio */
+    opacity: 0; 
     animation-delay: 0.1s;
 }
 
-/* Nivel 2: Lo principal (Cartas, Tablero) - Medio */
 .cartas-container, #juegoCartas, .sala-box {
     animation: slideUpEntry 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
     opacity: 0;
-    animation-delay: 0.2s; /* Un poco después */
+    animation-delay: 0.2s; 
 }
 
-/* Nivel 3: Controles (Botones) - Tarde */
 #controlesJuego, .sala-botones-row {
     animation: slideUpEntry 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
     opacity: 0;
     animation-delay: 0.3s;
 }
 
-/* Nivel 4: Paneles Inferiores (Jugadores, Apuestas) - Último */
 #panelInferior, #jugadoresLista, #apuestasUI {
     animation: slideUpEntry 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
     opacity: 0;
@@ -117,7 +102,7 @@ h1, h2, h3 {
 #pantallaSplash h1 {
   position: absolute; bottom: 2rem; left: 50%; transform: translateX(-50%);
   font-size: 1.5rem; font-weight: 400;
-  opacity: 1 !important; /* El splash no debe tener delay */
+  opacity: 1 !important; 
   animation: none;
 }
 
@@ -135,7 +120,7 @@ h1, h2, h3 {
     box-sizing: border-box; text-align: center;
 }
 
-/* --- HISTORIAL MEJORADO (HUD) --- */
+/* --- HISTORIAL (HUD) --- */
 .historial-container {
     padding: 10px 15px !important; 
     min-height: 110px; 
@@ -163,7 +148,6 @@ h1, h2, h3 {
     border: 1px solid rgba(255,255,255,0.4); 
     box-shadow: 0 4px 8px rgba(0,0,0,0.5); 
     flex-shrink: 0;
-    /* Animación de barajita entrando */
     animation: dealCard 0.5s cubic-bezier(0.34, 1.56, 0.64, 1); 
 }
 
@@ -232,11 +216,12 @@ input::placeholder { color: rgba(255,255,255,0.6); }
   box-shadow: 0 0 25px var(--amarillo-maiz); 
 }
 
-/* --- FICHA --- */
+/* --- FICHA (AJUSTADA TAMAÑO MÓVIL) --- */
 .ficha {
   position: absolute;
-  width: 35%; 
-  max-width: 40px;
+  /* REDUCIDO A 28% PARA QUE NO DESBORDE */
+  width: 28%; 
+  max-width: 80px;
   height: auto;
   top: 50%; left: 50%;
   transform: translate(-50%, -50%);
@@ -321,11 +306,13 @@ button[onclick*="unirseSala"], #btnBarajear, #btnLimpiarCartas {
 #panelInferior { display: flex; flex-direction: column; width: 100%; margin-top: 15px; }
 .panel-seccion { width: 100%; margin-bottom: 15px; }
 
-/* APUESTAS UI */
+/* APUESTAS UI (CON BORDE DORADO) */
 #apuestasUI {
   display: flex; justify-content: space-between; align-items: center; padding: 1rem;
   background: var(--glass-bg) !important; backdrop-filter: blur(12px);          
-  border-radius: 20px; border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 20px; 
+  /* AQUÍ ESTÁ EL BORDE DORADO */
+  border: 2px solid var(--amarillo-maiz); 
   box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3); flex-direction: row; gap: 1rem;
   width: 90%; max-width: 500px; margin-left: auto; margin-right: auto;
 }
@@ -341,7 +328,7 @@ button[onclick*="unirseSala"], #btnBarajear, #btnLimpiarCartas {
 .bote-monedas img:nth-child(4) { transform: translate(0px, 20px); z-index: 4; }
 #bote-valor { color: var(--amarillo-maiz); font-weight: 800; font-size: 1.4rem; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 13; text-shadow: 0 0 8px rgba(0,0,0,0.9); }
 
-/* LISTA JUGADORES */
+/* LISTA JUGADORES (CON BORDE DORADO) */
 #jugadoresLista, #jugadoresListaIngame { max-width: 500px; margin-top: 15px; border-color: var(--amarillo-maiz); }
 #jugadoresLista div, #jugadoresListaIngame div { padding: 10px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.1); font-weight: 600; color: white; }
 #jugadoresLista div:last-child, #jugadoresListaIngame div:last-child { border-bottom: none; }
