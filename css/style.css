@@ -1,6 +1,6 @@
-/* css/style.css - TEMA "FERIA NARANJA" (VIVO Y ALEGRE) PRO v2 */
+/* css/style.css - TEMA "FERIA NARANJA" (VIVO Y ALEGRE) PRO v3.0 FINAL */
 
-/* --- IMPORTAR FUENTES PRO --- */
+/* --- 1. IMPORTAR FUENTES PRO --- */
 @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;900&family=Poppins:wght@300;400;600&display=swap');
 
 :root {
@@ -16,7 +16,7 @@
   --azul-cielo: #00b0ff;      
   --rojo-fuego: #d50000;      
   
-  --glass-bg: rgba(0, 0, 0, 0.7); /* Un poco más oscuro para mejor lectura */
+  --glass-bg: rgba(0, 0, 0, 0.7); 
   --border-color: rgba(255, 234, 0, 0.5); 
   --box-shadow-warm: 0 8px 32px 0 rgba(100, 30, 0, 0.5);
 }
@@ -26,28 +26,27 @@ body {
   background: linear-gradient(135deg, #ff9100 0%, #ff3d00 100%);
   background-attachment: fixed; 
   color: var(--text-color);
-  font-family: 'Poppins', sans-serif; /* Fuente base limpia */
+  font-family: 'Poppins', sans-serif; 
   min-height: 100vh;
   width: 100%;          
   overflow-x: hidden;   
 }
 
-/* Configuración General de Pantallas */
+/* --- 2. CONFIGURACIÓN DE PANTALLAS --- */
 .pantalla {
   display: none;
   flex-direction: column;
   align-items: center;
-  /* Centrado vertical y horizontal por defecto */
   justify-content: center; 
   min-height: 100vh;        
-  padding: 1rem; /* Reducido para móvil */
+  padding: 1rem; 
   background: transparent; 
   transition: opacity 0.5s ease-in;
   box-sizing: border-box;
 }
 
-/* Alineación Superior para Menús específicos */
-#pantallaMenu, #pantallaSeleccion, #pantallaJuego {
+/* Ajuste de márgenes superiores para pantallas con contenido */
+#pantallaMenu, #pantallaSeleccion, #pantallaJuego, #pantallaAdmin {
     justify-content: flex-start;
     padding-top: 40px; 
     padding-bottom: 20px;
@@ -55,9 +54,9 @@ body {
 
 .pantalla.activa { display: flex; }
 
-/* Títulos y Saludos - FUENTE NUEVA */
+/* --- 3. TIPOGRAFÍA PRO --- */
 h1, h2, h3 {
-    font-family: 'Montserrat', sans-serif; /* Fuente de impacto */
+    font-family: 'Montserrat', sans-serif; 
     text-transform: uppercase;
     color: var(--amarillo-maiz);
     text-shadow: 2px 2px 0px #b71c1c; 
@@ -67,44 +66,40 @@ h1, h2, h3 {
     text-align: center;
 }
 
-/* El Saludo Principal */
-#menuBienvenida {
-    font-size: 1.8rem;
-    margin-bottom: 0.5rem;
-    line-height: 1.2;
-}
+#menuBienvenida { font-size: 1.8rem; margin-bottom: 0.5rem; line-height: 1.2; }
+#menuMonedas { font-family: 'Montserrat', sans-serif; font-weight: 700; }
 
-/* Monedas en el menú */
-#menuMonedas {
-    font-family: 'Montserrat', sans-serif;
-    font-weight: 700;
-}
-
-/* --- CONTENEDORES (GLASS) --- */
+/* --- 4. CONTENEDORES (GLASSMORPHISM) --- */
 .auth-container, 
 .sala-box, 
 .menu-acciones,
 #jugadoresLista, 
 #jugadoresListaIngame,
-.historial-container {
+.historial-container,
+.sala-box-admin { /* Agregamos soporte para admin */
     background: var(--glass-bg) !important;
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
-    border-radius: 24px; /* Bordes más redondeados y modernos */
+    border-radius: 24px; 
     border: 1px solid rgba(255, 255, 255, 0.15); 
     box-shadow: 0 10px 30px rgba(0,0,0,0.4);
     padding: 1.5rem;
     color: white;
     width: 100%;
-    /* En móvil ocupamos casi todo el ancho */
     max-width: 400px; 
     margin: 10px auto;
     box-sizing: border-box;
     text-align: center;
 }
 
-/* Ajustes Inputs */
-input[type="text"], input[type="email"], input[type="password"], select {
+#jugadoresLista, #jugadoresListaIngame {
+    max-width: 500px;
+    margin-top: 15px;
+    border-color: var(--amarillo-maiz); 
+}
+
+/* --- 5. INPUTS Y FORMULARIOS --- */
+input[type="text"], input[type="email"], input[type="password"], input[type="number"], select {
     width: 100%;
     padding: 14px;
     border-radius: 12px;
@@ -116,7 +111,7 @@ input[type="text"], input[type="email"], input[type="password"], select {
     box-sizing: border-box;
     margin-bottom: 15px;
     outline: none;
-    text-align: center; /* Texto centrado se ve más pro en móvil */
+    text-align: center; 
 }
 
 input:focus, select:focus {
@@ -124,7 +119,7 @@ input:focus, select:focus {
     background: rgba(255, 255, 255, 0.15);
 }
 
-/* --- CARTAS --- */
+/* --- 6. CARTAS (BASE) --- */
 .cartas-container, .juego-cartas {
   display: flex;
   flex-wrap: wrap;
@@ -135,7 +130,7 @@ input:focus, select:focus {
 }
 
 .carta-img {
-  width: 150px; /* Tamaño optimizado móvil */
+  width: 150px; 
   border-radius: 10px;
   cursor: pointer;
   transition: transform 0.2s ease;
@@ -165,11 +160,11 @@ input:focus, select:focus {
   pointer-events: none;
 }
 
-/* --- BOTONES --- */
+/* --- 7. BOTONES (COLORES Y ESTILOS) --- */
 button {
   padding: 0.9rem 1.5rem; 
   font-size: 1rem;
-  margin: 0.5rem 0; /* Margen vertical */
+  margin: 0.5rem 0; 
   border-radius: 50px; 
   border: none;
   background: var(--rosa-mexicano);
@@ -181,12 +176,10 @@ button {
   box-shadow: 0 4px 15px rgba(0,0,0,0.3); 
   transition: transform 0.1s, box-shadow 0.1s;
   text-transform: uppercase;
-  width: 100%; /* En móvil botones anchos */
+  width: 100%; 
 }
 
-button:active {
-  transform: scale(0.97);
-}
+button:active { transform: scale(0.97); }
 
 /* Variantes de Color */
 button[onclick*="crearSala"], #btnIniciarJuego, #btnApostar, .btn-recargar-verde, button[class*="confirmar"] {
@@ -194,12 +187,12 @@ button[onclick*="crearSala"], #btnIniciarJuego, #btnApostar, .btn-recargar-verde
     color: #003300; 
 }
 
-button[onclick*="unirseSala"], #btnBarajear, #btnLimpiarCartas {
+button[onclick*="unirseSala"], #btnBarajear, #btnLimpiarCartas, button[onclick*="cargarUsuarios"] {
     background: linear-gradient(135deg, var(--azul-cielo) 0%, #0091ea 100%);
     color: #002f6c;
 }
 
-#btnDetenerJuego, #btnSalirSala, #btnSalirLobby, button[onclick*="cerrarSesion"] {
+#btnDetenerJuego, #btnSalirSala, #btnSalirLobby, button[onclick*="cerrarSesion"], button[onclick*="cerrarTienda"] {
     background: linear-gradient(135deg, #ff5252 0%, #d50000 100%);
     color: white;
 }
@@ -214,7 +207,71 @@ button[onclick*="unirseSala"], #btnBarajear, #btnLimpiarCartas {
 }
 @keyframes gradientMove { 0% { background-position: 0% 50%; } 100% { background-position: 100% 50%; } }
 
-/* --- CONTROLES DE JUEGO (MÓVIL) --- */
+/* --- 8. TIENDA Y ECONOMÍA (IMPORTANTE PARA TU IDEA) --- */
+.paquete-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,255,255,0.1);
+    padding: 15px;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: transform 0.2s;
+    position: relative;
+    margin-bottom: 10px;
+    text-align: left; /* Alineación interna */
+}
+
+.paquete-item:hover {
+    background: rgba(255,255,255,0.2);
+    transform: translateX(5px);
+}
+
+.paquete-item.destacado {
+    border: 2px solid var(--amarillo-maiz);
+    background: rgba(255, 235, 59, 0.15);
+}
+
+.badge-pop {
+    position: absolute;
+    top: -10px;
+    left: 10px;
+    background: var(--amarillo-maiz);
+    color: black;
+    font-size: 0.7rem;
+    font-weight: bold;
+    padding: 2px 8px;
+    border-radius: 10px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+}
+
+.btn-precio {
+    background: var(--verde-limon);
+    color: #003d00;
+    margin: 0;
+    width: auto !important; /* Excepción para que no se estire */
+    font-size: 0.9rem;
+    box-shadow: none;
+    padding: 8px 12px;
+}
+
+/* Botón pequeño de recarga verde */
+.btn-recargar-verde {
+    font-size: 0.8rem;
+    padding: 8px 16px;
+    margin-top: 10px; 
+    width: auto !important;
+    border: 2px solid white;
+    animation: palpito 2s infinite;
+}
+@keyframes palpito {
+    0% { box-shadow: 0 0 0 0 rgba(118, 255, 3, 0.7); }
+    70% { box-shadow: 0 0 0 10px rgba(118, 255, 3, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(118, 255, 3, 0); }
+}
+
+/* --- 9. CONTROLES DE JUEGO (MÓVIL BASE) --- */
 #controlesJuego {
     width: 100%;
     max-width: 450px;
@@ -222,7 +279,6 @@ button[onclick*="unirseSala"], #btnBarajear, #btnLimpiarCartas {
     display: flex;
     flex-direction: column;
 }
-
 .botones-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -230,11 +286,8 @@ button[onclick*="unirseSala"], #btnBarajear, #btnLimpiarCartas {
     width: 100%;
     margin-top: 10px;
 }
-
-/* Botón salir full width */
 #btnSalirSala { grid-column: 1 / -1; margin-top: 5px !important; }
 
-/* Panel Inferior Móvil */
 #panelInferior {
     display: flex;
     flex-direction: column; 
@@ -266,11 +319,7 @@ button[onclick*="unirseSala"], #btnBarajear, #btnLimpiarCartas {
 .bote-monedas img { width: 35px; }
 #bote-valor { font-size: 1.2rem; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 5; text-shadow: 0 0 5px black; }
 
-/* HISTORIAL */
-#historial { display: flex; overflow-x: auto; gap: 8px; padding: 10px 0; scrollbar-width: none; }
-#historial img { width: 50px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.3); }
-
-/* --- MODALES Y EXTRAS --- */
+/* --- 10. MODALES, HISTORIAL Y ADMIN --- */
 #loteriaMensaje { 
     position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); 
     font-size: 3rem; color: var(--amarillo-maiz); font-weight: 900; font-family: 'Montserrat', sans-serif;
@@ -280,29 +329,35 @@ button[onclick*="unirseSala"], #btnBarajear, #btnLimpiarCartas {
 .modal { display: none; position: fixed; z-index: 10000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.85); backdrop-filter: blur(8px); justify-content: center; align-items: center; }
 .modal.active { display: flex; }
 .modal-content { background: #e64a19; padding: 2rem; border-radius: 24px; text-align: center; border: 2px solid var(--amarillo-maiz); color: white; width: 90%; max-width: 400px; }
+#modalTienda .modal-content { width: 95%; padding: 10px; } /* Ajuste tienda móvil */
+
+#historial { display: flex; overflow-x: auto; gap: 8px; padding: 10px 0; scrollbar-width: none; }
+#historial img { width: 50px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.3); }
+
+/* TABLA ADMIN */
+#tablaUsuariosAdmin tr td { border-bottom: 1px solid rgba(255,255,255,0.1); }
 
 /* =========================================================
-   MEDIA QUERY: ESCRITORIO (PANTALLAS GRANDES) 🖥️
+   MEDIA QUERY: ESCRITORIO (PRO UI) 🖥️
    ========================================================= */
 
 @media (min-width: 1024px) {
 
-    /* AJUSTE DEL MENÚ: Alineación Profesional */
+    /* MENÚ HORIZONTAL Y ELEGANTE */
     .menu-acciones {
-        flex-direction: row !important; /* Lado a lado */
+        flex-direction: row !important; 
         justify-content: center;
-        align-items: stretch; /* Misma altura */
-        gap: 40px; /* Separación elegante */
+        align-items: stretch; 
+        gap: 40px; 
         max-width: 900px; 
         margin: 40px auto; 
-        background: transparent !important; /* Quitamos fondo contenedor padre */
+        background: transparent !important; 
         border: none;
         box-shadow: none;
         padding: 0;
     }
 
     .sala-box {
-        /* Restauramos el fondo glass a las cajas individuales */
         background: var(--glass-bg) !important;
         flex: 1; 
         max-width: 400px;
@@ -310,34 +365,27 @@ button[onclick*="unirseSala"], #btnBarajear, #btnLimpiarCartas {
         display: flex;
         flex-direction: column;
         justify-content: center;
-        padding: 3rem 2rem; /* Más espacio interno */
+        padding: 3rem 2rem; 
     }
 
-    /* Títulos más grandes en PC */
     h1 { font-size: 2.5rem; }
-    h2 { font-size: 2rem; }
     #menuBienvenida { font-size: 3rem; }
 
-    /* CARTAS GIGANTES */
+    /* CARTAS Y LAYOUT JUEGO */
     .juego-cartas, .cartas-container { max-width: 1400px; margin: 0 auto; }
     .carta-img { width: 260px; } 
     .carta-juego { flex-basis: 260px; max-width: 260px; }
 
-    /* CONTROLES HORIZONTALES */
     #controlesJuego {
         max-width: 1200px;
         margin: 20px auto;
-        flex-direction: row; /* Velocidad izq, botones der */
+        flex-direction: row; 
         align-items: center;
         justify-content: space-between;
         gap: 20px;
     }
 
-    #divVelocidad {
-        width: 250px;
-        margin-bottom: 0;
-        height: 55px;
-    }
+    #divVelocidad { width: 250px; margin-bottom: 0; height: 55px; }
 
     .botones-grid {
         display: flex;
@@ -357,7 +405,6 @@ button[onclick*="unirseSala"], #btnBarajear, #btnLimpiarCartas {
         font-size: 1rem;
     }
 
-    /* PANEL INFERIOR DIVIDIDO */
     #panelInferior {
         flex-direction: row; 
         justify-content: space-between;
@@ -370,16 +417,7 @@ button[onclick*="unirseSala"], #btnBarajear, #btnLimpiarCartas {
     #seccionJugadores { flex: 1; }
     #seccionApuestas { flex: 1; display: flex; justify-content: flex-end; }
     
-    #jugadoresListaIngame {
-        width: 100%;
-        min-height: 200px;
-    }
-
-    #apuestasUI {
-        width: 100%;
-        max-width: 600px; /* Panel apuestas más ancho */
-        padding: 2rem;
-    }
-    
+    #jugadoresListaIngame { width: 100%; min-height: 200px; }
+    #apuestasUI { width: 100%; max-width: 600px; padding: 2rem; }
     #monedas-valor { font-size: 3.5rem; }
 }
