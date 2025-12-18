@@ -852,9 +852,7 @@ async function iniciarPagoEmbedded(cantidadMonedas) {
         // Inicializamos el checkout integrado
         // (stripePromise viene de la variable global que pusiste al inicio)
         checkoutInstance = await stripePromise.initEmbeddedCheckout({
-    clientSecret,
-    // AGREGA ESTA LÍNEA PARA MODO OSCURO:
-    appearance: { theme: 'night' } 
+    clientSecret, 
 });
 
 checkoutInstance.mount('#checkout');
