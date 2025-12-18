@@ -1,4 +1,4 @@
-/* css/style.css - TEMA "FERIA NARANJA" (VIVO Y ALEGRE) */
+/* css/style.css - TEMA "FERIA NARANJA" (VIVO Y ALEGRE) PRO */
 
 :root {
   /* Paleta CÁLIDA Y VIVA */
@@ -13,7 +13,7 @@
   --azul-cielo: #00b0ff;      /* Acciones secundarias */
   --rojo-fuego: #d50000;      /* Salir / Cancelar */
   
-  --glass-bg: rgba(0, 0, 0, 0.65); /* Fondo negro translúcido (mejor contraste con naranja) */
+  --glass-bg: rgba(0, 0, 0, 0.65); /* Fondo negro translúcido */
   --border-color: rgba(255, 234, 0, 0.5); /* Bordes dorados */
   --box-shadow-warm: 0 8px 32px 0 rgba(100, 30, 0, 0.5);
 }
@@ -22,7 +22,7 @@ body {
   margin: 0;
   /* DEGRADADO NARANJA TIPO ATARDECER / FERIA */
   background: linear-gradient(135deg, #ff9100 0%, #ff3d00 100%);
-  background-attachment: fixed; /* Que el fondo no se mueva al scrollear */
+  background-attachment: fixed; 
   color: var(--text-color);
   font-family: 'Segoe UI', 'Roboto', sans-serif;
   min-height: 100vh;
@@ -40,7 +40,6 @@ body {
   max-height: 100vh;        
   overflow-y: auto;          
   padding: 1rem;
-  /* Quitamos las imágenes de fondo para que luzca el color naranja limpio */
   background: transparent; 
   transition: opacity 0.5s ease-in;
   box-sizing: border-box;
@@ -56,11 +55,11 @@ body {
 
 .pantalla.activa { display: flex; }
 
-/* Títulos con Degradado Dorado */
+/* Títulos */
 h1, h2, h3 {
     text-transform: uppercase;
     color: var(--amarillo-maiz);
-    text-shadow: 2px 2px 0px #b71c1c; /* Sombra roja sólida para que resalte */
+    text-shadow: 2px 2px 0px #b71c1c; 
     margin-bottom: 15px;
     font-weight: 900;
     letter-spacing: 1px;
@@ -78,7 +77,7 @@ h1, h2, h3 {
   font-weight: 400;
 }
 
-/* --- CONTENEDORES (GLASS OSCURO PARA CONTRASTE) --- */
+/* --- CONTENEDORES (GLASS OSCURO) --- */
 .auth-container, 
 .sala-box, 
 .menu-acciones,
@@ -89,7 +88,7 @@ h1, h2, h3 {
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
     border-radius: 20px;
-    border: 2px solid rgba(255, 255, 255, 0.1); /* Borde sutil */
+    border: 2px solid rgba(255, 255, 255, 0.1); 
     box-shadow: 0 10px 20px rgba(0,0,0,0.3);
     padding: 1.2rem;
     color: white;
@@ -100,11 +99,11 @@ h1, h2, h3 {
     text-align: center;
 }
 
-/* Ajuste específico para listas en juego */
+/* Ajuste específico para listas */
 #jugadoresLista, #jugadoresListaIngame {
     max-width: 500px;
     margin-top: 15px;
-    border-color: var(--amarillo-maiz); /* Borde dorado en la lista */
+    border-color: var(--amarillo-maiz); 
 }
 
 /* Inputs y Selects */
@@ -113,7 +112,7 @@ input[type="text"], input[type="email"], input[type="password"], select {
     padding: 12px;
     border-radius: 10px;
     border: 1px solid rgba(255, 255, 255, 0.3); 
-    background: rgba(255, 255, 255, 0.1); /* Blanco translúcido */
+    background: rgba(255, 255, 255, 0.1); 
     color: white;
     font-size: 1rem;
     box-sizing: border-box;
@@ -121,7 +120,7 @@ input[type="text"], input[type="email"], input[type="password"], select {
 }
 input::placeholder { color: rgba(255,255,255,0.7); }
 
-/* --- CARTAS --- */
+/* --- CARTAS (BASE MÓVIL) --- */
 .cartas-container, .juego-cartas {
   display: flex;
   flex-wrap: wrap;
@@ -133,7 +132,7 @@ input::placeholder { color: rgba(255,255,255,0.7); }
 }
 
 .carta-img {
-  width: 180px;
+  width: 160px; /* Tamaño base para móvil */
   border-radius: 8px;
   cursor: pointer;
   transition: transform 0.2s ease;
@@ -146,18 +145,14 @@ input::placeholder { color: rgba(255,255,255,0.7); }
 .carta-img.seleccionada {
   transform: scale(1.05);
   border-color: var(--amarillo-maiz);
-  box-shadow: 0 0 20px var(--amarillo-maiz); /* Resplandor Dorado */
+  box-shadow: 0 0 20px var(--amarillo-maiz); 
 }
 
 .carta-juego {
   position: relative;
-  flex-basis: 45%; 
-  max-width: 45%;
-}
-
-.carta-juego img.carta-img {
-    width: 100%;
-    border-radius: 8px;
+  /* Flex basis permite que crezcan o se encojan según el contenedor */
+  flex-basis: auto; 
+  max-width: fit-content;
 }
 
 .ficha {
@@ -171,20 +166,15 @@ input::placeholder { color: rgba(255,255,255,0.7); }
   z-index: 10;
 }
 
-/* --- BOTONES (AQUÍ ESTÁ EL ARREGLO DE LOS BLANCOS) --- */
-
-/* 1. Estilo BASE para TODOS los botones (incluso los sin ID) */
+/* --- BOTONES --- */
 button {
-  padding: 1rem 1.5rem; /* Botones gorditos */
+  padding: 1rem 1.5rem; 
   font-size: 1rem;
   margin: 0.5rem;
   border-radius: 50px; 
   border: none;
-  
-  /* COLOR POR DEFECTO: ROSA MEXICANO (Para que no salgan blancos) */
   background: var(--rosa-mexicano);
   color: white; 
-  
   cursor: pointer;
   font-weight: 800;
   letter-spacing: 0.5px;
@@ -198,38 +188,32 @@ button:active {
   box-shadow: none;
 }
 
-/* 2. Colores Específicos (Sobrescriben el rosa base) */
-
-/* Verdes (Iniciar, Crear, Apostar, Confirmar, Continuar) */
+/* Colores Específicos */
 button[onclick*="crearSala"], 
 #btnIniciarJuego, 
 #btnApostar, 
-#btnGuardarSet, /* Si tienes ID para guardar */
-button[class*="confirmar"], /* Si usas clases confirmar */
+#btnGuardarSet, 
+button[class*="confirmar"], 
 button[onclick*="cargarSet"] {
     background: linear-gradient(to bottom, var(--verde-limon), #64dd17);
-    color: #003300; /* Texto oscuro para contraste en verde */
+    color: #003300; 
 }
 
-/* Azules (Unirse, Barajear, Limpiar) */
 button[onclick*="unirseSala"], #btnBarajear, #btnLimpiarCartas {
     background: linear-gradient(to bottom, var(--azul-cielo), #0091ea);
     color: #002f6c;
 }
 
-/* Rojos (Salir, Detener, Cerrar) */
 #btnDetenerJuego, #btnSalirSala, #btnSalirLobby, button[onclick*="cerrarSesion"] {
     background: linear-gradient(to bottom, #ff5252, #d50000);
     color: white;
 }
 
-/* Amarillos (Cambiar Cartas) */
 #btnCambiarCartas {
     background: linear-gradient(to bottom, var(--amarillo-maiz), #fbc02d);
     color: #3e2723;
 }
 
-/* LOTERÍA (El más llamativo) */
 #btnLoteria { 
     background: linear-gradient(45deg, #ffea00, #ff9100, #ffea00);
     background-size: 200% 200%;
@@ -245,19 +229,31 @@ button[onclick*="unirseSala"], #btnBarajear, #btnLimpiarCartas {
     100% { background-position: 0% 50%; }
 }
 
-/* CONTROLES GRID */
+/* --- CONTROLES DE JUEGO (MÓVIL BASE) --- */
 #controlesJuego {
-    display: grid;
-    grid-template-columns: 1fr 1fr; 
-    gap: 10px;                    
     width: 100%;
-    max-width: 500px;             
-    margin: 5px auto;
-    padding: 0 5px;
+    max-width: 500px;
+    margin: 10px auto;
+    display: flex;
+    flex-direction: column;
+}
+
+/* El selector de velocidad ocupa todo el ancho */
+#divVelocidad {
+    width: 100%; 
     box-sizing: border-box;
 }
 
-#controlesJuego button {
+/* La rejilla de botones base (2 columnas) */
+.botones-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    width: 100%;
+    margin-top: 10px;
+}
+
+.botones-grid button {
     width: 100%;
     height: 55px;       
     margin: 0;          
@@ -273,12 +269,25 @@ button[onclick*="unirseSala"], #btnBarajear, #btnLimpiarCartas {
     margin-top: 5px !important;
 }
 
+/* --- PANEL INFERIOR (MÓVIL BASE) --- */
+/* Importante: column para que no se rompa en iPhone */
+#panelInferior {
+    display: flex;
+    flex-direction: column; 
+    width: 100%;
+    margin-top: 15px;
+}
+
+.panel-seccion {
+    width: 100%;
+    margin-bottom: 15px;
+}
+
 /* APUESTAS UI */
 #apuestasUI {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-top: 15px;
   padding: 1rem;
   background: var(--glass-bg) !important; 
   backdrop-filter: blur(12px);          
@@ -334,21 +343,8 @@ button[onclick*="unirseSala"], #btnBarajear, #btnLimpiarCartas {
 
 .modal { display: none; position: fixed; z-index: 10000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.8); backdrop-filter: blur(5px); justify-content: center; align-items: center; opacity: 0; transition: opacity 0.3s ease; }
 .modal.active { display: flex; opacity: 1; }
-.modal-content { background: #d84315; /* Fondo Naranja Quemado para modales */ padding: 2rem; border-radius: 20px; text-align: center; border: 2px solid var(--amarillo-maiz); color: white; min-width: 300px; box-sizing: border-box; box-shadow: 0 0 20px rgba(0,0,0,0.5); }
+.modal-content { background: #d84315; padding: 2rem; border-radius: 20px; text-align: center; border: 2px solid var(--amarillo-maiz); color: white; min-width: 300px; box-sizing: border-box; box-shadow: 0 0 20px rgba(0,0,0,0.5); }
 .modal-buttons { margin-top: 1.5rem; display: flex; justify-content: center; gap: 1rem; }
-
-/* PC / TABLET */
-@media (min-width: 768px) {
-  .juego-cartas, .cartas-container { max-width: 1200px; margin: 0 auto; }
-  .carta-img { width: 220px; }
-  .carta-juego { flex-basis: 220px; max-width: 220px; }
-  #apuestasUI { width: 800px; max-width: 90%; }
-  #monedas-valor { font-size: 3rem; }
-  .moneda-stack { width: 60px; height: 60px; margin-top: -40px; }
-  .bote-monedas { width: 80px; height: 80px; }
-  .bote-monedas img { width: 65px; height: 65px; }
-  #bote-valor { font-size: 2rem; }
-}
 
 /* HISTORIAL MODAL */
 .historial-container-modal {
@@ -375,7 +371,7 @@ button[onclick*="unirseSala"], #btnBarajear, #btnLimpiarCartas {
     box-shadow: 0 2px 4px rgba(0,0,0,0.3);
 }
 
-/* --- BOTÓN RECARGAR (VIBRANTE) --- */
+/* BOTÓN RECARGAR */
 .btn-recargar-verde {
     font-size: 0.8rem;
     padding: 8px 16px;
@@ -452,7 +448,7 @@ button[onclick*="unirseSala"], #btnBarajear, #btnLimpiarCartas {
     box-shadow: none;
 }
 
-/* AJUSTES PARA EL MODAL DE PAGO EN MÓVIL */
+/* MODAL DE PAGO MÓVIL */
 .modal-content {
     max-height: 90vh;      
     overflow-y: auto;       
@@ -465,115 +461,120 @@ button[onclick*="unirseSala"], #btnBarajear, #btnLimpiarCartas {
         padding: 15px 10px;      
         margin: 0 auto;
     }
-    
     #checkout {
         min-height: 500px; 
     }
 }
-/* =========================================
-   ESTILOS BASE (Móvil - Se mantienen igual)
-   ========================================= */
 
-/* Definimos la grid de botones por defecto para móvil (2 columnas) */
-.botones-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 8px;
-    width: 100%;
-}
 
-/* El botón de salir en móvil ocupa todo el ancho abajo */
-#btnSalirSala {
-    grid-column: 1 / -1; 
-    margin-top: 5px !important;
-}
-
-/* El panel inferior en móvil es columna (uno abajo del otro) */
-#panelInferior {
-    display: flex;
-    flex-direction: column;
-    width: 100%;
-    margin-top: 15px;
-}
-
-#seccionJugadores, #seccionApuestas {
-    width: 100%;
-    margin-bottom: 10px;
-}
-
-/* =========================================
-   ESTILOS ESCRITORIO (Pantallas Grandes) 🖥️
-   ========================================= */
+/* =========================================================
+   MEDIA QUERY: ESCRITORIO (PANTALLAS GRANDES - PRO UI) 🖥️
+   ========================================================= */
 
 @media (min-width: 1024px) {
 
-    /* 1. BOTONES EN UNA SOLA LÍNEA */
+    /* 1. CARTAS MÁS GRANDES PARA APROVECHAR ESPACIO */
+    .juego-cartas, .cartas-container {
+        max-width: 1400px; /* Permitimos que crezca */
+    }
+
+    .carta-img {
+        width: 280px; /* ¡AUMENTADO! Se verán grandes en PC */
+    }
+
+    .carta-juego {
+        flex-basis: 280px; 
+        max-width: 280px;
+    }
+
+    /* 2. MENÚ (CREAR / UNIRSE) EN HORIZONTAL */
+    .menu-acciones {
+        flex-direction: row !important; /* Lado a lado */
+        gap: 30px; 
+        max-width: 900px; 
+        margin: 0 auto; 
+    }
+
+    .sala-box {
+        flex: 1; 
+        margin-bottom: 0; 
+        height: 100%; 
+    }
+
+    /* 3. CONTROLES EN UNA SOLA LÍNEA HORIZONTAL */
     #controlesJuego {
-        max-width: 1200px; /* Que coincida con el ancho de las cartas */
-        margin: 10px auto;
+        max-width: 1200px;
+        margin: 20px auto;
+        display: flex; 
+        flex-direction: column; /* Velocidad arriba, botones abajo */
+        align-items: center;
     }
 
     .botones-grid {
-        display: flex; /* Usamos flex para ponerlos en fila */
+        display: flex; /* Flex para ponerlos en fila */
         flex-direction: row;
-        justify-content: center; /* Centrados */
+        justify-content: center;
         align-items: center;
-        gap: 15px; /* Más espacio entre botones */
+        gap: 15px;
+        width: auto;
     }
 
     .botones-grid button {
-        width: auto; /* Que el botón se ajuste al texto */
-        min-width: 120px; /* Un ancho mínimo decente */
-        height: 50px;
+        width: auto;
+        min-width: 140px; /* Botones más anchos */
+        height: 55px;    
         margin: 0;
-        font-size: 0.9rem;
+        font-size: 1rem;
     }
 
-    /* El botón salir ya no necesita ser gigante en escritorio */
     #btnSalirSala {
         margin-top: 0 !important;
-        background: linear-gradient(to bottom, #ff5252, #d50000); /* Rojo */
+        background: linear-gradient(to bottom, #ff5252, #d50000);
     }
 
-    /* 2. PANEL DIVIDIDO (IZQ: JUGADORES | DER: APUESTAS) */
+    /* 4. PANEL INFERIOR DIVIDIDO (IZQ: JUGADORES | DER: APUESTAS) */
     #panelInferior {
         display: flex;
         flex-direction: row; /* Lado a lado */
         justify-content: space-between;
         align-items: flex-start;
-        max-width: 1200px;
-        margin: 20px auto; /* Centrado */
-        gap: 20px;
+        max-width: 1400px; 
+        margin: 30px auto;
+        gap: 40px;
     }
 
-    /* Lado Izquierdo: Jugadores */
+    /* Izquierda */
     #seccionJugadores {
-        flex: 1; /* Ocupa el 50% disponible */
+        flex: 1;
         display: flex;
-        justify-content: flex-start; /* Alinear contenido a la izq */
-    }
-
-    /* Ajustamos la lista para que se vea bien en el panel izquierdo */
-    #jugadoresListaIngame {
-        width: 100%;
-        margin-top: 0; /* Quitamos margen superior */
-        height: 100%;
-        min-height: 160px; /* Misma altura aprox que apuestas */
-        display: flex;
-        flex-direction: column;
         justify-content: flex-start;
     }
 
-    /* Lado Derecho: Apuestas */
-    #seccionApuestas {
-        flex: 1; /* Ocupa el otro 50% */
+    #jugadoresListaIngame {
+        width: 100%;
+        margin-top: 0; 
+        height: 100%;
+        min-height: 160px;
         display: flex;
-        justify-content: flex-end; /* Alinear contenido a la derecha */
+        flex-direction: column;
+        justify-content: flex-start;
+        max-width: 100%;
+    }
+
+    /* Derecha */
+    #seccionApuestas {
+        flex: 1;
+        display: flex;
+        justify-content: flex-end;
     }
 
     #apuestasUI {
         width: 100%;
+        max-width: 100%; /* Que llene el contenedor */
         margin-top: 0;
-        /* Aseguramos que se expanda bien */
     }
+    
+    /* Monedas aún más grandes en PC */
+    #monedas-valor { font-size: 3.5rem; }
+    #bote-valor { font-size: 2.5rem; }
 }
