@@ -1,29 +1,28 @@
-/* css/style.css - TEMA FIESTA MEXICANA (FINAL) */
+/* css/style.css - TEMA "FERIA NARANJA" (VIVO Y ALEGRE) */
 
 :root {
-  /* Paleta "Fiesta Mexicana" */
-  --primary-bg: #2c003e;      /* Morado profundo base */
-  --secondary-bg: rgba(45, 10, 60, 0.7); 
+  /* Paleta CÁLIDA Y VIVA */
+  --primary-bg: #ff6f00;      /* Naranja vibrante base */
+  --secondary-bg: #e65100;    /* Naranja rojizo oscuro */
   --text-color: #ffffff;
   
-  /* Colores Neón */
-  --rosa-mexicano: #ff007f;
-  --amarillo-maiz: #ffeb3b;
-  --verde-limon: #76ff03;
-  --azul-turquesa: #00e5ff;
-  --naranja-vivo: #ff6d00;
+  /* Colores de Acento (Feria Mexicana) */
+  --rosa-mexicano: #f50057;   /* Para botones generales */
+  --amarillo-maiz: #ffea00;   /* Dorados / Títulos */
+  --verde-limon: #76ff03;     /* Acciones positivas */
+  --azul-cielo: #00b0ff;      /* Acciones secundarias */
+  --rojo-fuego: #d50000;      /* Salir / Cancelar */
   
-  --border-color: rgba(255, 255, 255, 0.3);
-  --glass-border: 1px solid rgba(255, 0, 127, 0.3); /* Borde rosita sutil */
-  --box-shadow-glass: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
-  --box-shadow-neon: 0 0 10px rgba(255, 0, 127, 0.5);
+  --glass-bg: rgba(0, 0, 0, 0.65); /* Fondo negro translúcido (mejor contraste con naranja) */
+  --border-color: rgba(255, 234, 0, 0.5); /* Bordes dorados */
+  --box-shadow-warm: 0 8px 32px 0 rgba(100, 30, 0, 0.5);
 }
 
 body {
   margin: 0;
-  background-color: var(--primary-bg);
-  /* Mezcla el color morado con tus imágenes de fondo para darles tinte */
-  background-blend-mode: overlay; 
+  /* DEGRADADO NARANJA TIPO ATARDECER / FERIA */
+  background: linear-gradient(135deg, #ff9100 0%, #ff3d00 100%);
+  background-attachment: fixed; /* Que el fondo no se mueva al scrollear */
   color: var(--text-color);
   font-family: 'Segoe UI', 'Roboto', sans-serif;
   min-height: 100vh;
@@ -41,39 +40,30 @@ body {
   max-height: 100vh;        
   overflow-y: auto;          
   padding: 1rem;
-  background-size: cover;
-  background-position: center;
-  background-attachment: fixed;
-  background-repeat: no-repeat;
+  /* Quitamos las imágenes de fondo para que luzca el color naranja limpio */
+  background: transparent; 
   transition: opacity 0.5s ease-in;
   box-sizing: border-box;
   -webkit-overflow-scrolling: touch;
 }
 
-/* Alineación Superior para Menús (Fix de UX) */
+/* Alineación Superior para Menús */
 #pantallaMenu, #pantallaSeleccion, #pantallaJuego {
     justify-content: flex-start;
-    padding-top: 40px; 
+    padding-top: 50px; 
     padding-bottom: 20px;
 }
 
-.pantalla.activa {
-  display: flex;
-}
+.pantalla.activa { display: flex; }
 
-/* FONDOS (Se mantienen tus imágenes pero se verán con tinte morado por el body) */
-#pantallaSplash { background-image: url("../assets/imagenes/ui/splash.PNG"); }
-#pantallaSeleccion, #pantallaJuego { background-image: url("../assets/imagenes/ui/fondo-seleccion.PNG"); }
-
-/* Títulos con Degradado Festivo */
+/* Títulos con Degradado Dorado */
 h1, h2, h3 {
     text-transform: uppercase;
-    background: linear-gradient(to right, var(--amarillo-maiz), var(--naranja-vivo));
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    text-shadow: 0 2px 10px rgba(0,0,0,0.3);
+    color: var(--amarillo-maiz);
+    text-shadow: 2px 2px 0px #b71c1c; /* Sombra roja sólida para que resalte */
     margin-bottom: 15px;
-    font-weight: 800;
+    font-weight: 900;
+    letter-spacing: 1px;
 }
 
 #pantallaSplash h1 {
@@ -83,24 +73,24 @@ h1, h2, h3 {
   transform: translateX(-50%);
   font-size: 1.5rem;
   text-align: center;
-  text-shadow: 0 0 8px black; /* Sombra negra para lectura */
-  -webkit-text-fill-color: white; /* Blanco sólido en splash */
-  font-weight: 300;
+  color: white;
+  text-shadow: 0 2px 5px rgba(0,0,0,0.5);
+  font-weight: 400;
 }
 
-/* --- GLASSMORPHISM MORADO --- */
+/* --- CONTENEDORES (GLASS OSCURO PARA CONTRASTE) --- */
 .auth-container, 
 .sala-box, 
 .menu-acciones,
 #jugadoresLista, 
 #jugadoresListaIngame,
 .historial-container {
-    background: rgba(40, 10, 60, 0.75) !important; /* Morado translúcido */
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
+    background: var(--glass-bg) !important;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
     border-radius: 20px;
-    border: var(--glass-border);
-    box-shadow: var(--box-shadow-glass);
+    border: 2px solid rgba(255, 255, 255, 0.1); /* Borde sutil */
+    box-shadow: 0 10px 20px rgba(0,0,0,0.3);
     padding: 1.2rem;
     color: white;
     width: 100%;
@@ -114,21 +104,22 @@ h1, h2, h3 {
 #jugadoresLista, #jugadoresListaIngame {
     max-width: 500px;
     margin-top: 15px;
-    background: rgba(20, 5, 30, 0.6) !important; /* Más oscuro para leer bien */
+    border-color: var(--amarillo-maiz); /* Borde dorado en la lista */
 }
 
 /* Inputs y Selects */
 input[type="text"], input[type="email"], input[type="password"], select {
     width: 100%;
     padding: 12px;
-    border-radius: 8px;
-    border: 1px solid rgba(255, 0, 127, 0.3); /* Borde rosa suave */
-    background: rgba(0, 0, 0, 0.4);
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.3); 
+    background: rgba(255, 255, 255, 0.1); /* Blanco translúcido */
     color: white;
     font-size: 1rem;
     box-sizing: border-box;
     margin-bottom: 15px;
 }
+input::placeholder { color: rgba(255,255,255,0.7); }
 
 /* --- CARTAS --- */
 .cartas-container, .juego-cartas {
@@ -149,13 +140,13 @@ input[type="text"], input[type="email"], input[type="password"], select {
   max-width: 100%;
   height: auto;
   border: 3px solid transparent;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.4);
 }
 
 .carta-img.seleccionada {
   transform: scale(1.05);
   border-color: var(--amarillo-maiz);
-  box-shadow: 0 0 15px var(--rosa-mexicano); /* Resplandor Rosa */
+  box-shadow: 0 0 20px var(--amarillo-maiz); /* Resplandor Dorado */
 }
 
 .carta-juego {
@@ -180,58 +171,78 @@ input[type="text"], input[type="email"], input[type="password"], select {
   z-index: 10;
 }
 
-/* BOTONES ESTILO FIESTA (Degradados) */
+/* --- BOTONES (AQUÍ ESTÁ EL ARREGLO DE LOS BLANCOS) --- */
+
+/* 1. Estilo BASE para TODOS los botones (incluso los sin ID) */
 button {
-  padding: 0.8rem 1.6rem;
+  padding: 1rem 1.5rem; /* Botones gorditos */
   font-size: 1rem;
   margin: 0.5rem;
-  border-radius: 50px; /* Más redondos */
+  border-radius: 50px; 
   border: none;
-  color: white; /* Texto blanco por defecto */
+  
+  /* COLOR POR DEFECTO: ROSA MEXICANO (Para que no salgan blancos) */
+  background: var(--rosa-mexicano);
+  color: white; 
+  
   cursor: pointer;
   font-weight: 800;
   letter-spacing: 0.5px;
-  box-shadow: 0 4px 0 rgba(0,0,0,0.2); /* Efecto 3D */
+  box-shadow: 0 4px 10px rgba(0,0,0,0.3); 
   transition: transform 0.1s, box-shadow 0.1s;
   text-transform: uppercase;
 }
 
 button:active {
-  transform: translateY(4px);
+  transform: scale(0.95);
   box-shadow: none;
 }
 
-/* Colores Específicos por ID/Función */
+/* 2. Colores Específicos (Sobrescriben el rosa base) */
 
-/* Verdes (Iniciar, Crear) */
-button[onclick*="crearSala"], #btnIniciarJuego, #btnApostar {
-    background: linear-gradient(45deg, var(--verde-limon), #00c853);
-    color: #003d00; /* Texto oscuro para contraste */
+/* Verdes (Iniciar, Crear, Apostar, Confirmar, Continuar) */
+button[onclick*="crearSala"], 
+#btnIniciarJuego, 
+#btnApostar, 
+#btnGuardarSet, /* Si tienes ID para guardar */
+button[class*="confirmar"], /* Si usas clases confirmar */
+button[onclick*="cargarSet"] {
+    background: linear-gradient(to bottom, var(--verde-limon), #64dd17);
+    color: #003300; /* Texto oscuro para contraste en verde */
 }
 
 /* Azules (Unirse, Barajear, Limpiar) */
 button[onclick*="unirseSala"], #btnBarajear, #btnLimpiarCartas {
-    background: linear-gradient(45deg, var(--azul-turquesa), #0091ea);
+    background: linear-gradient(to bottom, var(--azul-cielo), #0091ea);
     color: #002f6c;
 }
 
 /* Rojos (Salir, Detener, Cerrar) */
 #btnDetenerJuego, #btnSalirSala, #btnSalirLobby, button[onclick*="cerrarSesion"] {
-    background: linear-gradient(45deg, #ff5252, #d50000);
+    background: linear-gradient(to bottom, #ff5252, #d50000);
     color: white;
 }
 
-/* Amarillos/Naranjas (Cambiar, Lotería) */
+/* Amarillos (Cambiar Cartas) */
 #btnCambiarCartas {
-    background: linear-gradient(45deg, var(--amarillo-maiz), #fbc02d);
+    background: linear-gradient(to bottom, var(--amarillo-maiz), #fbc02d);
     color: #3e2723;
 }
 
+/* LOTERÍA (El más llamativo) */
 #btnLoteria { 
-    background: linear-gradient(45deg, var(--amarillo-maiz), var(--naranja-vivo)); 
-    color: #3e2723;
-    font-size: 1.1rem;
-    animation: palpito 1.5s infinite;
+    background: linear-gradient(45deg, #ffea00, #ff9100, #ffea00);
+    background-size: 200% 200%;
+    color: #bf360c;
+    font-size: 1.2rem;
+    animation: palpito 1.5s infinite, gradientMove 2s ease infinite;
+    border: 2px solid white;
+}
+
+@keyframes gradientMove {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
 }
 
 /* CONTROLES GRID */
@@ -248,9 +259,9 @@ button[onclick*="unirseSala"], #btnBarajear, #btnLimpiarCartas {
 
 #controlesJuego button {
     width: 100%;
-    height: 50px;       
+    height: 55px;       
     margin: 0;          
-    font-size: 0.8rem;  
+    font-size: 0.9rem;  
     display: flex;
     align-items: center;
     justify-content: center;
@@ -269,11 +280,11 @@ button[onclick*="unirseSala"], #btnBarajear, #btnLimpiarCartas {
   align-items: center;
   margin-top: 15px;
   padding: 1rem;
-  background: rgba(20, 5, 30, 0.6) !important; 
+  background: var(--glass-bg) !important; 
   backdrop-filter: blur(12px);          
   -webkit-backdrop-filter: blur(12px);
   border-radius: 20px;
-  border: 1px solid rgba(255, 0, 127, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.2);
   box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
   flex-direction: row;
   gap: 1rem;
@@ -311,18 +322,19 @@ button[onclick*="unirseSala"], #btnBarajear, #btnLimpiarCartas {
   padding: 8px 0;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   font-weight: 500;
+  color: white;
 }
 #jugadoresLista div:last-child, #jugadoresListaIngame div:last-child { border-bottom: none; }
 
 /* MODAL Y EXTRAS */
-#loteriaMensaje { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 4rem; color: var(--amarillo-maiz); font-weight: bold; background-color: rgba(0,0,0,0.85); backdrop-filter: blur(5px); padding: 30px 60px; border-radius: 20px; z-index: 9999; display: none; border: 3px solid var(--rosa-mexicano); animation: pulsate 1s infinite alternate; box-shadow: 0 0 30px var(--rosa-mexicano); }
+#loteriaMensaje { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 4rem; color: var(--amarillo-maiz); font-weight: bold; background-color: rgba(0,0,0,0.9); backdrop-filter: blur(5px); padding: 30px 60px; border-radius: 20px; z-index: 9999; display: none; border: 3px solid var(--rosa-mexicano); animation: pulsate 1s infinite alternate; box-shadow: 0 0 30px var(--rosa-mexicano); }
 @keyframes pulsate { from { transform: translate(-50%, -50%) scale(1); } to { transform: translate(-50%, -50%) scale(1.1); } }
 .confeti { position: fixed; width: 10px; height: 10px; background-color: var(--amarillo-maiz); z-index: 9998; animation: caer 4s linear forwards; border-radius: 50%; }
 @keyframes caer { to { transform: translateY(100vh) rotate(360deg); opacity: 0; } }
 
 .modal { display: none; position: fixed; z-index: 10000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.8); backdrop-filter: blur(5px); justify-content: center; align-items: center; opacity: 0; transition: opacity 0.3s ease; }
 .modal.active { display: flex; opacity: 1; }
-.modal-content { background: #2c003e; padding: 2rem; border-radius: 20px; text-align: center; border: 2px solid var(--rosa-mexicano); color: white; min-width: 300px; box-sizing: border-box; box-shadow: 0 0 20px rgba(0,0,0,0.5); }
+.modal-content { background: #d84315; /* Fondo Naranja Quemado para modales */ padding: 2rem; border-radius: 20px; text-align: center; border: 2px solid var(--amarillo-maiz); color: white; min-width: 300px; box-sizing: border-box; box-shadow: 0 0 20px rgba(0,0,0,0.5); }
 .modal-buttons { margin-top: 1.5rem; display: flex; justify-content: center; gap: 1rem; }
 
 /* PC / TABLET */
@@ -363,19 +375,19 @@ button[onclick*="unirseSala"], #btnBarajear, #btnLimpiarCartas {
     box-shadow: 0 2px 4px rgba(0,0,0,0.3);
 }
 
-/* --- BOTÓN RECARGAR (Estilo Neón) --- */
+/* --- BOTÓN RECARGAR (VIBRANTE) --- */
 .btn-recargar-verde {
     font-size: 0.8rem;
-    padding: 6px 16px;
+    padding: 8px 16px;
     margin-top: 10px; 
     background-color: var(--verde-limon);
     color: #003d00;
     border-radius: 20px;
-    box-shadow: 0 0 10px var(--verde-limon); /* Resplandor */
+    box-shadow: 0 0 10px var(--verde-limon); 
     text-transform: uppercase;
     font-weight: 800;
     width: auto;
-    border: 1px solid white;
+    border: 2px solid white;
     animation: palpito 2s infinite;
     cursor: pointer;
     transition: all 0.2s ease;
@@ -398,7 +410,7 @@ button[onclick*="unirseSala"], #btnBarajear, #btnLimpiarCartas {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    background: rgba(255,255,255,0.05);
+    background: rgba(255,255,255,0.1);
     border: 1px solid rgba(255,255,255,0.1);
     padding: 15px;
     border-radius: 12px;
@@ -409,13 +421,13 @@ button[onclick*="unirseSala"], #btnBarajear, #btnLimpiarCartas {
 }
 
 .paquete-item:hover {
-    background: rgba(255,255,255,0.15);
+    background: rgba(255,255,255,0.2);
     transform: translateX(5px);
 }
 
 .paquete-item.destacado {
     border: 2px solid var(--amarillo-maiz);
-    background: rgba(255, 235, 59, 0.1);
+    background: rgba(255, 235, 59, 0.2);
 }
 
 .badge-pop {
