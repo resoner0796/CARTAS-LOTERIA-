@@ -31,6 +31,7 @@ const pantallas = {
   sala: document.getElementById("pantallaSala"),
   seleccion: document.getElementById("pantallaSeleccion"),
   juego: document.getElementById("pantallaJuego")
+  pantallaAdmin: document.getElementById("pantallaAdmin")
 };
 
 // Referencias DOM - Elementos UI
