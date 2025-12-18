@@ -5,40 +5,18 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <meta name="theme-color" content="#111111" />
   <link rel="manifest" href="manifest.json" />
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;800;900&display=swap" rel="stylesheet">
    
   <link rel="apple-touch-icon" href="assets/imagenes/ui/icon-192.png">
   <title>Lotería WebApp</title>
    
   <link rel="stylesheet" href="css/style.css">
   <style>
-    /* Estilos rápidos para auth y estructura */
-    .auth-container, .menu-acciones, .sala-box {
-      display: flex;
-      flex-direction: column;
-      gap: 1rem;
-      width: 100%;
-      max-width: 320px;
-      text-align: center;
-    }
-    .auth-container input, .sala-box input {
-      padding: 12px;
-      border-radius: 8px;
-      border: 1px solid #444;
-      background: #2d3e50;
-      color: white;
-      font-size: 1rem;
-    }
-    .stats-resumen {
-      font-size: 2rem;
-      margin: 1rem 0;
-      color: gold;
-    }
-    .sala-box {
-      background: rgba(0,0,0,0.3);
-      padding: 1rem;
-      border-radius: 12px;
-      margin-bottom: 1rem;
-    }
+    /* Estilos inline de emergencia (se pueden mover a CSS después) */
+    .stats-resumen { font-size: 2rem; margin: 1rem 0; color: gold; }
     a { color: #4dd0e1; text-decoration: none; }
   </style>
 </head>
@@ -69,53 +47,58 @@
   <div id="pantallaMenu" class="pantalla">
     <h1 id="menuBienvenida">Hola, Jugador</h1>
     
-    <div class="stats-resumen" style="display: flex; flex-direction: column; align-items: center; margin: 2rem 0;">
-        <span id="menuMonedas" style="font-size: 2.5rem; color: gold; text-shadow: 0 2px 4px rgba(0,0,0,0.5);">💰 0</span>
+    <div class="stats-resumen" style="display: flex; flex-direction: column; align-items: center; margin: 1rem 0;">
+        <span id="menuMonedas" style="font-size: 3rem; color: gold; text-shadow: 0 4px 8px rgba(0,0,0,0.6); font-weight: 900;">💰 0</span>
         <button class="btn-recargar-verde" onclick="abrirModalRecarga()">Recargar Ahora</button>
     </div>
     
     <div class="menu-acciones">
-        <div class="sala-box">
+        <div class="sala-box menu-card">
             <h3>Crear Sala</h3>
             
-            <p style="margin-bottom:5px;">Nombre de la mesa:</p>
+            <p style="margin-bottom:5px; font-size: 0.8rem;">Nombre:</p>
             <input type="text" id="inputCrearSala" placeholder="Ej: Familia">
             
-            <p style="margin-bottom:5px;">Modo de Juego:</p>
+            <p style="margin-bottom:5px; font-size: 0.8rem;">Modo:</p>
             <select id="inputModoJuego" style="background:rgba(0,0,0,0.5); border:1px solid gold; color:white; margin-bottom:15px;">
-                <option value="clasico">🏆 Clásica (Tabla Llena)</option>
+                <option value="clasico">🏆 Clásica</option>
                 <option value="esquinas">🧱 4 Esquinas</option>
-                <option value="centro">🎯 El Pozo (Centro)</option>
-                <option value="linea">➖ Línea (Cualquiera)</option>
+                <option value="centro">🎯 El Pozo</option>
+                <option value="linea">➖ Línea</option>
             </select>
 
-            <button onclick="crearSalaPropia()">Crear y Jugar</button>
+            <button onclick="crearSalaPropia()" class="btn-full">Crear ▶</button>
         </div>
         
-        <div class="sala-box">
-            <h3>Unirse a Sala</h3>
-            <p>Ingresa el nombre exacto:</p>
-            <input type="text" id="inputUnirseSala" placeholder="Nombre de sala">
-            <button onclick="unirseSalaExistente()">Unirse</button>
+        <div class="sala-box menu-card">
+            <h3>Unirse</h3>
+            <p style="margin-bottom:5px; font-size: 0.8rem;">Código / Nombre:</p>
+            <input type="text" id="inputUnirseSala" placeholder="Nombre sala">
+            <div style="flex-grow: 1;"></div> 
+            <button onclick="unirseSalaExistente()" class="btn-full">Unirse 🚀</button>
         </div>
     </div>
-    <button id="btnPanelAdmin" onclick="abrirPanelAdmin()" style="display:none; background: #212121; color: gold; border: 1px solid gold; margin-top: 10px;">👑 Panel Admin</button>
-    <button onclick="cerrarSesion()" style="background-color: #dc3545; margin-top: 2rem;">Cerrar Sesión</button>
+
+    <button id="btnPanelAdmin" onclick="abrirPanelAdmin()" style="display:none; background: #212121; color: gold; border: 1px solid gold; margin-top: 20px;">👑 Panel Admin</button>
+    <button onclick="cerrarSesion()" style="background-color: #dc3545; margin-top: 2rem; width: auto; padding: 10px 30px;">Cerrar Sesión</button>
   </div>
 
   <div id="pantallaSala" class="pantalla">
-    <h2 id="tituloSalaActual">Sala: ...</h2>
+    <h2 id="tituloSalaActual" style="font-size: 2rem;">Sala: ...</h2>
     
-    <div class="sala-box">
-        <p>¡Invita a más jugadores!</p>
-        <button onclick="compartirSala()" id="btnCompartir" style="background-color: #4dd0e1; color: #000;">🔗 Compartir Enlace</button>
-    </div>
+    <div class="sala-botones-row">
+        <button onclick="compartirSala()" id="btnCompartir" style="background: var(--azul-cielo); color: #002f6c;">
+            🔗 Compartir
+        </button>
 
-    <button onclick="cambiarPantalla('seleccion')" style="background-color: gold; color: black; font-weight: bold; margin-top: 10px;">Elegir Cartas 🎴</button>
+        <button onclick="cambiarPantalla('seleccion')" style="background: gold; color: black;">
+            Elegir Cartas 🎴
+        </button>
+    </div>
     
     <div id="jugadoresLista" style="width: 100%; margin-top: 20px;"></div>
     
-    <button id="btnSalirLobby" onclick="salirDeSalaEnJuego()" style="background-color: #dc3545; margin-top: 20px;">Salir al Menú</button>
+    <button id="btnSalirLobby" onclick="salirDeSalaEnJuego()" style="background-color: #dc3545; margin-top: 30px;">Salir al Menú</button>
   </div>
 
   <div id="pantallaSeleccion" class="pantalla">
