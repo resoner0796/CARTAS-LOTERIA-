@@ -1,4 +1,4 @@
-/* css/style.css - TEMA "FERIA NARANJA" PRO (MASTER FINAL) */
+/* css/style.css - TEMA "FERIA NARANJA" PRO (MASTER FINAL - MODAL VICTORIA PULIDO) */
 
 :root {
   /* Paleta CÁLIDA Y VIVA */
@@ -57,7 +57,7 @@ body {
 /* Títulos (BLANCOS Y FUERTES) */
 h1, h2, h3 {
     text-transform: uppercase;
-    color: #ffffff !important; /* Blanco solicitado */
+    color: #ffffff !important; 
     text-shadow: 0 4px 6px rgba(0,0,0,0.4); 
     margin-bottom: 15px;
     font-weight: 900; 
@@ -84,7 +84,6 @@ h1, h2, h3 {
 }
 
 /* --- MENÚ PRINCIPAL (GRID / SEPARADO) --- */
-/* Esto hace que los botones sean cuadrados y separados */
 .menu-acciones {
     display: grid; 
     grid-template-columns: 1fr 1fr;
@@ -108,7 +107,6 @@ h1, h2, h3 {
 
 .btn-full { width: 100%; margin: 10px 0 0 0; }
 
-/* Botones de Sala (Lado a Lado) */
 .sala-botones-row {
     display: flex; flex-direction: row; justify-content: center; gap: 15px; 
     width: 100%; max-width: 500px; margin: 20px 0;
@@ -150,7 +148,7 @@ input::placeholder { color: rgba(255,255,255,0.6); }
   box-shadow: 0 0 25px var(--amarillo-maiz); 
 }
 
-/* --- FICHA (ARREGLADO: CLICKEABLE) --- */
+/* --- FICHA (CLICKEABLE) --- */
 .ficha {
   position: absolute;
   width: 35%; 
@@ -160,11 +158,17 @@ input::placeholder { color: rgba(255,255,255,0.6); }
   transform: translate(-50%, -50%);
   filter: drop-shadow(0 4px 6px rgba(0,0,0,0.6));
   z-index: 10;
-  cursor: pointer; /* Mano al pasar */
-  pointer-events: auto; /* Permitir clicks */
+  cursor: pointer; 
+  pointer-events: auto; 
 }
 
-/* TAMAÑOS MÓVIL (Base) */
+/* --- FICHA DENTRO DEL MODAL (MÁS PEQUEÑA) --- */
+/* Esta regla reduce las fichas solo en la pantalla de victoria */
+#modalVerificationArea .ficha {
+    width: 20% !important; /* Reducido del 35% al 20% */
+}
+
+/* TAMAÑOS MÓVIL BASE */
 #contenedorCartas .carta-juego, 
 #contenedorCartas .carta-img {
     width: 150px; 
@@ -178,18 +182,19 @@ input::placeholder { color: rgba(255,255,255,0.6); }
     display: flex; justify-content: center;
 }
 
-/* --- ARREGLO MODAL VICTORIA (MÓVIL) --- */
-/* Forzamos que se comporte como galería simple */
+/* --- MODAL VICTORIA (MÓVIL) --- */
 #modalVerificationArea {
-    justify-content: center !important;
-    gap: 10px !important;
+    width: 100%;
+    justify-content: center;
 }
 
 #modalVerificationArea .carta-juego {
-    flex: 0 0 auto !important; /* No estirar */
-    width: 100px !important;   /* Tamaño fijo pequeño */
-    max-width: 100px !important;
-    margin: 5px !important;
+    flex: 1; 
+    position: relative;
+    display: flex; 
+    justify-content: center;
+    min-width: 100px; 
+    max-width: 180px; 
 }
 
 /* --- BOTONES --- */
@@ -269,7 +274,22 @@ button[onclick*="unirseSala"], #btnBarajear, #btnLimpiarCartas {
 
 .modal { display: none; position: fixed; z-index: 10000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.8); backdrop-filter: blur(5px); justify-content: center; align-items: center; opacity: 0; transition: opacity 0.3s ease; }
 .modal.active { display: flex; opacity: 1; }
-.modal-content { background: #d84315; padding: 2rem; border-radius: 20px; text-align: center; border: 2px solid var(--amarillo-maiz); color: white; min-width: 300px; width: 90%; max-width: 450px; box-sizing: border-box; box-shadow: 0 0 20px rgba(0,0,0,0.5); }
+
+/* MODAL CONTENT (FULL WIDTH) */
+.modal-content { 
+    background: #d84315; 
+    padding: 2rem; 
+    border-radius: 20px; 
+    text-align: center; 
+    border: 2px solid var(--amarillo-maiz); 
+    color: white; 
+    /* AQUÍ ESTÁ EL CAMBIO DE ANCHO */
+    width: 95%; 
+    max-width: 95%; /* Ocupa casi todo */
+    box-sizing: border-box; 
+    box-shadow: 0 0 20px rgba(0,0,0,0.5); 
+}
+
 .modal-buttons { margin-top: 1.5rem; display: flex; justify-content: center; gap: 1rem; }
 .historial-container-modal { width: 100%; padding: 8px; background: rgba(0, 0, 0, 0.4); border-radius: 12px; margin-bottom: 15px; overflow-x: auto; border: 1px solid rgba(255, 255, 255, 0.1); }
 #modalHistorialFlex { display: flex; gap: 8px; white-space: nowrap; }
@@ -289,12 +309,12 @@ button[onclick*="unirseSala"], #btnBarajear, #btnLimpiarCartas {
 .modal-content { max-height: 90vh; overflow-y: auto; overflow-x: hidden; }
 
 /* =========================================================
-   MEDIA QUERY: ESCRITORIO (TODO EN ORDEN) 🖥️
+   MEDIA QUERY: ESCRITORIO (SOLUCIÓN DEFINITIVA) 🖥️
    ========================================================= */
 
 @media (min-width: 1024px) {
 
-    /* --- 1. MESA DE JUEGO (SOLO PANTALLA JUEGO) --- */
+    /* --- 1. MESA DE JUEGO (Full Ancho) --- */
     #juegoCartas {
         width: 100% !important; 
         max-width: 1600px; 
@@ -315,7 +335,7 @@ button[onclick*="unirseSala"], #btnBarajear, #btnLimpiarCartas {
         width: 100%; 
     }
 
-    /* --- 2. PANTALLA DE SELECCIÓN (GALERÍA) --- */
+    /* --- 2. PANTALLA DE SELECCIÓN (Galería) --- */
     #contenedorCartas {
         max-width: 1200px;
         gap: 15px;
@@ -328,23 +348,24 @@ button[onclick*="unirseSala"], #btnBarajear, #btnLimpiarCartas {
         flex: 0 0 auto;
     }
 
-    /* --- 3. MODAL DE VICTORIA (ARREGLADO DEFINITIVO) --- */
-    /* Aseguramos que el contenedor del modal ignore reglas del juego */
+    /* --- 3. MODAL DE VICTORIA (HORIZONTAL Y GRANDE) --- */
     #modalVerificationArea {
         display: flex !important;
-        flex-wrap: wrap !important;
+        /* NOWRAP: Obliga a que estén en una sola línea horizontal */
+        flex-wrap: nowrap !important;
         justify-content: center !important;
-        gap: 15px !important;
+        gap: 20px !important;
         width: 100% !important;
-        max-width: 100% !important;
+        overflow-x: auto; /* Por si la pantalla es muy chica */
     }
 
-    /* Forzamos a las cartas dentro del modal a ser pequeñas y fijas */
     #modalVerificationArea .carta-juego {
-        flex: 0 0 auto !important; /* No estirar */
-        width: 140px !important;   /* Ancho fijo para modal PC */
-        max-width: 140px !important;
+        /* Permite crecer (flex-grow) para ocupar espacio */
+        flex: 1 !important; 
+        min-width: 200px !important; /* Bastante grandes */
+        max-width: none !important;  /* Sin límite para llenar a lo ancho */
         margin: 5px !important;
+        position: relative !important;
     }
 
     #modalVerificationArea .carta-img {
