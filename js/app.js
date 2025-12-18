@@ -30,7 +30,7 @@ const pantallas = {
   menu: document.getElementById("pantallaMenu"),
   sala: document.getElementById("pantallaSala"),
   seleccion: document.getElementById("pantallaSeleccion"),
-  juego: document.getElementById("pantallaJuego")
+  juego: document.getElementById("pantallaJuego"),
   pantallaAdmin: document.getElementById("pantallaAdmin")
 };
 
