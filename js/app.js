@@ -530,7 +530,9 @@ socket.on("jugadores-actualizados", jugadores => {
   const htmlLista = "<h3>Jugadores en sala:</h3>" +
     Object.values(jugadores).map(j => {
       const check = j.apostado ? "💸" : "";
-      return `<div>${j.nickname} ${check}</div>`;
+      // --- CAMBIO: Detectar si es Host y poner corona ---
+      const crown = j.host ? "👑" : ""; 
+      return `<div>${crown} ${j.nickname} ${check}</div>`;
     }).join("");
     
   if(jugadoresLista) jugadoresLista.innerHTML = htmlLista;
@@ -863,3 +865,49 @@ checkoutInstance.mount('#checkout');
         volverAPaquetes();
     }
 }
+
+// ==================== PRESETS DE CARTAS ====================
+
+function guardarSetFavorito() {
+    if(seleccionadas.length === 0) return mostrarAlerta("Selecciona cartas primero.");
+    localStorage.setItem("loteria_cartas_fav", JSON.stringify(seleccionadas));
+    mostrarAlerta("¡Cartas guardadas! Podrás usarlas en tu próxima partida.", "Guardado");
+}
+
+function cargarSetFavorito() {
+    const guardadas = localStorage.getItem("loteria_cartas_fav");
+    if(!guardadas) return mostrarAlerta("No tienes ningún set guardado.", "Sin datos");
+    
+    const idsFavoritos = JSON.parse(guardadas);
+    
+    // Primero limpiamos lo que tenga seleccionado actualmente
+    seleccionadas.forEach(id => {
+        socket.emit("deseleccionar-carta", { carta: id, sala: salaActual });
+    });
+    seleccionadas = [];
+    
+    // Limpiamos visualmente
+    document.querySelectorAll("#contenedorCartas .carta-img").forEach(img => {
+        img.classList.remove("seleccionada");
+    });
+
+    // Seleccionamos las favoritas una por una
+    // (Un pequeño delay para no saturar al socket si son muchas)
+    idsFavoritos.forEach((id, index) => {
+        setTimeout(() => {
+            const img = document.querySelector(`.carta-img[data-id="${id}"]`);
+            if(img) seleccionarCarta(img);
+        }, index * 50);
+    });
+    
+    mostrarAlerta("Tus cartas favoritas han sido cargadas.", "Listo");
+}
+
+function iniciarJuegoConVelocidad() {
+    const selector = document.getElementById("velocidadJuego");
+    const velocidad = selector ? parseInt(selector.value) : 3000;
+    
+    // Emitimos al servidor con el parámetro extra 'velocidad'
+    socket.emit('iniciar-juego', { sala: salaActual, velocidad: velocidad });
+}
+
