@@ -715,8 +715,8 @@ button[onclick*="unirseSala"], #btnBarajear, #btnLimpiarCartas {
 #menuMonedas {
     position: absolute;
     /* AJUSTE DE POSICIÓN: Más a la izquierda y un poco arriba */
-    top: 45%; 
-    left: 40%; 
+    top: 65%; 
+    left: 80%; 
     transform: translate(-50%, -50%);
     
     margin: 0;
@@ -762,9 +762,4 @@ button[onclick*="unirseSala"], #btnBarajear, #btnLimpiarCartas {
 .btn-recargar-gold:active {
     transform: translateY(1px) scale(0.98);
     box-shadow: 0 3px 10px rgba(255, 215, 0, 0.5);
-}
-
-/* Ajuste responsivo para pantallas pequeñas */
-@media (max-width: 380px) {
-    #menuMonedas { font-size: 2.8rem; }
 }
