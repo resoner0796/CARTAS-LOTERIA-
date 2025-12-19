@@ -822,3 +822,45 @@ button[onclick*="unirseSala"], #btnBarajear, #btnLimpiarCartas {
 .btn-transferir-img:active {
     transform: scale(0.95);
 }
+
+/* --- AJUSTES MODAL TRANSFERENCIA --- */
+
+/* 1. Texto de descripción en blanco */
+#modalTransferencia p {
+    color: rgba(255, 255, 255, 0.9) !important; /* Blanco casi puro */
+    font-weight: 500;
+}
+
+/* 2. Botón de Cerrar "Pro" (Redondo y flotante) */
+.btn-close-pro {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    width: 35px;
+    height: 35px;
+    background: rgba(255, 255, 255, 0.2); /* Fondo semi-transparente */
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    z-index: 10;
+}
+
+.btn-close-pro:hover {
+    background: #d50000; /* Rojo al pasar el mouse */
+    transform: rotate(90deg); /* Pequeña animación de giro */
+    border-color: #d50000;
+}
+
+.btn-close-pro svg {
+    width: 20px;
+    height: 20px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 3;
+    stroke-linecap: round;
+}
