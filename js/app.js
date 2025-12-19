@@ -121,7 +121,7 @@ window.onload = () => {
         usuarioActual = JSON.parse(sesionGuardada);
         configurarMenu();
         cargarTienda();
-        
+        sincronizarDatosForzoso();
         // Obtenemos los parámetros de la URL una sola vez
         const urlParams = new URLSearchParams(window.location.search);
         const salaInvitacion = urlParams.get('sala');
@@ -1088,20 +1088,55 @@ async function comprarItem(itemId, precio) {
     });
 }
 
-// CORRECCIÓN TAMBIÉN EN EL SOCKET LISTENER
-socket.on('usuario-actualizado', (data) => {
-    if (usuarioActual && data.email === usuarioActual.email) {
-        usuarioActual.monedas = data.monedas;
-        usuarioActual.inventario = data.inventario || [];
+// ==================== SINCRONIZACIÓN EN TIEMPO REAL ====================
+
+// 1. LISTENER MAESTRO: ESTE RECIBE EL SALDO REAL DEL SERVIDOR
+socket.on('usuario-actualizado', (datosFrescos) => {
+    console.log("📥 Datos sincronizados recibidos:", datosFrescos);
+
+    // Actualizamos la variable global
+    if (usuarioActual) {
+        // Mantenemos email y nickname, actualizamos lo variable
+        usuarioActual.monedas = datosFrescos.monedas;
+        usuarioActual.inventario = datosFrescos.inventario || [];
         
-        // Si estamos en el menú, recargar tienda
-        if(document.getElementById('pantallaMenu').classList.contains('activa')) {
-            cargarTienda();
-            const menuMonedasEl = document.getElementById('menuMonedas');
-            if(menuMonedasEl) menuMonedasEl.innerText = `💰 ${data.monedas}`;
-        }
+        // Guardamos en LocalStorage para que si recarga tenga algo rápido
+        localStorage.setItem("loteria_usuario", JSON.stringify(usuarioActual));
+    }
+
+    // --- ACTUALIZAR TODAS LAS ETIQUETAS DE LA UI AL MISMO TIEMPO ---
+
+    // 1. Menú Principal
+    const menuMonedas = document.getElementById("menuMonedas");
+    if(menuMonedas) menuMonedas.textContent = `💰 ${datosFrescos.monedas}`;
+
+    // 2. Tienda (Si está abierta)
+    const saldoTienda = document.getElementById("saldoTienda");
+    if(saldoTienda) saldoTienda.innerHTML = `Tu saldo: <span style="color:white;">$${datosFrescos.monedas}</span>`;
+    
+    // Si la tienda está visible, recargamos la lista para que se marquen los comprados
+    if(document.querySelector('.tienda-card')) {
+        cargarTienda(); 
+    }
+
+    // 3. Pantalla de Juego (Panel Inferior)
+    const gameMonedas = document.getElementById("monedas-valor");
+    if(gameMonedas) gameMonedas.textContent = datosFrescos.monedas;
+
+    // 4. Soundboard (Actualizar burbujas si compró algo nuevo)
+    const menuSonidos = document.getElementById("menuSonidosDesplegable");
+    if(menuSonidos && menuSonidos.classList.contains("mostrar")) {
+        renderizarSonidosJuego();
     }
 });
+
+// 2. FUNCIÓN PARA PEDIR DATOS FRESCOS AL RECARGAR (F5)
+function sincronizarDatosForzoso() {
+    if(usuarioActual && usuarioActual.email) {
+        console.log("🔄 Pidiendo datos frescos al servidor...");
+        socket.emit('solicitar-info-usuario', usuarioActual.email);
+    }
+}
 
 // ==================== SISTEMA DE SONIDOS EN JUEGO (SOUNDBOARD) ====================
 
