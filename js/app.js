@@ -1202,28 +1202,26 @@ function sincronizarDatosForzoso() {
 }
 
 // ==========================================
-// SISTEMA DE TRANSFERENCIAS (PÁSAME UNA FERIA)
+// SISTEMA DE TRANSFERENCIAS (CORREGIDO "USUARIOS")
 // ==========================================
 
-let destinatarioUID = null;
+let destinatarioID = null; // Guardará el ID del documento (ej. el email)
 let destinatarioData = null;
 
 function abrirModalTransferencia() {
-    // Busca el modal por ID y le agrega la clase 'visible' o cambia el display
     const modal = document.getElementById('modalTransferencia');
     if(modal) {
-        modal.classList.add('visible'); // Si usas la clase .visible del CSS nuevo
-        modal.style.opacity = "1";      // Refuerzo inline
-        modal.style.visibility = "visible"; // Refuerzo inline
-        modal.style.pointerEvents = "all"; // Refuerzo inline
+        modal.classList.add('visible');
+        // Aseguramos estilos visibles por si acaso
+        modal.style.opacity = "1";
+        modal.style.visibility = "visible";
+        modal.style.pointerEvents = "all";
         
-        // Resetear pasos
+        // Resetear formulario
         document.getElementById('step-find-user').style.display = 'block';
         document.getElementById('step-amount').style.display = 'none';
         document.getElementById('inputDestinatario').value = '';
         document.getElementById('inputMontoTransferir').value = '';
-    } else {
-        console.error("No se encontró el modal con ID: modalTransferencia");
     }
 }
 
@@ -1240,73 +1238,112 @@ function cerrarModalTransferencia() {
 // Lógica para buscar usuario
 async function verificarDestinatario() {
     const nicknameInput = document.getElementById('inputDestinatario').value.trim();
-    
-    // Asumiendo que usas Firebase Auth
     const user = firebase.auth().currentUser;
-    if (!user) return showModal('Error', 'Debes iniciar sesión.', 'error');
 
-    if (!nicknameInput) {
-        return alert("Escribe un nickname"); // O tu función showModal
-    }
+    if (!user) return alert("Debes iniciar sesión para transferir.");
+    if (!nicknameInput) return alert("Por favor escribe un nickname.");
 
     try {
-        // Busca en la colección 'users' el campo 'nickname'
-        const snapshot = await db.collection('users').where('nickname', '==', nicknameInput).get();
+        // CORRECCIÓN: Cambiado 'users' por 'usuarios'
+        const snapshot = await db.collection('usuarios').where('nickname', '==', nicknameInput).get();
 
         if (snapshot.empty) {
-            alert("Usuario no encontrado");
+            alert("❌ No se encontró ningún jugador con ese nickname.");
             return;
         }
 
         const doc = snapshot.docs[0];
-        if (doc.id === user.uid) {
-            alert("No te puedes transferir a ti mismo");
+        const data = doc.data();
+
+        // Validación: No transferirse a uno mismo
+        // Comparamos el email del auth actual con el email del documento encontrado
+        if (data.email === user.email) {
+            alert("⚠️ No puedes transferirte monedas a ti mismo.");
             return;
         }
 
-        destinatarioUID = doc.id;
-        destinatarioData = doc.data();
+        destinatarioID = doc.id; // Guardamos el ID del documento (ej. el email)
+        destinatarioData = data;
 
-        // Muestra siguiente paso
+        // Mostrar paso 2
         document.getElementById('step-find-user').style.display = 'none';
         document.getElementById('step-amount').style.display = 'block';
-        document.getElementById('userFoundMsg').textContent = `✅ Jugador encontrado: ${destinatarioData.nickname}`;
+        document.getElementById('userFoundMsg').textContent = `✅ Jugador: ${destinatarioData.nickname}`;
 
     } catch (error) {
         console.error("Error al buscar:", error);
+        alert("Error de conexión al buscar jugador.");
     }
 }
 
 function cancelarTransferencia() {
     document.getElementById('step-find-user').style.display = 'block';
     document.getElementById('step-amount').style.display = 'none';
-    destinatarioUID = null;
+    destinatarioID = null;
 }
 
 async function realizarTransferencia() {
     const monto = parseInt(document.getElementById('inputMontoTransferir').value);
     const user = firebase.auth().currentUser;
 
-    if (!monto || monto < 2) return alert("Mínimo 2 monedas");
+    if (!monto || monto < 2) return alert("⚠️ La transferencia mínima es de 2 monedas.");
 
     try {
         await db.runTransaction(async (transaction) => {
-            const senderRef = db.collection('users').doc(user.uid);
-            const receiverRef = db.collection('users').doc(destinatarioUID);
+            // CORRECCIÓN: Buscamos al remitente por su email en la colección 'usuarios'
+            // Asumimos que el ID del documento es el email, basado en tus capturas.
+            // Si el ID no es el email, habría que hacer un query primero.
+            // INTENTO 1: Usar el email como ID (como se ve en la captura)
+            let senderRef = db.collection('usuarios').doc(user.email);
+            
+            // Verificamos si existe con ese ID, si no, intentamos buscarlo
+            let senderDoc = await transaction.get(senderRef);
+            
+            if (!senderDoc.exists) {
+                // Si no existe por ID de email, busquemos por campo email
+                const querySender = await db.collection('usuarios').where('email', '==', user.email).get();
+                if (querySender.empty) throw "No se encontró tu cuenta de usuario.";
+                senderRef = querySender.docs[0].ref;
+                senderDoc = await transaction.get(senderRef);
+            }
 
-            const senderDoc = await transaction.get(senderRef);
+            const receiverRef = db.collection('usuarios').doc(destinatarioID);
+            
             const saldoActual = senderDoc.data().monedas || 0;
 
-            if (saldoActual < monto) throw "Saldo insuficiente";
+            if (saldoActual < monto) {
+                throw "Saldo insuficiente. Tienes: " + saldoActual;
+            }
 
+            // Restar al que envía
             transaction.update(senderRef, { monedas: saldoActual - monto });
+            // Sumar al que recibe (usando increment por seguridad)
             transaction.update(receiverRef, { monedas: firebase.firestore.FieldValue.increment(monto) });
         });
 
         cerrarModalTransferencia();
-        alert(`¡Transferencia de ${monto} exitosa!`);
+        alert(`🎉 ¡Transferencia exitosa!\nEnvaste ${monto} monedas a ${destinatarioData.nickname}`);
         
+        // Actualizar UI del monedero
+        actualizarMonederoVisual(); 
+
     } catch (e) {
+        console.error(e);
         alert("Error: " + e);
+    }
+}
+
+// Función auxiliar para refrescar el saldo visualmente
+function actualizarMonederoVisual() {
+    const user = firebase.auth().currentUser;
+    if(user) {
+        // Forzamos una recarga rápida de los datos del usuario
+        db.collection('usuarios').where('email', '==', user.email).get().then(snap => {
+            if(!snap.empty) {
+                const monedas = snap.docs[0].data().monedas;
+                document.getElementById('menuMonedas').innerText = monedas;
+                document.getElementById('monedas-valor').innerText = monedas;
+            }
+        });
     }
 }
