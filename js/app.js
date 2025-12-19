@@ -1,4 +1,3 @@
-
 // ======================================================
 // CONFIGURACIÓN E INICIALIZACIÓN
 // ======================================================
@@ -8,7 +7,7 @@ const API_URL = "https://loteria-backend-3nde.onrender.com/api";
 const socket = io("https://loteria-backend-3nde.onrender.com");
 
 // Variables Globales
-let usuarioActual = null; // {email, nickname, monedas}
+let usuarioActual = null; // {email, nickname, monedas, inventario}
 let jugadoresGlobal = {};
 let miId;
 let soyHost = false;
@@ -16,8 +15,9 @@ let seleccionadas = [];
 let salaActual = "";
 let haApostadoLocal = false;
 let historialIdsGlobal = [];
+let checkoutInstance = null; // Variable global para Stripe
 
-// Generamos IDs de cartas (del 01 al 54)
+// Generamos IDs de cartas (del 01 al 54) - Ajustado a 30 por tu código anterior
 const cartasDisponibles = Array.from({ length: 30 }, (_, i) => String(i + 1).padStart(2, '0'));
 
 const stripePromise = Stripe("pk_live_51SfOSHHRnABvTmoyGETt893p5wdCWGOmKQOiW4YCkbquy0Vp0mx97dVdfgXlhPszaZ40iXNFW4NveUq4Lilv83wd00gCQpzFmR");
@@ -37,7 +37,7 @@ const pantallas = {
 // Referencias DOM - Elementos UI
 const contenedorCartas = document.getElementById("contenedorCartas");
 const juegoCartas = document.getElementById("juegoCartas");
-const btnIniciar = document.getElementById("btnIniciar"); // Botón flotante en selección
+const btnIniciar = document.getElementById("btnIniciar"); 
 const historial = document.getElementById("historial");
 const jugadoresLista = document.getElementById("jugadoresLista");
 const jugadoresListaIngame = document.getElementById("jugadoresListaIngame");
@@ -47,7 +47,7 @@ const monedasEl = document.getElementById("monedas-valor");
 const boteEl = document.getElementById("bote-valor");
 
 // Referencias DOM - Modales y Audios
-const loteriaModal = document.getElementById("loteriaModal"); // Modal de verificar cartas
+const loteriaModal = document.getElementById("loteriaModal");
 const modalLoteriaTitulo = document.getElementById("modalLoteriaTitulo");
 const modalLoteriaTexto = document.getElementById("modalLoteriaTexto");
 const btnAceptarGanador = document.getElementById("btnAceptarGanador");
@@ -55,15 +55,16 @@ const btnRechazarGanador = document.getElementById("btnRechazarGanador");
 const modalVerificationArea = document.getElementById("modalVerificationArea");
 let ganadorTempId = "";
 
+// Audios
 const audioBarajear = document.getElementById("audioBarajear");
 const audioCampana = document.getElementById("audioCampana");
 const audioCorre = document.getElementById("audioCorre");
 const audioAplausos = document.getElementById("audioAplausos");
-const audioKachin = new Audio("assets/audios/kachin.mp3");
-const loteriaMensaje = document.getElementById("loteriaMensaje"); // Overlay "LOTERÍA"
+const audioKachin = new Audio("assets/audios/kachin.mp3"); // Sonido de apuesta
+const loteriaMensaje = document.getElementById("loteriaMensaje");
 
 // ======================================================
-// SISTEMA DE MODALES PRO (Reemplazo de Alert/Confirm)
+// SISTEMA DE MODALES PRO
 // ======================================================
 
 const modalSistema = document.getElementById("modalSistema");
@@ -72,7 +73,7 @@ const modalMensaje = document.getElementById("modalSistemaMensaje");
 const btnModalAceptar = document.getElementById("btnModalAceptar");
 const btnModalCancelar = document.getElementById("btnModalCancelar");
 
-let onModalAceptar = null; // Callback para la acción "Sí"
+let onModalAceptar = null; 
 
 function mostrarAlerta(mensaje, titulo = "Aviso del Sistema") {
     modalTitulo.textContent = titulo;
@@ -105,7 +106,6 @@ function cerrarModal() {
     onModalAceptar = null;
 }
 
-// Listeners del Modal Sistema
 if(btnModalAceptar) btnModalAceptar.onclick = () => { if (onModalAceptar) onModalAceptar(); else cerrarModal(); };
 if(btnModalCancelar) btnModalCancelar.onclick = () => cerrarModal();
 
@@ -122,8 +122,8 @@ window.onload = () => {
         usuarioActual = JSON.parse(sesionGuardada);
         configurarMenu();
         cargarTienda();
-        sincronizarDatosForzoso();
-        // Obtenemos los parámetros de la URL una sola vez
+        sincronizarDatosForzoso(); // <--- IMPORTANTE: Pedir datos frescos al servidor
+        
         const urlParams = new URLSearchParams(window.location.search);
         const salaInvitacion = urlParams.get('sala');
         const pagoEstado = urlParams.get('pago');
@@ -133,16 +133,13 @@ window.onload = () => {
             const cant = urlParams.get('cantidad');
             mostrarAlerta(`¡Has recibido ${cant} monedas! 🎉`, "¡Pago Exitoso!");
             
-            // Actualización visual inmediata y guardado local
+            // Forzar actualización inmediata visualmente
             if(usuarioActual) {
-                // Aseguramos que sean números para sumar bien
                 usuarioActual.monedas = (parseInt(usuarioActual.monedas) || 0) + parseInt(cant);
                 localStorage.setItem("loteria_usuario", JSON.stringify(usuarioActual));
                 configurarMenu();
                 cargarTienda();
             }
-            
-            // Limpiamos la URL para borrar ?pago=exito
             window.history.pushState({}, document.title, window.location.pathname);
         
         } else if (pagoEstado === 'cancelado') {
@@ -150,11 +147,10 @@ window.onload = () => {
             window.history.pushState({}, document.title, window.location.pathname);
         }
 
-        // 3. DETECTAR INVITACIÓN O NAVEGACIÓN NORMAL
+        // 3. NAVEGACIÓN
         if(salaInvitacion) {
-             unirseSalaDirecto(salaInvitacion, null); // Invitados no eligen modo
+             unirseSalaDirecto(salaInvitacion, null);
         } else {
-             // Si no hay invitación, mandamos al menú
              cambiarPantalla("menu");
         }
         
@@ -162,8 +158,14 @@ window.onload = () => {
         if(socket.connected) socket.emit('reconectar', { sala: salaActual, email: usuarioActual.email });
 
     } else {
-        // Si no hay sesión, mandamos al login
-        setTimeout(() => cambiarPantalla("login"), 1000);
+        // Splash Screen (5 segundos)
+        setTimeout(() => {
+            if(pantallas.splash) pantallas.splash.style.opacity = '0';
+            setTimeout(() => {
+                if(pantallas.splash) pantallas.splash.style.display = 'none';
+                if (!sesionGuardada) cambiarPantalla("login");
+            }, 500);
+        }, 5000); 
     }
 };
 
@@ -192,8 +194,10 @@ async function login() {
         if(data.success) {
             usuarioActual = data;
             localStorage.setItem("loteria_usuario", JSON.stringify(data));
+            
             configurarMenu();
-            cargarTienda();
+            cargarTienda(); // <--- Cargar tienda al entrar
+            sincronizarDatosForzoso(); // <--- Asegurar datos frescos
             
             const urlParams = new URLSearchParams(window.location.search);
             const salaInvitacion = urlParams.get('sala');
@@ -224,8 +228,10 @@ async function registro() {
         if(data.success) {
             usuarioActual = data;
             localStorage.setItem("loteria_usuario", JSON.stringify(data));
+            
             configurarMenu();
-            cargarTienda();
+            cargarTienda(); // <--- Cargar tienda al registrarse
+            
             cambiarPantalla("menu");
         } else {
             mostrarAlerta(data.error, "Error de Registro");
@@ -242,18 +248,18 @@ function cerrarSesion() {
 function configurarMenu() {
     if(usuarioActual) {
         document.getElementById("menuBienvenida").textContent = `Hola, ${usuarioActual.nickname}`;
-        document.getElementById("menuMonedas").textContent = `💰 ${usuarioActual.monedas}`;
+        // En el menú principal solo mostramos el número (para el monedero)
+        document.getElementById("menuMonedas").textContent = usuarioActual.monedas;
         verificarSiSoyAdmin();
     }
 }
 
 // ======================================================
-// GESTIÓN DE SALAS (ACTUALIZADO: MODOS DE JUEGO)
+// GESTIÓN DE SALAS
 // ======================================================
 
 function crearSalaPropia() {
     const nombreSala = document.getElementById("inputCrearSala").value.trim();
-    // Leemos el modo del select que agregaste al HTML
     const selectModo = document.getElementById("inputModoJuego");
     const modoJuego = selectModo ? selectModo.value : "clasico"; 
     
@@ -264,7 +270,6 @@ function crearSalaPropia() {
 function unirseSalaExistente() {
     const nombreSala = document.getElementById("inputUnirseSala").value.trim();
     if(!nombreSala) return mostrarAlerta("Escribe el nombre de la sala");
-    // Al unirse como invitado, el modo no importa (lo define la sala), mandamos null
     unirseSalaDirecto(nombreSala, null);
 }
 
@@ -273,25 +278,16 @@ function unirseSalaDirecto(nombreSala, modo) {
     
     // Configurar Fondos
     const basePath = "assets/imagenes/ui/";
-    switch(salaActual) { 
-      case "Familia":
-        aplicarFondo(pantallas.seleccion, basePath + "fondo-seleccion-familia.PNG");
-        aplicarFondo(pantallas.juego, basePath + "fondo-juego-familia.PNG");
-        break;
-      case "Oficina":
-        aplicarFondo(pantallas.seleccion, basePath + "fondo-seleccion-oficina.PNG");
-        aplicarFondo(pantallas.juego, basePath + "fondo-juego-oficina.PNG");
-        break;
-      case "Amigos":
-        aplicarFondo(pantallas.seleccion, basePath + "fondo-seleccion-amigos.PNG");
-        aplicarFondo(pantallas.juego, basePath + "fondo-juego-amigos.PNG");
-        break;
-      default:
-        aplicarFondo(pantallas.seleccion, basePath + "fondo-seleccion.PNG");
-        aplicarFondo(pantallas.juego, basePath + "fondo-juego.PNG");
-    }
+    let fondoSel = "fondo-seleccion.PNG";
+    let fondoJuego = "fondo-juego.PNG";
 
-    // Unirse al socket enviando el modo (si existe)
+    if(salaActual === "Familia") { fondoSel = "fondo-seleccion-familia.PNG"; fondoJuego = "fondo-juego-familia.PNG"; }
+    if(salaActual === "Oficina") { fondoSel = "fondo-seleccion-oficina.PNG"; fondoJuego = "fondo-juego-oficina.PNG"; }
+    if(salaActual === "Amigos") { fondoSel = "fondo-seleccion-amigos.PNG"; fondoJuego = "fondo-juego-amigos.PNG"; }
+
+    aplicarFondo(pantallas.seleccion, basePath + fondoSel);
+    aplicarFondo(pantallas.juego, basePath + fondoJuego);
+
     socket.emit("unirse-sala", { 
         nickname: usuarioActual.nickname, 
         email: usuarioActual.email,
@@ -309,22 +305,7 @@ function aplicarFondo(elemento, imageUrl) {
     elemento.style.backgroundPosition = 'center';
 }
 
-function compartirSala() {
-    const url = `${window.location.origin}${window.location.pathname}?sala=${encodeURIComponent(salaActual)}`;
-    
-    if (navigator.share) {
-        navigator.share({
-            title: '¡Vamos a jugar Lotería!',
-            text: `Únete a la sala "${salaActual}"`,
-            url: url
-        }).catch(console.error);
-    } else {
-        navigator.clipboard.writeText(url);
-        mostrarAlerta("Enlace copiado al portapapeles", "¡Listo!");
-    }
-}
-
-// Funcionalidad Botón Salir (Lobby)
+// Funcionalidad Botón Salir
 if(btnSalirSala) btnSalirSala.addEventListener("click", () => salirDeSalaEnJuego());
 
 function salirDeSalaEnJuego() {
@@ -365,7 +346,6 @@ function generarCartas() {
 function seleccionarCarta(img) {
   const id = img.dataset.id;
    
-  // 1. DESELECCIONAR
   if (seleccionadas.includes(id)) {
       seleccionadas = seleccionadas.filter(c => c !== id);
       img.classList.remove("seleccionada");
@@ -375,10 +355,8 @@ function seleccionarCarta(img) {
       return;
   }
 
-  // 2. VALIDAR
   if (img.style.pointerEvents === 'none') return; 
    
-  // 3. SELECCIONAR
   if (seleccionadas.length < 4) {
     img.classList.add("seleccionada");
     seleccionadas.push(id);
@@ -388,7 +366,6 @@ function seleccionarCarta(img) {
   }
 }
 
-// Al dar click en "Elegir Cartas" (o el botón flotante Iniciar)
 btnIniciar.onclick = () => {
   cambiarPantalla("juego");
   juegoCartas.innerHTML = "";
@@ -400,19 +377,20 @@ btnIniciar.onclick = () => {
     contenedor.onclick = e => marcarFicha(e, contenedor);
     juegoCartas.appendChild(contenedor);
   });
+  
+  // Mostrar botón de sonidos al entrar al juego
+  renderizarSonidosJuego();
 };
 
 function marcarFicha(e, contenedor) {
   const elementoClickeado = e.target;
 
-  // CASO BORRAR
   if (elementoClickeado.classList.contains("ficha")) {
       if(navigator.vibrate) navigator.vibrate(10);
       elementoClickeado.remove();
       return; 
   }
 
-  // CASO PONER
   const img = contenedor.querySelector("img.carta-img"); 
   if (!img) return;
 
@@ -439,7 +417,6 @@ function limpiarFichas() {
 }
 
 function cambiarCartas() {
-    // Función interna para ejecutar el cambio
     const ejecutarCambio = () => {
         seleccionadas.forEach(id => {
             socket.emit("deseleccionar-carta", { carta: id, sala: salaActual });
@@ -450,7 +427,6 @@ function cambiarCartas() {
         juegoCartas.innerHTML = "";
         btnIniciar.style.display = "none";
         
-        // Reset visual selección
         document.querySelectorAll("#contenedorCartas .carta-img").forEach(img => {
             img.classList.remove("seleccionada");
             img.style.opacity = 1; 
@@ -461,7 +437,6 @@ function cambiarCartas() {
     };
 
     const btnDetener = document.getElementById("btnDetenerJuego");
-    // Si soy Host y el juego corre, pregunto primero
     if(btnDetener && btnDetener.style.display !== "none" && soyHost) {
         mostrarConfirmacion("El juego está corriendo. ¿Pausar para cambiar cartas?", () => {
             socket.emit("detener-juego", salaActual);
@@ -487,13 +462,11 @@ socket.on("rol-asignado", ({ host }) => {
   soyHost = host;
   generarCartas();
    
-  // Lista de controles exclusivos del Host
   const controlesHost = ["btnBarajear", "btnIniciarJuego", "btnDetenerJuego", "divVelocidad"]; 
    
   controlesHost.forEach(id => {
       const el = document.getElementById(id);
       if (el) {
-          // Si soy host lo muestro (flex para el div de velocidad, block para botones)
           if (soyHost) {
               el.style.display = (id === "divVelocidad") ? "flex" : "block"; 
           } else {
@@ -563,14 +536,11 @@ socket.on("error-apuesta", msg => {
   if (btnApostar) btnApostar.disabled = false;
 });
 
-// SONIDO DE APUESTA
+// SONIDO DE APUESTA (NUEVO)
 socket.on("reproducir-sonido-apuesta", () => {
-    // Reiniciamos el tiempo por si suenan varias apuestas seguidas rápido
     audioKachin.currentTime = 0; 
-    audioKachin.volume = 0.6; // Ajusta el volumen a tu gusto
+    audioKachin.volume = 0.6; 
     audioKachin.play().catch(e => console.log("Audio play error:", e));
-    
-    // Opcional: Vibración en el celular para sentir el dinero 😎
     if(navigator.vibrate) navigator.vibrate(50); 
 });
 
@@ -620,14 +590,13 @@ socket.on("juego-detenido", () => {
 });
 
 // ======================================================
-// LOTERÍA (GANADORES) - NUEVA LÓGICA DE EMPATES
+// LOTERÍA (GANADORES)
 // ======================================================
 
 function emitirLoteria() {
   audioCorre.pause();
   audioCampana.pause();
   audioBarajear.pause();
-  // El mensaje ya no lo mostramos aquí, lo dispara el server con 'pausa-empate'
    
   const boardState = { cards: seleccionadas, chips: {} };
 
@@ -643,7 +612,6 @@ function emitirLoteria() {
   socket.emit("loteria", { nickname: usuarioActual.nickname, sala: salaActual, boardState });
 }
 
-// 1. INICIO DE LA VENTANA DE EMPATE (Cuenta regresiva)
 socket.on("pausa-empate", ({ primerGanador, tiempo }) => {
     loteriaMensaje.style.display = "block";
     loteriaMensaje.innerHTML = `
@@ -651,7 +619,6 @@ socket.on("pausa-empate", ({ primerGanador, tiempo }) => {
         <div style="font-size:1.2rem; margin-top:20px; color: white;">Esperando empates... <span id="contadorEmpate" style="font-weight:bold; font-size:1.5rem;">${tiempo}</span>s</div>
     `;
     
-    // Animación visual de cuenta regresiva
     let timeLeft = tiempo;
     const timer = setInterval(() => {
         timeLeft--;
@@ -666,7 +633,6 @@ socket.on("notificar-otro-ganador", (otroNick) => {
     if(navigator.vibrate) navigator.vibrate([100, 100]);
 });
 
-// 2. HOST: INICIAR VALIDACIÓN SECUENCIAL
 socket.on("iniciar-validacion-secuencial", (listaReclamantes) => {
     loteriaMensaje.style.display = "none"; 
     procesarSiguienteValidacion(listaReclamantes);
@@ -678,11 +644,9 @@ socket.on("continuar-validacion", (listaReclamantes) => {
 
 function procesarSiguienteValidacion(lista) {
     const siguiente = lista.find(r => r.status === 'pendiente');
-    
     if (siguiente) {
         const total = lista.length;
         const index = lista.filter(r => r.status !== 'pendiente').length + 1;
-        
         abrirModalValidacionHost(siguiente, index, total);
     }
 }
@@ -693,7 +657,6 @@ function abrirModalValidacionHost(candidato, index, total) {
     modalLoteriaTitulo.textContent = `Validando Ganador (${index} de ${total})`;
     modalLoteriaTexto.textContent = `${candidato.nickname} reclama victoria. Revisa su tabla.`;
     
-    // Llenar historial visual
     const modalHistorialFlex = document.getElementById("modalHistorialFlex");
     modalHistorialFlex.innerHTML = "";
     historialIdsGlobal.forEach(cartaId => {
@@ -702,7 +665,6 @@ function abrirModalValidacionHost(candidato, index, total) {
          modalHistorialFlex.appendChild(img);
     });
 
-    // Llenar tabla del jugador
     modalVerificationArea.innerHTML = '';
     const bs = candidato.boardState;
     if (bs && bs.cards) {
@@ -733,10 +695,8 @@ function abrirModalValidacionHost(candidato, index, total) {
     loteriaModal.classList.add("active");
 }
 
-// BOTONES DEL MODAL
 if(btnAceptarGanador) btnAceptarGanador.onclick = () => {
     if (ganadorTempId) {
-        // Emitimos el nuevo evento 'veredicto-host'
         socket.emit("veredicto-host", { sala: salaActual, candidatoId: ganadorTempId, esValido: true });
         loteriaModal.classList.remove("active"); 
     }
@@ -749,7 +709,6 @@ if(btnRechazarGanador) btnRechazarGanador.onclick = () => {
     }
 };
 
-// 3. RESULTADOS FINALES
 socket.on("ganadores-multiples", ({ ganadores, premio }) => {
     loteriaMensaje.style.display = "none";
     let msg = "";
@@ -760,12 +719,10 @@ socket.on("ganadores-multiples", ({ ganadores, premio }) => {
     }
     mostrarAlerta(msg, "¡RESULTADO FINAL!");
     
-    // Confeti y audio final
     audioAplausos.currentTime = 0;
     audioAplausos.play().catch(()=>{});
     if(navigator.vibrate) navigator.vibrate([100,50,100,50,500]);
 
-    // Efecto visual confeti (mismo que antes)
     for (let i = 0; i < 100; i++) {
         const confeti = document.createElement("div");
         confeti.classList.add("confeti");
@@ -909,7 +866,6 @@ function iniciarJuegoConVelocidad() {
 
 // ==================== PANEL DE ADMINISTRADOR ====================
 
-// PON AQUÍ EL MISMO CORREO QUE PUSISTE EN EL SERVER
 const MI_EMAIL_ADMIN = "admin@loteria.com"; 
 
 function verificarSiSoyAdmin() {
@@ -1021,43 +977,42 @@ function cargarTienda() {
     const contenedor = document.getElementById('listaSonidosTienda');
     const saldoTxt = document.getElementById('saldoTienda');
     
-    // CORRECCIÓN: Usamos 'usuarioActual' en lugar de 'currentUser'
     if(!usuarioActual) return;
 
-    // Actualizar texto de saldo
-    saldoTxt.innerHTML = `Tu saldo: <span style="color:white;">$${usuarioActual.monedas}</span>`;
+    // Actualizar texto de saldo (con estilo HTML)
+    if(saldoTxt) saldoTxt.innerHTML = `Tu saldo: <span style="color:white;">$${usuarioActual.monedas}</span>`;
 
-    contenedor.innerHTML = ''; 
+    if(contenedor) {
+        contenedor.innerHTML = ''; 
+        const inventario = usuarioActual.inventario || []; 
 
-    // CORRECCIÓN: Usamos 'usuarioActual'
-    const inventario = usuarioActual.inventario || []; 
+        catalogoSonidos.forEach(item => {
+            const yaLoTiene = inventario.includes(item.id);
+            const div = document.createElement('div');
+            div.className = `item-sonido ${yaLoTiene ? 'comprado' : ''}`;
+            
+            let botonHTML = '';
+            if (yaLoTiene) {
+                botonHTML = `<button class="btn-accion-tienda btn-listo">✔ Listo</button>`;
+            } else if (item.precio === 0) {
+                botonHTML = `<button class="btn-accion-tienda btn-gratis" onclick="comprarItem('${item.id}', 0)">GRATIS</button>`;
+            } else {
+                botonHTML = `<button class="btn-accion-tienda btn-comprar" onclick="comprarItem('${item.id}', ${item.precio})">$${item.precio}</button>`;
+            }
 
-    catalogoSonidos.forEach(item => {
-        const yaLoTiene = inventario.includes(item.id);
-        const div = document.createElement('div');
-        div.className = `item-sonido ${yaLoTiene ? 'comprado' : ''}`;
-        
-        let botonHTML = '';
-        if (yaLoTiene) {
-            botonHTML = `<button class="btn-accion-tienda btn-listo">✔ Listo</button>`;
-        } else if (item.precio === 0) {
-            botonHTML = `<button class="btn-accion-tienda btn-gratis" onclick="comprarItem('${item.id}', 0)">GRATIS</button>`;
-        } else {
-            botonHTML = `<button class="btn-accion-tienda btn-comprar" onclick="comprarItem('${item.id}', ${item.precio})">$${item.precio}</button>`;
-        }
-
-        div.innerHTML = `
-            <div class="info-sonido">
-                <button class="btn-play-preview" onclick="previewSonido('${item.file}')">▶</button>
-                <div>
-                    <span class="emoji-icon">${item.emoji}</span>
-                    <span class="nombre-sonido">${item.nombre}</span>
+            div.innerHTML = `
+                <div class="info-sonido">
+                    <button class="btn-play-preview" onclick="previewSonido('${item.file}')">▶</button>
+                    <div>
+                        <span class="emoji-icon">${item.emoji}</span>
+                        <span class="nombre-sonido">${item.nombre}</span>
+                    </div>
                 </div>
-            </div>
-            ${botonHTML}
-        `;
-        contenedor.appendChild(div);
-    });
+                ${botonHTML}
+            `;
+            contenedor.appendChild(div);
+        });
+    }
 }
 
 function previewSonido(ruta) {
@@ -1067,7 +1022,6 @@ function previewSonido(ruta) {
 }
 
 async function comprarItem(itemId, precio) {
-    // CORRECCIÓN: Usamos 'usuarioActual'
     if (!usuarioActual) return;
 
     if (usuarioActual.monedas < precio) {
@@ -1088,9 +1042,8 @@ async function comprarItem(itemId, precio) {
     
     cargarTienda();
     // Actualizar el saldo en el menú principal
-    // (Asegúrate de que el ID 'menuMonedas' exista en tu HTML, si no, comenta esta línea)
     const menuMonedasEl = document.getElementById('menuMonedas');
-    if(menuMonedasEl) menuMonedasEl.innerText = `💰 ${usuarioActual.monedas}`;
+    if(menuMonedasEl) menuMonedasEl.textContent = usuarioActual.monedas;
 
     // --- ENVIAR AL SERVIDOR ---
     socket.emit('comprar-item', { 
@@ -1100,83 +1053,33 @@ async function comprarItem(itemId, precio) {
     });
 }
 
-// ==================== SINCRONIZACIÓN EN TIEMPO REAL ====================
-
-// 1. LISTENER MAESTRO: ESTE RECIBE EL SALDO REAL DEL SERVIDOR
-socket.on('usuario-actualizado', (datosFrescos) => {
-    console.log("📥 Datos sincronizados recibidos:", datosFrescos);
-
-    // Actualizamos la variable global
-    if (usuarioActual) {
-        // Mantenemos email y nickname, actualizamos lo variable
-        usuarioActual.monedas = datosFrescos.monedas;
-        usuarioActual.inventario = datosFrescos.inventario || [];
-        
-        // Guardamos en LocalStorage para que si recarga tenga algo rápido
-        localStorage.setItem("loteria_usuario", JSON.stringify(usuarioActual));
-    }
-
-    // --- ACTUALIZAR TODAS LAS ETIQUETAS DE LA UI AL MISMO TIEMPO ---
-
-    // 1. Menú Principal
-    const menuMonedas = document.getElementById("menuMonedas");
-    if(menuMonedas) menuMonedas.textContent = `💰 ${datosFrescos.monedas}`;
-
-    // 2. Tienda (Si está abierta)
-    const saldoTienda = document.getElementById("saldoTienda");
-    if(saldoTienda) saldoTienda.innerHTML = `Tu saldo: <span style="color:white;">$${datosFrescos.monedas}</span>`;
-    
-    // Si la tienda está visible, recargamos la lista para que se marquen los comprados
-    if(document.querySelector('.tienda-card')) {
-        cargarTienda(); 
-    }
-
-    // 3. Pantalla de Juego (Panel Inferior)
-    const gameMonedas = document.getElementById("monedas-valor");
-    if(gameMonedas) gameMonedas.textContent = datosFrescos.monedas;
-
-    // 4. Soundboard (Actualizar burbujas si compró algo nuevo)
-    const menuSonidos = document.getElementById("menuSonidosDesplegable");
-    if(menuSonidos && menuSonidos.classList.contains("mostrar")) {
-        renderizarSonidosJuego();
-    }
-});
-
-// 2. FUNCIÓN PARA PEDIR DATOS FRESCOS AL RECARGAR (F5)
-function sincronizarDatosForzoso() {
-    if(usuarioActual && usuarioActual.email) {
-        console.log("🔄 Pidiendo datos frescos al servidor...");
-        socket.emit('solicitar-info-usuario', usuarioActual.email);
-    }
-}
-
 // ==================== SISTEMA DE SONIDOS EN JUEGO (SOUNDBOARD) ====================
 
-let spamCooldown = false; // Para evitar que spameen el botón y traben el audio
+let spamCooldown = false; 
 
 // 1. Alternar visibilidad del menú
 function toggleMenuSonidos() {
     const menu = document.getElementById("menuSonidosDesplegable");
-    menu.classList.toggle("mostrar");
-    
-    // Si se abre, cargamos los sonidos por si hubo compras nuevas
-    if (menu.classList.contains("mostrar")) {
-        renderizarSonidosJuego();
+    if(menu) {
+        menu.classList.toggle("mostrar");
+        if (menu.classList.contains("mostrar")) {
+            renderizarSonidosJuego();
+        }
     }
 }
 
 // 2. Renderizar burbujas de emojis
 function renderizarSonidosJuego() {
     const contenedor = document.getElementById("menuSonidosDesplegable");
+    if(!contenedor) return;
     contenedor.innerHTML = "";
     
     if (!usuarioActual) return;
     
     const inventario = usuarioActual.inventario || [];
     
-    // Filtramos del catálogo los que el usuario TIENE
+    // Filtramos del catálogo los que el usuario TIENE (o son gratis)
     const misSonidos = catalogoSonidos.filter(item => {
-        // Incluye los comprados O los que son precio 0 (gratis por defecto)
         return inventario.includes(item.id) || item.precio === 0;
     });
 
@@ -1196,16 +1099,11 @@ function renderizarSonidosJuego() {
 
 // 3. Enviar evento al servidor (YO presiono el botón)
 function enviarEfectoSonido(soundId) {
-    if (spamCooldown) return; // Evitar spam masivo
+    if (spamCooldown) return; 
     
-    // Pequeño cooldown de 1 segundo
     spamCooldown = true;
     setTimeout(() => { spamCooldown = false }, 1000);
 
-    // Ocultar menú tras seleccionar (opcional, si quieres que se cierre)
-    // document.getElementById("menuSonidosDesplegable").classList.remove("mostrar");
-
-    // Emitir al socket
     socket.emit("enviar-efecto-sonido", { 
         sala: salaActual, 
         soundId: soundId,
@@ -1215,25 +1113,22 @@ function enviarEfectoSonido(soundId) {
 
 // 4. Recibir evento del servidor (ALGUIEN presionó el botón)
 socket.on("reproducir-efecto-sonido", ({ soundId, emisor }) => {
-    // Buscar el archivo en el catálogo
     const sonidoData = catalogoSonidos.find(s => s.id === soundId);
     
     if (sonidoData) {
         const audio = new Audio(sonidoData.file);
-        audio.volume = 0.8; // Volumen alto para que se note
+        audio.volume = 0.8; 
         audio.play().catch(e => console.log("Error playing effect:", e));
         
-        // (Opcional) Mostrar un "Toast" o notificación visual de quién lo envió
         mostrarNotificacionFlotante(`${emisor}: ${sonidoData.emoji}`);
     }
 });
 
-// Función extra visual: Pequeña notificación que flota
 function mostrarNotificacionFlotante(texto) {
     const notif = document.createElement("div");
     notif.innerText = texto;
     notif.style.position = "fixed";
-    notif.style.bottom = "90px"; // Arriba del botón
+    notif.style.bottom = "90px"; 
     notif.style.left = "20px";
     notif.style.background = "rgba(0,0,0,0.7)";
     notif.style.color = "gold";
@@ -1244,6 +1139,49 @@ function mostrarNotificacionFlotante(texto) {
     notif.style.animation = "flotarDesvanecer 2s forwards";
     
     document.body.appendChild(notif);
-    
     setTimeout(() => notif.remove(), 2000);
+}
+
+// ==================== SINCRONIZACIÓN EN TIEMPO REAL (MASTER LISTENER) ====================
+
+socket.on('usuario-actualizado', (datosFrescos) => {
+    console.log("📥 Datos sincronizados recibidos:", datosFrescos);
+
+    if (usuarioActual) {
+        usuarioActual.monedas = datosFrescos.monedas;
+        usuarioActual.inventario = datosFrescos.inventario || [];
+        localStorage.setItem("loteria_usuario", JSON.stringify(usuarioActual));
+    }
+
+    // --- ACTUALIZAR TODAS LAS ETIQUETAS DE LA UI AL MISMO TIEMPO ---
+
+    // 1. Menú Principal (Monedero - SOLO NÚMERO)
+    const menuMonedas = document.getElementById("menuMonedas");
+    if(menuMonedas) menuMonedas.textContent = datosFrescos.monedas;
+
+    // 2. Tienda
+    const saldoTienda = document.getElementById("saldoTienda");
+    if(saldoTienda) saldoTienda.innerHTML = `Tu saldo: <span style="color:white;">$${datosFrescos.monedas}</span>`;
+    
+    // Si la tienda está visible, recargamos la lista
+    if(document.querySelector('.tienda-card')) {
+        cargarTienda(); 
+    }
+
+    // 3. Juego
+    const gameMonedas = document.getElementById("monedas-valor");
+    if(gameMonedas) gameMonedas.textContent = datosFrescos.monedas;
+
+    // 4. Soundboard
+    const menuSonidos = document.getElementById("menuSonidosDesplegable");
+    if(menuSonidos && menuSonidos.classList.contains("mostrar")) {
+        renderizarSonidosJuego();
+    }
+});
+
+function sincronizarDatosForzoso() {
+    if(usuarioActual && usuarioActual.email) {
+        console.log("🔄 Pidiendo datos frescos al servidor...");
+        socket.emit('solicitar-info-usuario', usuarioActual.email);
+    }
 }
