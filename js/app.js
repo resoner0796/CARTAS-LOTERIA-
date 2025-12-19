@@ -1200,3 +1200,113 @@ function sincronizarDatosForzoso() {
         socket.emit('solicitar-info-usuario', usuarioActual.email);
     }
 }
+
+// ==========================================
+// SISTEMA DE TRANSFERENCIAS (PÁSAME UNA FERIA)
+// ==========================================
+
+let destinatarioUID = null;
+let destinatarioData = null;
+
+function abrirModalTransferencia() {
+    // Busca el modal por ID y le agrega la clase 'visible' o cambia el display
+    const modal = document.getElementById('modalTransferencia');
+    if(modal) {
+        modal.classList.add('visible'); // Si usas la clase .visible del CSS nuevo
+        modal.style.opacity = "1";      // Refuerzo inline
+        modal.style.visibility = "visible"; // Refuerzo inline
+        modal.style.pointerEvents = "all"; // Refuerzo inline
+        
+        // Resetear pasos
+        document.getElementById('step-find-user').style.display = 'block';
+        document.getElementById('step-amount').style.display = 'none';
+        document.getElementById('inputDestinatario').value = '';
+        document.getElementById('inputMontoTransferir').value = '';
+    } else {
+        console.error("No se encontró el modal con ID: modalTransferencia");
+    }
+}
+
+function cerrarModalTransferencia() {
+    const modal = document.getElementById('modalTransferencia');
+    if(modal) {
+        modal.classList.remove('visible');
+        modal.style.opacity = "0";
+        modal.style.visibility = "hidden";
+        modal.style.pointerEvents = "none";
+    }
+}
+
+// Lógica para buscar usuario
+async function verificarDestinatario() {
+    const nicknameInput = document.getElementById('inputDestinatario').value.trim();
+    
+    // Asumiendo que usas Firebase Auth
+    const user = firebase.auth().currentUser;
+    if (!user) return showModal('Error', 'Debes iniciar sesión.', 'error');
+
+    if (!nicknameInput) {
+        return alert("Escribe un nickname"); // O tu función showModal
+    }
+
+    try {
+        // Busca en la colección 'users' el campo 'nickname'
+        const snapshot = await db.collection('users').where('nickname', '==', nicknameInput).get();
+
+        if (snapshot.empty) {
+            alert("Usuario no encontrado");
+            return;
+        }
+
+        const doc = snapshot.docs[0];
+        if (doc.id === user.uid) {
+            alert("No te puedes transferir a ti mismo");
+            return;
+        }
+
+        destinatarioUID = doc.id;
+        destinatarioData = doc.data();
+
+        // Muestra siguiente paso
+        document.getElementById('step-find-user').style.display = 'none';
+        document.getElementById('step-amount').style.display = 'block';
+        document.getElementById('userFoundMsg').textContent = `✅ Jugador encontrado: ${destinatarioData.nickname}`;
+
+    } catch (error) {
+        console.error("Error al buscar:", error);
+    }
+}
+
+function cancelarTransferencia() {
+    document.getElementById('step-find-user').style.display = 'block';
+    document.getElementById('step-amount').style.display = 'none';
+    destinatarioUID = null;
+}
+
+async function realizarTransferencia() {
+    const monto = parseInt(document.getElementById('inputMontoTransferir').value);
+    const user = firebase.auth().currentUser;
+
+    if (!monto || monto < 2) return alert("Mínimo 2 monedas");
+
+    try {
+        await db.runTransaction(async (transaction) => {
+            const senderRef = db.collection('users').doc(user.uid);
+            const receiverRef = db.collection('users').doc(destinatarioUID);
+
+            const senderDoc = await transaction.get(senderRef);
+            const saldoActual = senderDoc.data().monedas || 0;
+
+            if (saldoActual < monto) throw "Saldo insuficiente";
+
+            transaction.update(senderRef, { monedas: saldoActual - monto });
+            transaction.update(receiverRef, { monedas: firebase.firestore.FieldValue.increment(monto) });
+        });
+
+        cerrarModalTransferencia();
+        alert(`¡Transferencia de ${monto} exitosa!`);
+        
+    } catch (e) {
+        alert("Error: " + e);
+    }
+}
