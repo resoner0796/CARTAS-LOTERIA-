@@ -985,3 +985,132 @@ async function ejecutarRecargaAdmin() {
         }
     });
 }
+
+// ==================== LÓGICA DE TIENDA DE SONIDOS ====================
+
+// 1. Catálogo Definido (Precios y Archivos)
+const catalogoSonidos = [
+    { id: 'snd_risa', nombre: 'Risa', emoji: '😂', precio: 0, file: 'assets/audios/tienda/risa.mp3' },
+    { id: 'snd_corneta', nombre: 'Corneta', emoji: '📯', precio: 0, file: 'assets/audios/tienda/corneta.mp3' },
+    { id: 'snd_tepasas', nombre: 'Te pasas', emoji: '😒', precio: 8, file: 'assets/audios/tienda/tepasas.mp3' },
+    { id: 'snd_misahorros', nombre: 'Mis Ahorros', emoji: '😭', precio: 8, file: 'assets/audios/tienda/misahorros.mp3' },
+    { id: 'snd_ronquido', nombre: 'Ronquido', emoji: '😴', precio: 8, file: 'assets/audios/tienda/ronquido.mp3' },
+    { id: 'snd_cuack', nombre: 'Cuack', emoji: '🦆', precio: 8, file: 'assets/audios/tienda/cuack.mp3' },
+    { id: 'snd_disparo', nombre: 'Disparo', emoji: '🔫', precio: 8, file: 'assets/audios/tienda/disparo.mp3' }
+];
+
+const audioPlayerTienda = new Audio();
+
+function cargarTienda() {
+    const contenedor = document.getElementById('listaSonidosTienda');
+    const saldoTxt = document.getElementById('saldoTienda');
+    
+    // Si no estamos logueados, no hacemos nada
+    if(!currentUser) return;
+
+    // Actualizar texto de saldo
+    saldoTxt.innerHTML = `Tu saldo: <span style="color:white;">$${currentUser.monedas}</span>`;
+
+    contenedor.innerHTML = ''; // Limpiar lista
+
+    // Obtener inventario actual del usuario (array de IDs)
+    const inventario = currentUser.inventario || []; 
+
+    catalogoSonidos.forEach(item => {
+        // Verificar si ya lo tiene (o si es gratis, se considera "tenido" visualmente o adquirible gratis)
+        // Lógica: Si el precio es 0, siempre mostramos botón "Gratis" si no lo tiene, o "Listo" si ya lo tiene.
+        const yaLoTiene = inventario.includes(item.id);
+        
+        const div = document.createElement('div');
+        div.className = `item-sonido ${yaLoTiene ? 'comprado' : ''}`;
+        
+        let botonHTML = '';
+
+        if (yaLoTiene) {
+            botonHTML = `<button class="btn-accion-tienda btn-listo">✔ Listo</button>`;
+        } else if (item.precio === 0) {
+            // Es gratis pero no lo ha "reclamado" (o simplemente se le da)
+            // Para simplicidad, los gratis se pueden "comprar" por 0 pesos.
+            botonHTML = `<button class="btn-accion-tienda btn-gratis" onclick="comprarItem('${item.id}', 0)">GRATIS</button>`;
+        } else {
+            // De pago
+            botonHTML = `<button class="btn-accion-tienda btn-comprar" onclick="comprarItem('${item.id}', ${item.precio})">$${item.precio}</button>`;
+        }
+
+        div.innerHTML = `
+            <div class="info-sonido">
+                <button class="btn-play-preview" onclick="previewSonido('${item.file}')">▶</button>
+                <div>
+                    <span class="emoji-icon">${item.emoji}</span>
+                    <span class="nombre-sonido">${item.nombre}</span>
+                </div>
+            </div>
+            ${botonHTML}
+        `;
+        
+        contenedor.appendChild(div);
+    });
+}
+
+function previewSonido(ruta) {
+    audioPlayerTienda.src = ruta;
+    audioPlayerTienda.volume = 0.5;
+    audioPlayerTienda.play().catch(e => console.log("Error preview:", e));
+}
+
+async function comprarItem(itemId, precio) {
+    if (!currentUser) return;
+
+    // Validación local rápida
+    if (currentUser.monedas < precio) {
+        // Aquí podrías abrir el modal de recarga si quieres
+        if(confirm("¡No tienes suficientes monedas! ¿Quieres recargar?")) {
+            abrirModalRecarga();
+        }
+        return;
+    }
+
+    // Confirmación (solo si cuesta monedas)
+    if (precio > 0) {
+        if (!confirm(`¿Comprar este sonido por $${precio} monedas?`)) return;
+    }
+
+    // --- OPTIMISTIC UI (Actualizar visualmente antes de que responda el server) ---
+    currentUser.monedas -= precio;
+    if (!currentUser.inventario) currentUser.inventario = [];
+    currentUser.inventario.push(itemId);
+    
+    // Recargar la tienda para que se vea el cambio
+    cargarTienda();
+    // Actualizar el saldo en el menú principal también
+    document.getElementById('menuMonedas').innerText = `💰 ${currentUser.monedas}`;
+
+    // --- ENVIAR AL SERVIDOR ---
+    socket.emit('comprar-item', { 
+        email: currentUser.email, 
+        itemId: itemId, 
+        precio: precio 
+    });
+    
+    // Sonido de confirmación (opcional, usa el de 'kachin' si lo tienes o uno default)
+    // const audioCash = new Audio('assets/audios/caja.mp3'); audioCash.play();
+}
+
+// ESCUCHADOR: Cuando el usuario se loguea o actualiza, recargamos la tienda
+// (Asegúrate de llamar a cargarTienda() dentro de tu función existing de 'actualizarInfoUsuario' o similar)
+socket.on('usuario-actualizado', (data) => {
+    if (currentUser && data.email === currentUser.email) {
+        // Actualizamos datos locales
+        currentUser.monedas = data.monedas;
+        currentUser.inventario = data.inventario || [];
+        
+        // Si la pantalla actual es el menú, refrescamos la tienda
+        if(document.getElementById('pantallaMenu').style.display === 'flex') {
+            cargarTienda();
+            document.getElementById('menuMonedas').innerText = `💰 ${data.monedas}`;
+        }
+    }
+});
+
+// IMPORTANTE: Agrega esta línea al final de tu función login() o cuando muestras el menú:
+// cargarTienda();
