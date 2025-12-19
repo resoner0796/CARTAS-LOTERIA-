@@ -120,6 +120,7 @@ window.onload = () => {
     if (sesionGuardada) {
         usuarioActual = JSON.parse(sesionGuardada);
         configurarMenu();
+        cargarTienda();
         
         // Obtenemos los parámetros de la URL una sola vez
         const urlParams = new URLSearchParams(window.location.search);
@@ -137,6 +138,7 @@ window.onload = () => {
                 usuarioActual.monedas = (parseInt(usuarioActual.monedas) || 0) + parseInt(cant);
                 localStorage.setItem("loteria_usuario", JSON.stringify(usuarioActual));
                 configurarMenu();
+                cargarTienda();
             }
             
             // Limpiamos la URL para borrar ?pago=exito
@@ -190,6 +192,7 @@ async function login() {
             usuarioActual = data;
             localStorage.setItem("loteria_usuario", JSON.stringify(data));
             configurarMenu();
+            cargarTienda();
             
             const urlParams = new URLSearchParams(window.location.search);
             const salaInvitacion = urlParams.get('sala');
@@ -221,6 +224,7 @@ async function registro() {
             usuarioActual = data;
             localStorage.setItem("loteria_usuario", JSON.stringify(data));
             configurarMenu();
+            cargarTienda();
             cambiarPantalla("menu");
         } else {
             mostrarAlerta(data.error, "Error de Registro");
