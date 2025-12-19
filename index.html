@@ -27,6 +27,40 @@
     a { color: #4dd0e1; text-decoration: none; }
     /* Prevenimos flash de contenido sin estilo */
     body { font-family: 'Montserrat', sans-serif; background-color: #111; margin: 0; }
+
+    /* --- CORRECCIÓN CRÍTICA PARA EL MODAL DE TRANSFERENCIA --- */
+    #modalTransferencia {
+        /* Posicionamiento Fijo (Flotante) */
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: 10000; /* Encima de todo */
+        
+        /* Centrado */
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        
+        /* Fondo Oscuro */
+        background-color: rgba(0, 0, 0, 0.8);
+        backdrop-filter: blur(5px);
+        -webkit-backdrop-filter: blur(5px);
+
+        /* ESTADO INICIAL: OCULTO */
+        opacity: 0;
+        visibility: hidden;
+        pointer-events: none; /* Ignora clicks cuando está oculto */
+        transition: all 0.3s ease;
+    }
+
+    /* CLASE PARA MOSTRARLO */
+    #modalTransferencia.visible {
+        opacity: 1;
+        visibility: visible;
+        pointer-events: all;
+    }
   </style>
 </head>
 <body>
@@ -350,7 +384,7 @@
     </div>
   </div>
 
-  <div id="modalTransferencia" class="modal-overlay">
+  <div id="modalTransferencia">
     <div class="modal-content">
         <span class="modal-close" onclick="cerrarModalTransferencia()">&times;</span>
         
