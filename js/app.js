@@ -1102,3 +1102,101 @@ socket.on('usuario-actualizado', (data) => {
         }
     }
 });
+
+// ==================== SISTEMA DE SONIDOS EN JUEGO (SOUNDBOARD) ====================
+
+let spamCooldown = false; // Para evitar que spameen el botón y traben el audio
+
+// 1. Alternar visibilidad del menú
+function toggleMenuSonidos() {
+    const menu = document.getElementById("menuSonidosDesplegable");
+    menu.classList.toggle("mostrar");
+    
+    // Si se abre, cargamos los sonidos por si hubo compras nuevas
+    if (menu.classList.contains("mostrar")) {
+        renderizarSonidosJuego();
+    }
+}
+
+// 2. Renderizar burbujas de emojis
+function renderizarSonidosJuego() {
+    const contenedor = document.getElementById("menuSonidosDesplegable");
+    contenedor.innerHTML = "";
+    
+    if (!usuarioActual) return;
+    
+    const inventario = usuarioActual.inventario || [];
+    
+    // Filtramos del catálogo los que el usuario TIENE
+    const misSonidos = catalogoSonidos.filter(item => {
+        // Incluye los comprados O los que son precio 0 (gratis por defecto)
+        return inventario.includes(item.id) || item.precio === 0;
+    });
+
+    if (misSonidos.length === 0) {
+        contenedor.innerHTML = "<span style='font-size:0.7rem; color:white;'>Sin sonidos</span>";
+        return;
+    }
+
+    misSonidos.forEach(sound => {
+        const btn = document.createElement("button");
+        btn.className = "btn-emoji-sonido";
+        btn.innerHTML = sound.emoji;
+        btn.onclick = () => enviarEfectoSonido(sound.id);
+        contenedor.appendChild(btn);
+    });
+}
+
+// 3. Enviar evento al servidor (YO presiono el botón)
+function enviarEfectoSonido(soundId) {
+    if (spamCooldown) return; // Evitar spam masivo
+    
+    // Pequeño cooldown de 1 segundo
+    spamCooldown = true;
+    setTimeout(() => { spamCooldown = false }, 1000);
+
+    // Ocultar menú tras seleccionar (opcional, si quieres que se cierre)
+    // document.getElementById("menuSonidosDesplegable").classList.remove("mostrar");
+
+    // Emitir al socket
+    socket.emit("enviar-efecto-sonido", { 
+        sala: salaActual, 
+        soundId: soundId,
+        emisor: usuarioActual.nickname 
+    });
+}
+
+// 4. Recibir evento del servidor (ALGUIEN presionó el botón)
+socket.on("reproducir-efecto-sonido", ({ soundId, emisor }) => {
+    // Buscar el archivo en el catálogo
+    const sonidoData = catalogoSonidos.find(s => s.id === soundId);
+    
+    if (sonidoData) {
+        const audio = new Audio(sonidoData.file);
+        audio.volume = 0.8; // Volumen alto para que se note
+        audio.play().catch(e => console.log("Error playing effect:", e));
+        
+        // (Opcional) Mostrar un "Toast" o notificación visual de quién lo envió
+        mostrarNotificacionFlotante(`${emisor}: ${sonidoData.emoji}`);
+    }
+});
+
+// Función extra visual: Pequeña notificación que flota
+function mostrarNotificacionFlotante(texto) {
+    const notif = document.createElement("div");
+    notif.innerText = texto;
+    notif.style.position = "fixed";
+    notif.style.bottom = "90px"; // Arriba del botón
+    notif.style.left = "20px";
+    notif.style.background = "rgba(0,0,0,0.7)";
+    notif.style.color = "gold";
+    notif.style.padding = "5px 10px";
+    notif.style.borderRadius = "10px";
+    notif.style.zIndex = "2001";
+    notif.style.fontSize = "0.9rem";
+    notif.style.animation = "flotarDesvanecer 2s forwards";
+    
+    document.body.appendChild(notif);
+    
+    setTimeout(() => notif.remove(), 2000);
+}

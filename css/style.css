@@ -576,3 +576,82 @@ button[onclick*="unirseSala"], #btnBarajear, #btnLimpiarCartas {
     .carrusel-indicadores { display: none; }
     .lista-items-scroll { max-height: 350px; }
 }
+
+
+/* --- FAB SONIDOS (SOUNDBOARD) --- */
+
+.fab-container {
+    position: fixed;
+    bottom: 20px;
+    left: 20px; /* A la izquierda para no estorbar al botón Loteria */
+    z-index: 2000;
+    display: flex;
+    flex-direction: column-reverse; /* Para que el menú salga hacia arriba */
+    align-items: center;
+    gap: 10px;
+}
+
+.fab-btn-main {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #2196F3, #0D47A1); /* Azul eléctrico */
+    color: white;
+    font-size: 1.8rem;
+    border: none;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+    cursor: pointer;
+    transition: transform 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.fab-btn-main:active { transform: scale(0.9); }
+
+.fab-menu {
+    background: rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(5px);
+    padding: 10px;
+    border-radius: 20px;
+    display: flex; /* Flex para mostrar, 'none' para ocultar */
+    flex-direction: column;
+    gap: 10px;
+    transform: scale(0); /* Oculto por defecto con animación */
+    transform-origin: bottom center;
+    transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    margin-bottom: 10px;
+    border: 1px solid rgba(255,255,255,0.2);
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.fab-menu.mostrar {
+    transform: scale(1); /* Mostrar */
+}
+
+.btn-emoji-sonido {
+    background: rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,255,255,0.2);
+    font-size: 2rem;
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: all 0.1s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    margin: 0;
+}
+
+.btn-emoji-sonido:active {
+    background: gold;
+    transform: scale(1.2);
+}
+
+@keyframes flotarDesvanecer {
+    0% { opacity: 1; transform: translateY(0); }
+    100% { opacity: 0; transform: translateY(-50px); }
+}
