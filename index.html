@@ -69,9 +69,18 @@
             <h1 id="menuMonedas">0</h1>
         </div>
         
-        <button id="btnRecargarMenu" onclick="abrirModalRecarga()" class="btn-recargar-gold">
-            RECARGAR AHORA
-        </button>
+        <div class="wallet-actions-container">
+            <button id="btnRecargarMenu" onclick="abrirModalRecarga()" class="btn-recargar-gold">
+                RECARGAR AHORA
+            </button>
+
+            <button class="btn-transferir-img" onclick="abrirModalTransferencia()">
+                <img src="assets/imagenes/ui/transferir.png" alt="Transferir">
+            </button>
+        </div>
+
+    </div>
+    
     </div>
     
     <div class="menu-acciones-wrapper">
@@ -288,6 +297,43 @@
       </div>
     </div>
   </div>
+
+<div id="modalTransferencia" class="modal-overlay">
+    <div class="modal-content">
+        <span class="modal-close" onclick="cerrarModalTransferencia()">&times;</span>
+        
+        <h2 style="color: var(--primary-color); margin-top: 0;">💸 Transferir Saldo</h2>
+        <p style="font-size: 0.9rem; color: #666; margin-bottom: 20px;">Envía monedas a un amigo para que siga jugando.</p>
+        
+        <div id="step-find-user">
+            <label style="display:block; text-align:left; font-weight:bold; margin-bottom:5px;">Nickname del jugador:</label>
+            <input type="text" id="inputDestinatario" placeholder="Ej. ElRudo23" style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #ccc; font-size: 1rem; margin-bottom: 15px; box-sizing: border-box;">
+            
+            <button class="btn" onclick="verificarDestinatario()" style="width: 100%; padding: 12px; background-color: var(--primary-color); color: white; font-weight: bold; border-radius: 8px; border: none; cursor: pointer;">
+                BUSCAR JUGADOR
+            </button>
+        </div>
+
+        <div id="step-amount" style="display: none;">
+            <div style="background-color: rgba(0, 255, 0, 0.1); padding: 10px; border-radius: 8px; margin-bottom: 15px;">
+                <p id="userFoundMsg" style="margin: 0; font-weight: bold; color: green;">✅ Jugador encontrado</p>
+            </div>
+
+            <label style="display:block; text-align:left; font-weight:bold; margin-bottom:5px;">Cantidad a transferir:</label>
+            <input type="number" id="inputMontoTransferir" placeholder="Mínimo $2" min="2" style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #ccc; font-size: 1rem; margin-bottom: 20px; box-sizing: border-box;">
+            
+            <div style="display: flex; gap: 10px;">
+                <button onclick="cancelarTransferencia()" style="flex: 1; padding: 12px; background-color: #dc3545; color: white; font-weight: bold; border-radius: 8px; border: none; cursor: pointer;">
+                    CANCELAR
+                </button>
+                <button onclick="realizarTransferencia()" style="flex: 1; padding: 12px; background-color: #28a745; color: white; font-weight: bold; border-radius: 8px; border: none; cursor: pointer;">
+                    CONFIRMAR
+                </button>
+            </div>
+        </div>
+
+    </div>
+</div>
 
   <div id="modalSistema" class="modal">
     <div class="modal-content">
