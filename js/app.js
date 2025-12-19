@@ -1201,43 +1201,61 @@ function sincronizarDatosForzoso() {
     }
 }
 
-// ==================== SISTEMA DE TRANSFERENCIAS (CORREGIDO) ====================
+// ==================== SISTEMA DE TRANSFERENCIAS (FINAL Y CORREGIDO) ====================
 
-let destinatarioConfirmado = null; // Guardamos {email, nickname}
+let destinatarioConfirmado = null; // Guardamos aquí los datos del usuario encontrado
 
-function abrirModalTransferencia() {
+// 1. ABRIR EL MODAL
+window.abrirModalTransferencia = function() {
     const modal = document.getElementById("modalTransferencia");
     if(modal) {
-        modal.classList.add("active");
+        modal.classList.add("visible"); // Usamos la clase .visible que pusimos en el CSS
+        modal.style.opacity = "1";
+        modal.style.visibility = "visible";
+        modal.style.pointerEvents = "all";
         
         // Resetear formulario visualmente
-        document.getElementById("inputDestinatario").value = "";
-        document.getElementById("inputMontoTransferir").value = ""; // Ojo: en HTML es inputMontoTransferir
+        const inputDest = document.getElementById("inputDestinatario");
+        const inputMonto = document.getElementById("inputMontoTransferir");
         
-        // Volver al Paso 1
-        document.getElementById("step-find-user").style.display = "block";
-        document.getElementById("step-amount").style.display = "none";
+        if(inputDest) inputDest.value = "";
+        if(inputMonto) inputMonto.value = "";
+        
+        // Volver al Paso 1 (Buscar) y ocultar el Paso 2 (Monto)
+        const step1 = document.getElementById("step-find-user");
+        const step2 = document.getElementById("step-amount");
+        
+        if(step1) step1.style.display = "block";
+        if(step2) step2.style.display = "none";
         
         destinatarioConfirmado = null;
+    } else {
+        console.error("No se encontró el modal #modalTransferencia");
     }
 }
 
-function cerrarModalTransferencia() {
+// 2. CERRAR EL MODAL
+window.cerrarModalTransferencia = function() {
     const modal = document.getElementById("modalTransferencia");
-    if(modal) modal.classList.remove("active");
+    if(modal) {
+        modal.classList.remove("visible");
+        modal.style.opacity = "0";
+        modal.style.visibility = "hidden";
+        modal.style.pointerEvents = "none";
+    }
 }
 
-// 4. Cancelar (Público)
+// 3. CANCELAR (Botón Rojo dentro del modal)
 window.cancelarTransferencia = function() {
-    document.getElementById('step-find-user').style.display = 'block';
-    document.getElementById('step-amount').style.display = 'none';
+    document.getElementById("step-find-user").style.display = "block";
+    document.getElementById("step-amount").style.display = "none";
     destinatarioConfirmado = null;
 }
 
-// 1. BUSCAR JUGADOR
+// 4. LÓGICA DE BÚSQUEDA (Botón "BUSCAR JUGADOR")
 window.verificarDestinatario = async () => {
-    const nicknameInput = document.getElementById("inputDestinatario");
-    const nickname = nicknameInput.value.trim();
+    const inputDest = document.getElementById("inputDestinatario");
+    const nickname = inputDest.value.trim();
     
     // Referencia al botón para efecto de carga
     const btnBuscar = event.target; 
@@ -1251,7 +1269,7 @@ window.verificarDestinatario = async () => {
     btnBuscar.disabled = true;
 
     try {
-        // Hacemos la petición al servidor
+        // Hacemos la petición al servidor (asegúrate de que tu backend esté corriendo)
         const res = await fetch(`${API_URL}/buscar-destinatario?nickname=${encodeURIComponent(nickname)}`);
         const data = await res.json();
 
@@ -1259,15 +1277,17 @@ window.verificarDestinatario = async () => {
             // ¡ÉXITO! Guardamos datos
             destinatarioConfirmado = data.destinatario; 
             
-            // Actualizamos UI: Pasamos al paso 2
+            // CAMBIAMOS DE PASO EN EL HTML
             document.getElementById("step-find-user").style.display = "none";
             document.getElementById("step-amount").style.display = "block";
             
-            // Mensaje de éxito
-            document.getElementById("userFoundMsg").textContent = `✅ Enviar a: ${destinatarioConfirmado.nickname}`;
+            // Actualizamos el mensaje verde
+            const msg = document.getElementById("userFoundMsg");
+            if(msg) msg.textContent = `✅ Enviar a: ${destinatarioConfirmado.nickname}`;
             
-            // Enfocar campo de monto
-            document.getElementById("inputMontoTransferir").focus();
+            // Enfocar campo de monto si existe
+            const inputMonto = document.getElementById("inputMontoTransferir");
+            if(inputMonto) inputMonto.focus();
 
         } else {
             // ERROR: No encontrado
@@ -1277,7 +1297,7 @@ window.verificarDestinatario = async () => {
 
     } catch (e) {
         console.error(e);
-        mostrarAlerta("Error de conexión con el servidor.", "Error");
+        mostrarAlerta("Error de conexión con el servidor.", "Error de Red");
     } finally {
         // Restaurar botón
         btnBuscar.innerText = textoOriginal;
@@ -1285,13 +1305,13 @@ window.verificarDestinatario = async () => {
     }
 };
 
-// 2. REALIZAR TRANSFERENCIA (El nombre debe coincidir con el HTML)
+// 5. LÓGICA DE ENVÍO (Botón "ENVIAR")
 window.realizarTransferencia = async () => {
-    // Ojo: en tu HTML el ID es "inputMontoTransferir"
+    // Usamos el ID correcto que tienes en tu HTML: inputMontoTransferir
     const inputMonto = document.getElementById("inputMontoTransferir");
     const monto = parseInt(inputMonto.value);
     
-    if(!destinatarioConfirmado) return mostrarAlerta("Error interno: Destinatario perdido", "Reinicia");
+    if(!destinatarioConfirmado) return mostrarAlerta("Error interno: Destinatario perdido. Busca de nuevo.", "Error");
     if(!monto || monto < 2) return mostrarAlerta("La transferencia mínima es de $2 monedas", "Monto inválido");
     if(monto > usuarioActual.monedas) return mostrarAlerta("No tienes suficientes monedas", "Saldo insuficiente");
 
@@ -1300,7 +1320,12 @@ window.realizarTransferencia = async () => {
         
         // Feedback visual en el botón de confirmar
         const btnConfirmar = event.target || document.querySelector("#step-amount button:last-child");
-        if(btnConfirmar) btnConfirmar.innerText = "Enviando...";
+        let textoBtnOriginal = "CONFIRMAR";
+        if(btnConfirmar) {
+            textoBtnOriginal = btnConfirmar.innerText;
+            btnConfirmar.innerText = "Enviando...";
+            btnConfirmar.disabled = true;
+        }
         
         try {
             const res = await fetch(`${API_URL}/transferir-saldo`, {
@@ -1316,20 +1341,21 @@ window.realizarTransferencia = async () => {
             const data = await res.json();
             
             if (data.success) {
-                // Actualizar saldo local (Optimistic UI)
+                // 1. Actualizar saldo local inmediatamente (Optimistic UI)
                 usuarioActual.monedas -= monto;
                 localStorage.setItem("loteria_usuario", JSON.stringify(usuarioActual));
                 
-                // Actualizar interfaz
+                // 2. Actualizar etiquetas de texto en el menú
                 const menuMonedas = document.getElementById("menuMonedas");
                 if(menuMonedas) menuMonedas.textContent = usuarioActual.monedas;
                 
-                // Sincronizar sockets para asegurar
-                sincronizarDatosForzoso();
-
+                // 3. Cerrar todo
                 cerrarModalTransferencia();
                 mostrarAlerta(`🎉 ¡Enviaste $${monto} a ${destinatarioConfirmado.nickname}!`, "¡Transferencia Exitosa!");
                 
+                // 4. Sincronizar sockets para asegurar
+                if(typeof sincronizarDatosForzoso === "function") sincronizarDatosForzoso();
+
             } else {
                 mostrarAlerta(data.error || "Falló la transferencia", "Error");
             }
@@ -1338,7 +1364,11 @@ window.realizarTransferencia = async () => {
             console.error(e);
             mostrarAlerta("Error de red al intentar transferir", "Fallo");
         } finally {
-            if(btnConfirmar) btnConfirmar.innerText = "CONFIRMAR";
+            if(btnConfirmar) {
+                btnConfirmar.innerText = textoBtnOriginal;
+                btnConfirmar.disabled = false;
+            }
         }
     });
+};
 };
