@@ -59,6 +59,7 @@ const audioBarajear = document.getElementById("audioBarajear");
 const audioCampana = document.getElementById("audioCampana");
 const audioCorre = document.getElementById("audioCorre");
 const audioAplausos = document.getElementById("audioAplausos");
+const audioKachin = new Audio("assets/audios/kachin.mp3");
 const loteriaMensaje = document.getElementById("loteriaMensaje"); // Overlay "LOTERÍA"
 
 // ======================================================
@@ -560,6 +561,17 @@ socket.on("error-apuesta", msg => {
   mostrarAlerta(msg || "Error al apostar", "Ups");
   haApostadoLocal = false;
   if (btnApostar) btnApostar.disabled = false;
+});
+
+// SONIDO DE APUESTA
+socket.on("reproducir-sonido-apuesta", () => {
+    // Reiniciamos el tiempo por si suenan varias apuestas seguidas rápido
+    audioKachin.currentTime = 0; 
+    audioKachin.volume = 0.6; // Ajusta el volumen a tu gusto
+    audioKachin.play().catch(e => console.log("Audio play error:", e));
+    
+    // Opcional: Vibración en el celular para sentir el dinero 😎
+    if(navigator.vibrate) navigator.vibrate(50); 
 });
 
 // Eventos de Juego
