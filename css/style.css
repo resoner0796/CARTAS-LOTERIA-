@@ -874,3 +874,13 @@ button[onclick*="unirseSala"], #btnBarajear, #btnLimpiarCartas {
 #modalTransferencia {
     z-index: 9000; 
 }
+
+/* --- CORRECCIÓN DE Z-INDEX (CONFIRMACIONES AL FRENTE) --- */
+#modalSistema {
+    z-index: 20000 !important; /* Superpone a la tienda y transferencias (que tienen 10000) */
+}
+
+/* Opcional: Asegurar que el fondo negro del sistema también tape lo de atrás */
+#modalSistema.active {
+    background-color: rgba(0, 0, 0, 0.85); 
+}
