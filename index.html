@@ -5,13 +5,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <meta name="theme-color" content="#111111" />
   <link rel="manifest" href="manifest.json" />
+  
   <meta http-equiv="Content-Security-Policy" content="default-src 'self' https:; script-src 'self' 'unsafe-inline' https://js.stripe.com https://m.stripe.network https://loteria-backend-3nde.onrender.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https://api.stripe.com https://maps.googleapis.com https://loteria-backend-3nde.onrender.com wss://loteria-backend-3nde.onrender.com https://m.stripe.network;">
   
   <meta property="og:title" content="Lotería Mexicana Online 🎲">
-<meta property="og:description" content="¡Juega Lotería con tus amigos en tiempo real! Crea tu sala, apuesta y gana.">
-<meta property="og:image" content="https://loteria-online-red.vercel.app/assets/imagenes/ui/icon-192.png"> <meta property="og:url" content="https://loteria-online-red.vercel.app/">
-<meta property="og:type" content="website">
-<meta name="theme-color" content="#ff6f00">
+  <meta property="og:description" content="¡Juega Lotería con tus amigos en tiempo real! Crea tu sala, apuesta y gana.">
+  <meta property="og:image" content="https://loteria-online-red.vercel.app/assets/imagenes/ui/icon-192.png"> 
+  <meta property="og:url" content="https://loteria-online-red.vercel.app/">
+  <meta property="og:type" content="website">
   
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -21,17 +22,19 @@
   <title>Lotería WebApp</title>
    
   <link rel="stylesheet" href="css/style.css">
+  
   <style>
-    /* Estilos inline de emergencia (se pueden mover a CSS después) */
-    .stats-resumen { font-size: 2rem; margin: 1rem 0; color: gold; }
     a { color: #4dd0e1; text-decoration: none; }
+    /* Prevenimos flash de contenido sin estilo */
+    body { font-family: 'Montserrat', sans-serif; background-color: #111; margin: 0; }
   </style>
 </head>
 <body>
+
   <div id="pantallaSplash" class="pantalla activa">
     <div class="splash-content">
       <img src="assets/imagenes/ui/icono-loteria.PNG" alt="Icono Lotería" class="splash-icon">
-      <h1 style="margin-top: 20px; font-size: 1.5rem; text-shadow: 2px 2px 4px rgba(0,0,0,0.5);">Cargando...</h1>
+      <h1 style="margin-top: 20px; font-size: 1.5rem; color: white; text-shadow: 2px 2px 4px rgba(0,0,0,0.5);">Cargando...</h1>
     </div>
   </div>
    
@@ -63,7 +66,6 @@
         
         <div class="monedero-container">
             <img src="assets/imagenes/ui/monederoele.png" alt="Monedero Electrónico" class="monedero-card-img">
-            
             <h1 id="menuMonedas">0</h1>
         </div>
         
@@ -152,7 +154,7 @@
     <button id="btnIniciar" style="display:none">Continuar</button>
   </div>
 
-<div id="pantallaAdmin" class="pantalla">
+  <div id="pantallaAdmin" class="pantalla">
     <h1 style="color: gold;">Panel de Control 👑</h1>
     
     <div class="sala-box" style="border: 2px solid gold;">
@@ -187,7 +189,7 @@
     </div>
 
     <button onclick="cambiarPantalla('menu')" style="background:#dc3545; margin-top:20px;">Volver al Menú</button>
-</div>
+  </div>
 
   <div id="pantallaJuego" class="pantalla">
     <div class="historial-container">
@@ -259,7 +261,6 @@
     <div id="fabSonidosContainer" class="fab-container">
         <div id="menuSonidosDesplegable" class="fab-menu">
             </div>
-        
         <button id="btnToggleSonidos" class="fab-btn-main" onclick="toggleMenuSonidos()">
             🔊
         </button>
@@ -276,8 +277,7 @@
       
       <div style="text-align: left; margin-bottom: 5px; font-weight: bold; color: var(--accent-yellow);">Historial de cartas cantadas:</div>
       <div class="historial-container-modal">
-          <div id="modalHistorialFlex">
-          </div>
+          <div id="modalHistorialFlex"></div>
       </div>
       <div style="text-align: left; margin-top: 15px; font-weight: bold; color: var(--accent-yellow);">Tabla del Jugador:</div>
       <div id="modalVerificationArea" class="juego-cartas" style="margin-top: 10px; justify-content: center;"></div>
@@ -340,17 +340,6 @@
       </div>
       
       <button id="btnVolverPaquetes" onclick="volverAPaquetes()" style="display:none; background:#6c757d; color:white; width:100%; margin-top:10px;">⬅ Volver a paquetes</button>
-    </div>
-  </div>
-
-  <div id="modalSalir" class="modal">
-    <div class="modal-content">
-      <h3 style="color:var(--accent-yellow)">¿Salir de la sala?</h3>
-      <p>Si sales ahora perderás tu lugar.</p>
-      <div class="modal-buttons">
-          <button onclick="confirmarSalida()" style="background-color: #dc3545;">Sí, salir</button>
-          <button onclick="cerrarModalSalir()">Cancelar</button>
-      </div>
     </div>
   </div>
 
