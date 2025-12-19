@@ -118,22 +118,32 @@ window.onload = () => {
     // 1. Revisar sesión guardada
     const sesionGuardada = localStorage.getItem("loteria_usuario");
     
+    // Función auxiliar para desvanecer el splash
+    const ocultarSplash = (callback) => {
+        if(pantallas.splash) {
+            pantallas.splash.style.opacity = '0';
+            setTimeout(() => {
+                pantallas.splash.style.display = 'none';
+                if(callback) callback();
+            }, 500); // 500ms es lo que tarda la transición CSS
+        }
+    };
+
     if (sesionGuardada) {
+        // === USUARIO LOGUEADO (CARGA DE DATOS) ===
         usuarioActual = JSON.parse(sesionGuardada);
         configurarMenu();
         cargarTienda();
-        sincronizarDatosForzoso(); // <--- IMPORTANTE: Pedir datos frescos al servidor
+        sincronizarDatosForzoso(); 
         
         const urlParams = new URLSearchParams(window.location.search);
         const salaInvitacion = urlParams.get('sala');
         const pagoEstado = urlParams.get('pago');
 
-        // 2. DETECTAR RETORNO DE PAGOS (STRIPE)
+        // Lógica de Pagos Stripe
         if (pagoEstado === 'exito') {
             const cant = urlParams.get('cantidad');
             mostrarAlerta(`¡Has recibido ${cant} monedas! 🎉`, "¡Pago Exitoso!");
-            
-            // Forzar actualización inmediata visualmente
             if(usuarioActual) {
                 usuarioActual.monedas = (parseInt(usuarioActual.monedas) || 0) + parseInt(cant);
                 localStorage.setItem("loteria_usuario", JSON.stringify(usuarioActual));
@@ -141,30 +151,35 @@ window.onload = () => {
                 cargarTienda();
             }
             window.history.pushState({}, document.title, window.location.pathname);
-        
         } else if (pagoEstado === 'cancelado') {
-            mostrarAlerta("La compra fue cancelada. No se te cobró nada.", "Aviso");
+            mostrarAlerta("La compra fue cancelada.", "Aviso");
             window.history.pushState({}, document.title, window.location.pathname);
         }
 
-        // 3. NAVEGACIÓN
+        // Navegación (Detrás del Splash)
         if(salaInvitacion) {
              unirseSalaDirecto(salaInvitacion, null);
         } else {
              cambiarPantalla("menu");
         }
         
-        // 4. Reconexión socket
+        // Reconexión socket
         if(socket.connected) socket.emit('reconectar', { sala: salaActual, email: usuarioActual.email });
 
-    } else {
-        // Splash Screen (5 segundos)
+        // === ¡CORRECCIÓN AQUÍ! ===
+        // Quitamos el splash después de 2.5 segundos para usuarios ya logueados
         setTimeout(() => {
-            if(pantallas.splash) pantallas.splash.style.opacity = '0';
-            setTimeout(() => {
-                if(pantallas.splash) pantallas.splash.style.display = 'none';
+            ocultarSplash();
+        }, 3500);
+
+    } else {
+        // === USUARIO NUEVO / SIN SESIÓN ===
+        // Aquí dejamos los 5 segundos para que luzca la marca
+        setTimeout(() => {
+            ocultarSplash(() => {
+                // Solo si no hay sesión y el splash ya se fue, mostramos login
                 if (!sesionGuardada) cambiarPantalla("login");
-            }, 500);
+            });
         }, 5000); 
     }
 };
