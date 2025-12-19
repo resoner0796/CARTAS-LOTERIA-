@@ -715,8 +715,8 @@ button[onclick*="unirseSala"], #btnBarajear, #btnLimpiarCartas {
 #menuMonedas {
     position: absolute;
     /* AJUSTE DE POSICIÓN: Más a la izquierda y un poco arriba */
-    top: 65%; 
-    left: 80%; 
+    top: 25%; 
+    left: -80%; 
     transform: translate(-50%, -50%);
     
     margin: 0;
