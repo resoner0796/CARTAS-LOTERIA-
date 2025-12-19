@@ -1371,4 +1371,3 @@ window.realizarTransferencia = async () => {
         }
     });
 };
-};
