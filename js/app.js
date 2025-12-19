@@ -1242,63 +1242,49 @@ window.cerrarModalTransferencia = function() {
     }
 }
 
-// 3. Buscar Jugador (Público y con Diagnóstico)
-window.verificarDestinatario = async function() {
-    // DIAGNÓSTICO: Si ves esta alerta, el botón sí funciona
-    // alert("Iniciando búsqueda..."); 
+// Variable global para guardar a quién le vamos a mandar el dinero
+let destinatarioConfirmado = null; 
 
-    const input = document.getElementById('inputDestinatario');
-    const nicknameInput = input.value.trim(); // Quitamos espacios extra
-    
-    // Verificamos Auth
-    const user = firebase.auth().currentUser;
-    if (!user) {
-        alert("⚠️ Error: No se detecta tu sesión iniciada. Intenta recargar la página.");
-        return;
-    }
+window.verificarDestinatario = async () => {
+    // Asegúrate de que tu input tenga este ID o cámbialo por el que uses
+    const inputNick = document.getElementById("inputDestinatario"); 
+    const nickname = inputNick.value.trim();
+    const infoDestinatario = document.getElementById("infoDestinatario"); // Un div para mostrar el resultado
 
-    if (!nicknameInput) {
-        alert("⚠️ Por favor escribe un nickname.");
-        return;
-    }
+    if (!nickname) return mostrarAlerta("Escribe el nickname del jugador", "Ojo");
+    if (nickname === usuarioActual.nickname) return mostrarAlerta("No puedes enviarte dinero a ti mismo", "Error");
 
     try {
-        // Buscamos en la colección 'usuarios' (en español, como en tu foto)
-        const snapshot = await db.collection('usuarios')
-                                 .where('nickname', '==', nicknameInput)
-                                 .get();
+        // Aquí llamamos a TU servidor en lugar de a Firebase directo
+        const res = await fetch(`${API_URL}/buscar-destinatario?nickname=${encodeURIComponent(nickname)}`);
+        const data = await res.json();
 
-        if (snapshot.empty) {
-            alert(`❌ No se encontró al jugador: "${nicknameInput}"\nVerifica mayúsculas y minúsculas.`);
-            return;
+        if (data.success) {
+            // ¡Lo encontramos!
+            destinatarioConfirmado = data.destinatario; // Guardamos email y nick
+            
+            mostrarAlerta(`✅ Usuario encontrado: ${data.destinatario.nickname}`, "¡Éxito!");
+            
+            // (Opcional) Si tienes un label para mostrar que ya quedó validado:
+            if(infoDestinatario) {
+                infoDestinatario.style.color = "var(--verde-limon)";
+                infoDestinatario.innerText = `Enviar a: ${data.destinatario.nickname}`;
+            }
+            
+            // Aquí podrías habilitar el botón de "Enviar" si lo tenías bloqueado
+            // document.getElementById("btnEnviarTransferencia").disabled = false;
+
+        } else {
+            destinatarioConfirmado = null;
+            mostrarAlerta("No existe ningún jugador con ese Nickname.", "No encontrado");
+            if(infoDestinatario) infoDestinatario.innerText = "";
         }
 
-        // Tomamos el primer resultado
-        const doc = snapshot.docs[0];
-        const data = doc.data();
-
-        // Evitar auto-transferencia
-        // Comparamos emails porque en tu base de datos el ID es el email
-        if (data.email === user.email) {
-            alert("⚠️ No puedes transferirte monedas a ti mismo.");
-            return;
-        }
-
-        // Guardamos datos para el siguiente paso
-        destinatarioID = doc.id; 
-        destinatarioData = data;
-
-        // ÉXITO: Cambiamos de pantalla en el modal
-        document.getElementById('step-find-user').style.display = 'none';
-        document.getElementById('step-amount').style.display = 'block';
-        document.getElementById('userFoundMsg').textContent = `✅ Jugador encontrado: ${data.nickname}`;
-
-    } catch (error) {
-        console.error("Error al buscar:", error);
-        alert("❌ Error de conexión: " + error.message);
-        // Si pide índice, el error.message te dará un link, cópialo y ábrelo.
+    } catch (e) {
+        console.error(e);
+        mostrarAlerta("Error al buscar usuario", "Error de Red");
     }
-}
+};
 
 // 4. Cancelar (Público)
 window.cancelarTransferencia = function() {
