@@ -655,3 +655,99 @@ button[onclick*="unirseSala"], #btnBarajear, #btnLimpiarCartas {
     0% { opacity: 1; transform: translateY(0); }
     100% { opacity: 0; transform: translateY(-50px); }
 }
+
+/* =========================================
+   NUEVOS ESTILOS UI (MONEDERO Y SPLASH)
+   ========================================= */
+
+/* --- PANTALLA SPLASH MEJORADA --- */
+#pantallaSplash {
+    /* Asegura que el fondo sea el degradado naranja/rojo */
+    background: linear-gradient(135deg, #ff9100 0%, #ff3d00 100%);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.splash-content {
+    text-align: center;
+    animation: fadeInUp 1s ease-out; /* Pequeña animación de entrada */
+}
+
+.splash-icon {
+    width: 180px; /* Tamaño del icono */
+    height: 180px;
+    border-radius: 35px; /* Bordes redondeados estilo app */
+    /* Sombra para efecto de "brillo" y elevación */
+    box-shadow: 0 10px 25px rgba(0,0,0,0.3), 0 0 50px rgba(255, 255, 255, 0.2) inset;
+    border: 3px solid rgba(255,255,255,0.2); /* Borde sutil */
+}
+
+/* Animación simple de entrada */
+@keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+
+/* --- MONEDERO ELECTRÓNICO (MENÚ) --- */
+.monedero-container {
+    position: relative; /* Para poder posicionar el saldo encima */
+    width: 100%;
+    max-width: 380px; /* Ancho máximo de la tarjeta */
+    margin: 20px auto; /* Centrado y con margen */
+}
+
+.monedero-card-img {
+    width: 100%;
+    height: auto;
+    display: block;
+    /* Sombra para que la tarjeta "flote" */
+    filter: drop-shadow(0 10px 15px rgba(0,0,0,0.3));
+}
+
+#menuMonedas {
+    position: absolute;
+    /* Posicionamiento para que quede en el centro de la tarjeta (ajusta según tu imagen) */
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%); /* Centrado perfecto */
+    
+    margin: 0;
+    color: white; /* Texto blanco para contraste */
+    font-family: 'Bangers', cursive; /* Usamos la fuente Bangers si la tienes, o una sans-serif gruesa */
+    font-size: 4rem; /* Tamaño grande para el número */
+    letter-spacing: 2px;
+    /* Sombra de texto para que resalte más sobre el fondo de la tarjeta */
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.6);
+    z-index: 2; /* Asegura que esté encima de la imagen */
+}
+
+
+/* --- BOTÓN RECARGAR DORADO --- */
+.btn-recargar-gold {
+    background: linear-gradient(to bottom, #ffd700, #ffb300); /* Degradado dorado */
+    color: #4a3f00; /* Color de texto oscuro para contraste */
+    font-weight: 900;
+    font-size: 1.1rem;
+    padding: 12px 30px;
+    border-radius: 50px;
+    border: none;
+    /* Sombra brillante dorada */
+    box-shadow: 0 5px 15px rgba(255, 215, 0, 0.5);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-family: 'Montserrat', sans-serif;
+    letter-spacing: 1px;
+    margin-top: 10px;
+}
+
+.btn-recargar-gold:hover {
+    transform: translateY(-3px) scale(1.02); /* Efecto "levitar" al pasar el mouse */
+    box-shadow: 0 8px 20px rgba(255, 215, 0, 0.7);
+}
+
+.btn-recargar-gold:active {
+    transform: translateY(1px) scale(0.98);
+    box-shadow: 0 3px 10px rgba(255, 215, 0, 0.5);
+}
