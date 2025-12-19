@@ -384,28 +384,41 @@
     </div>
   </div>
 
-  <div id="modalTransferencia" class="modal">
-    <div class="modal-content">
-      <h2 style="color: gold; margin-top:0;">Enviar Monedas 💸</h2>
-      <p>Busca al jugador por su Nickname exacto.</p>
-      
-      <div style="background: rgba(255,255,255,0.1); padding: 10px; border-radius: 10px; margin-bottom: 15px;">
-          <input type="text" id="inputDestinatario" placeholder="Nickname del jugador" style="margin-bottom: 5px;">
-          <button onclick="verificarDestinatario()" style="background: #0288d1; width: 100%; padding: 8px;">🔍 Buscar Jugador</button>
-          
-          <p id="msgValidacionDestinatario" style="font-weight: bold; margin: 5px 0 0 0; min-height: 20px; font-size: 0.9rem;"></p>
-      </div>
+  <div id="modalTransferencia">
+    <div class="modal-content" style="position: relative;">
+        <div class="btn-close-pro" onclick="cerrarModalTransferencia()">
+            <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </div>
+        
+        <h2 style="color: var(--amarillo-maiz); margin-top: 10px; text-shadow: 0 2px 4px rgba(0,0,0,0.5);">💸 Transferir Saldo</h2>
+        <p style="font-size: 1rem; margin-bottom: 25px;">Envía monedas a un amigo para que siga jugando.</p>
+        
+        <div id="step-find-user">
+            <label style="display:block; text-align:left; font-weight:bold; color: white; margin-bottom:8px;">Nickname del jugador:</label>
+            <input type="text" id="inputDestinatario" placeholder="Ej. Dari" style="width: 100%; padding: 14px; border-radius: 12px; border: 2px solid rgba(255,255,255,0.3); background: rgba(0,0,0,0.3); color: white; font-size: 1.1rem; margin-bottom: 20px;">
+            
+            <button class="btn" onclick="verificarDestinatario()" style="width: 100%; padding: 14px; background: linear-gradient(to bottom, #ff9100, #e65100); color: white; font-weight: 900; border-radius: 12px; border: none; box-shadow: 0 4px 15px rgba(230, 81, 0, 0.4);">
+                BUSCAR JUGADOR 🔍
+            </button>
+        </div>
 
-      <div id="areaMontoTransferencia" style="opacity: 0.5; pointer-events: none; transition: opacity 0.3s;">
-          <input type="number" id="inputMontoTransferencia" placeholder="Cantidad a enviar" min="1">
-          <button id="btnEnviarTransferencia" onclick="ejecutarTransferencia()" style="background: var(--verde-limon); color: black; font-weight: bold; width: 100%;">
-              ENVIAR AHORA 🚀
-          </button>
-      </div>
+        <div id="step-amount" style="display: none;">
+            <div style="background-color: rgba(118, 255, 3, 0.2); padding: 15px; border-radius: 12px; margin-bottom: 20px; border: 1px solid var(--verde-limon);">
+                <p id="userFoundMsg" style="margin: 0; font-weight: bold; color: var(--verde-limon) !important; font-size: 1.1rem;">✅ Jugador encontrado</p>
+            </div>
 
-      <button onclick="cerrarModalTransferencia()" style="background: #dc3545; margin-top: 15px;">Cancelar</button>
-    </div>
-  </div>
+            <label style="display:block; text-align:left; font-weight:bold; color: white; margin-bottom:8px;">Cantidad a transferir:</label>
+            <input type="number" id="inputMontoTransferir" placeholder="Mínimo $2" min="2" style="width: 100%; padding: 14px; border-radius: 12px; border: 2px solid rgba(255,255,255,0.3); background: rgba(0,0,0,0.3); color: white; font-size: 1.1rem; margin-bottom: 25px;">
+            
+            <div style="display: flex; gap: 15px;">
+                <button onclick="cancelarTransferencia()" style="flex: 1; padding: 12px; background: #424242; color: white; font-weight: bold; border-radius: 12px; border: none;">
+                    ATRÁS
+                </button>
+                <button onclick="realizarTransferencia()" style="flex: 1; padding: 12px; background: linear-gradient(to bottom, var(--verde-limon), #64dd17); color: #003d00; font-weight: 900; border-radius: 12px; border: none; box-shadow: 0 0 15px rgba(118, 255, 3, 0.4);">
+                    ENVIAR 💸
+                </button>
+            </div>
+        </div>
 
     </div>
 </div>
