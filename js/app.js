@@ -1201,167 +1201,129 @@ function sincronizarDatosForzoso() {
     }
 }
 
-/* ================================================================
-   SISTEMA DE TRANSFERENCIAS (CORREGIDO Y PÚBLICO)
-   ================================================================ */
+// ==================== SISTEMA DE TRANSFERENCIAS ====================
 
-// Variables globales para este módulo
-let destinatarioID = null;
-let destinatarioData = null;
+let destinatarioConfirmado = null; // Aquí guardamos al usuario encontrado
 
-// 1. Abrir Modal (Público)
-window.abrirModalTransferencia = function() {
-    const modal = document.getElementById('modalTransferencia');
+function abrirModalTransferencia() {
+    const modal = document.getElementById("modalTransferencia");
     if(modal) {
-        modal.classList.add('visible'); // Usamos la clase del CSS nuevo
-        // Refuerzo de estilos inline por si acaso
-        modal.style.opacity = "1";
-        modal.style.visibility = "visible";
-        modal.style.pointerEvents = "all";
+        modal.classList.add("active");
+        // Resetear formulario al abrir
+        document.getElementById("inputDestinatario").value = "";
+        document.getElementById("inputMontoTransferencia").value = "";
+        document.getElementById("msgValidacionDestinatario").innerText = "";
+        document.getElementById("msgValidacionDestinatario").style.color = "white";
+        destinatarioConfirmado = null;
         
-        // Resetear visualmente
-        document.getElementById('step-find-user').style.display = 'block';
-        document.getElementById('step-amount').style.display = 'none';
-        document.getElementById('inputDestinatario').value = '';
-        document.getElementById('inputMontoTransferir').value = '';
-        
-        console.log("Modal abierto correctamente");
-    } else {
-        alert("Error: No se encontró el modal en el HTML");
+        // Bloquear área de monto
+        const areaMonto = document.getElementById("areaMontoTransferencia");
+        areaMonto.style.opacity = "0.5";
+        areaMonto.style.pointerEvents = "none";
     }
 }
 
-// 2. Cerrar Modal (Público)
-window.cerrarModalTransferencia = function() {
-    const modal = document.getElementById('modalTransferencia');
-    if(modal) {
-        modal.classList.remove('visible');
-        modal.style.opacity = "0";
-        modal.style.visibility = "hidden";
-        modal.style.pointerEvents = "none";
-    }
+function cerrarModalTransferencia() {
+    const modal = document.getElementById("modalTransferencia");
+    if(modal) modal.classList.remove("active");
 }
 
-// Variable global para guardar a quién le vamos a mandar el dinero
-let destinatarioConfirmado = null; 
-
+// 1. BUSCAR Y VALIDAR
 window.verificarDestinatario = async () => {
-    // Asegúrate de que tu input tenga este ID o cámbialo por el que uses
-    const inputNick = document.getElementById("inputDestinatario"); 
-    const nickname = inputNick.value.trim();
-    const infoDestinatario = document.getElementById("infoDestinatario"); // Un div para mostrar el resultado
+    const nickname = document.getElementById("inputDestinatario").value.trim();
+    const msgLabel = document.getElementById("msgValidacionDestinatario");
+    const areaMonto = document.getElementById("areaMontoTransferencia");
 
-    if (!nickname) return mostrarAlerta("Escribe el nickname del jugador", "Ojo");
-    if (nickname === usuarioActual.nickname) return mostrarAlerta("No puedes enviarte dinero a ti mismo", "Error");
+    if (!nickname) return mostrarAlerta("Escribe un nickname", "Error");
+    if (nickname === usuarioActual.nickname) return mostrarAlerta("No puedes enviarte a ti mismo", "Error");
+
+    msgLabel.style.color = "yellow";
+    msgLabel.innerText = "Buscando...";
 
     try {
-        // Aquí llamamos a TU servidor en lugar de a Firebase directo
         const res = await fetch(`${API_URL}/buscar-destinatario?nickname=${encodeURIComponent(nickname)}`);
         const data = await res.json();
 
         if (data.success) {
-            // ¡Lo encontramos!
-            destinatarioConfirmado = data.destinatario; // Guardamos email y nick
+            // ¡ÉXITO!
+            destinatarioConfirmado = data.destinatario; // Guardamos {email, nickname}
             
-            mostrarAlerta(`✅ Usuario encontrado: ${data.destinatario.nickname}`, "¡Éxito!");
+            // Actualizamos UI sin abrir otro modal estorboso
+            msgLabel.style.color = "#76ff03"; // Verde
+            msgLabel.innerText = `✅ Enviar a: ${data.destinatario.nickname}`;
             
-            // (Opcional) Si tienes un label para mostrar que ya quedó validado:
-            if(infoDestinatario) {
-                infoDestinatario.style.color = "var(--verde-limon)";
-                infoDestinatario.innerText = `Enviar a: ${data.destinatario.nickname}`;
-            }
-            
-            // Aquí podrías habilitar el botón de "Enviar" si lo tenías bloqueado
-            // document.getElementById("btnEnviarTransferencia").disabled = false;
+            // Desbloqueamos el botón de enviar
+            areaMonto.style.opacity = "1";
+            areaMonto.style.pointerEvents = "auto";
+            document.getElementById("inputMontoTransferencia").focus();
 
         } else {
+            // ERROR
             destinatarioConfirmado = null;
-            mostrarAlerta("No existe ningún jugador con ese Nickname.", "No encontrado");
-            if(infoDestinatario) infoDestinatario.innerText = "";
+            msgLabel.style.color = "#ff1744"; // Rojo
+            msgLabel.innerText = "❌ Jugador no encontrado";
+            areaMonto.style.opacity = "0.5";
+            areaMonto.style.pointerEvents = "none";
         }
 
     } catch (e) {
         console.error(e);
-        mostrarAlerta("Error al buscar usuario", "Error de Red");
+        msgLabel.innerText = "Error de conexión";
     }
 };
 
-// 4. Cancelar (Público)
-window.cancelarTransferencia = function() {
-    document.getElementById('step-find-user').style.display = 'block';
-    document.getElementById('step-amount').style.display = 'none';
-    destinatarioID = null;
-    destinatarioData = null;
-}
+// 2. EJECUTAR EL ENVÍO (Backend)
+window.ejecutarTransferencia = async () => {
+    const monto = parseInt(document.getElementById("inputMontoTransferencia").value);
+    
+    if(!destinatarioConfirmado) return mostrarAlerta("Primero busca un jugador válido");
+    if(!monto || monto <= 0) return mostrarAlerta("Ingresa una cantidad válida");
+    if(monto > usuarioActual.monedas) return mostrarAlerta("No tienes suficientes monedas");
 
-// 5. Enviar Dinero (Público)
-window.realizarTransferencia = async function() {
-    const monto = parseInt(document.getElementById('inputMontoTransferir').value);
-    const user = firebase.auth().currentUser;
+    mostrarConfirmacion(`¿Enviar $${monto} monedas a ${destinatarioConfirmado.nickname}?`, async () => {
+        try {
+            // Feedback visual de carga
+            const btn = document.getElementById("btnEnviarTransferencia");
+            const textoOriginal = btn.innerText;
+            btn.innerText = "Enviando...";
+            btn.disabled = true;
 
-    if (!monto || monto < 2) {
-        alert("⚠️ La transferencia mínima es de 2 monedas.");
-        return;
-    }
-
-    // Botón de carga visual (Opcional: deshabilita para que no den doble click)
-    const btnConfirmar = event.target; 
-    const textoOriginal = btnConfirmar.innerText;
-    btnConfirmar.innerText = "Enviando...";
-    btnConfirmar.disabled = true;
-
-    try {
-        await db.runTransaction(async (transaction) => {
-            // Referencia al que envía (TÚ)
-            // IMPORTANTE: En tu foto el ID es el email. Usamos user.email.
-            let senderRef = db.collection('usuarios').doc(user.email);
-            
-            // Intento de lectura
-            let senderDoc = await transaction.get(senderRef);
-            
-            // Si no existe por ID de email, buscamos por query (plan B)
-            if (!senderDoc.exists) {
-                const querySender = await db.collection('usuarios').where('email', '==', user.email).get();
-                if (querySender.empty) throw "No se encontró tu cuenta en la base de datos.";
-                senderRef = querySender.docs[0].ref;
-                senderDoc = await transaction.get(senderRef);
-            }
-
-            // Referencia al que recibe
-            const receiverRef = db.collection('usuarios').doc(destinatarioID);
-            
-            // Validar Saldo
-            const saldoActual = senderDoc.data().monedas || 0;
-            if (saldoActual < monto) {
-                throw "Saldo insuficiente. Tienes: " + saldoActual;
-            }
-
-            // Ejecutar la magia
-            transaction.update(senderRef, { 
-                monedas: saldoActual - monto 
+            const res = await fetch(`${API_URL}/transferir-saldo`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    origenEmail: usuarioActual.email,
+                    destinoEmail: destinatarioConfirmado.email,
+                    cantidad: monto
+                })
             });
-            transaction.update(receiverRef, { 
-                monedas: firebase.firestore.FieldValue.increment(monto) 
-            });
-        });
 
-        // Éxito
-        window.cerrarModalTransferencia();
-        alert(`🎉 ¡ÉXITO!\n\nEnviaste $${monto} monedas a ${destinatarioData.nickname}.`);
-        
-        // Actualizamos el monedero visualmente
-        if(window.actualizarMonederoVisual) window.actualizarMonederoVisual();
+            const data = await res.json();
+            
+            if (data.success) {
+                mostrarAlerta(`¡Transferencia exitosa! Enviaste $${monto}`, "Hecho");
+                cerrarModalTransferencia();
+                
+                // Actualizar mi saldo localmente de inmediato (Optimistic UI)
+                usuarioActual.monedas -= monto;
+                
+                // Forzar sincronización completa
+                sincronizarDatosForzoso();
+                
+            } else {
+                mostrarAlerta(data.error || "Falló la transferencia", "Error");
+            }
+            
+            btn.innerText = textoOriginal;
+            btn.disabled = false;
 
-    } catch (e) {
-        console.error(e);
-        let msg = typeof e === 'string' ? e : e.message;
-        alert("❌ Error: " + msg);
-    } finally {
-        // Restaurar botón
-        btnConfirmar.innerText = textoOriginal;
-        btnConfirmar.disabled = false;
-    }
-}
+        } catch (e) {
+            console.error(e);
+            mostrarAlerta("Error de red al transferir", "Fallo");
+            document.getElementById("btnEnviarTransferencia").disabled = false;
+        }
+    });
+};
 
 // Función auxiliar para refrescar el saldo visualmente
 function actualizarMonederoVisual() {

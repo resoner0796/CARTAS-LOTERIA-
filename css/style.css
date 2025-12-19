@@ -864,3 +864,13 @@ button[onclick*="unirseSala"], #btnBarajear, #btnLimpiarCartas {
     stroke-width: 3;
     stroke-linecap: round;
 }
+
+/* Aseguramos que el modal de sistema siempre gane en altura */
+#modalSistema {
+    z-index: 10000 !important; /* Número altísimo para ganar */
+}
+
+/* El modal de transferencia debe estar abajo del sistema pero arriba del juego */
+#modalTransferencia {
+    z-index: 9000; 
+}
