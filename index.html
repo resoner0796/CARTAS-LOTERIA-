@@ -59,30 +59,49 @@
         <button class="btn-recargar-verde" onclick="abrirModalRecarga()">Recargar Ahora</button>
     </div>
     
-    <div class="menu-acciones">
-        <div class="sala-box menu-card">
-            <h3>Crear Sala</h3>
+    <div class="menu-acciones-wrapper">
+        <div class="menu-acciones scroll-snap-x">
             
-            <p style="margin-bottom:5px; font-size: 0.8rem;">Nombre:</p>
-            <input type="text" id="inputCrearSala" placeholder="Ej: Familia">
+            <div class="sala-box menu-card">
+                <h3>Crear Sala</h3>
+                <p style="margin-bottom:5px; font-size: 0.8rem;">Nombre:</p>
+                <input type="text" id="inputCrearSala" placeholder="Ej: Familia">
+                <p style="margin-bottom:5px; font-size: 0.8rem;">Modo:</p>
+                <select id="inputModoJuego" style="background:rgba(0,0,0,0.5); border:1px solid gold; color:white; margin-bottom:15px;">
+                    <option value="clasico">🏆 Clásica</option>
+                    <option value="esquinas">🧱 4 Esquinas</option>
+                    <option value="centro">🎯 El Pozo</option>
+                    <option value="linea">➖ Línea</option>
+                </select>
+                <div style="flex-grow: 1;"></div>
+                <button onclick="crearSalaPropia()" class="btn-full">Crear ▶</button>
+            </div>
             
-            <p style="margin-bottom:5px; font-size: 0.8rem;">Modo:</p>
-            <select id="inputModoJuego" style="background:rgba(0,0,0,0.5); border:1px solid gold; color:white; margin-bottom:15px;">
-                <option value="clasico">🏆 Clásica</option>
-                <option value="esquinas">🧱 4 Esquinas</option>
-                <option value="centro">🎯 El Pozo</option>
-                <option value="linea">➖ Línea</option>
-            </select>
+            <div class="sala-box menu-card">
+                <h3>Unirse</h3>
+                <p style="margin-bottom:5px; font-size: 0.8rem;">Código / Nombre:</p>
+                <input type="text" id="inputUnirseSala" placeholder="Nombre sala">
+                <div style="flex-grow: 1;"></div> 
+                <button onclick="unirseSalaExistente()" class="btn-full" style="background: var(--azul-cielo); color: #002f6c;">Unirse 🚀</button>
+            </div>
 
-            <button onclick="crearSalaPropia()" class="btn-full">Crear ▶</button>
+            <div class="sala-box menu-card tienda-card">
+                <h3 style="color: var(--verde-limon); margin-bottom: 5px;">Tienda 🛒</h3>
+                <p id="saldoTienda" style="font-size: 1rem; color: gold; font-weight: bold; margin-bottom: 10px;">Cargando saldo...</p>
+                
+                <div class="tienda-categoria">
+                    <h4 style="margin: 5px 0; text-align: left; font-size: 0.9rem; color: #ccc;">🔊 Efectos de Sonido</h4>
+                    <div id="listaSonidosTienda" class="lista-items-scroll">
+                        </div>
+                </div>
+            </div>
+
         </div>
         
-        <div class="sala-box menu-card">
-            <h3>Unirse</h3>
-            <p style="margin-bottom:5px; font-size: 0.8rem;">Código / Nombre:</p>
-            <input type="text" id="inputUnirseSala" placeholder="Nombre sala">
-            <div style="flex-grow: 1;"></div> 
-            <button onclick="unirseSalaExistente()" class="btn-full">Unirse 🚀</button>
+        <div class="carrusel-indicadores">
+            <span class="dot"></span>
+            <span class="dot"></span>
+            <span class="dot"></span>
         </div>
     </div>
 
