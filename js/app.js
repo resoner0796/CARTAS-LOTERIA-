@@ -1201,31 +1201,38 @@ function sincronizarDatosForzoso() {
     }
 }
 
-// ==========================================
-// SISTEMA DE TRANSFERENCIAS (CORREGIDO "USUARIOS")
-// ==========================================
+/* ================================================================
+   SISTEMA DE TRANSFERENCIAS (CORREGIDO Y PÚBLICO)
+   ================================================================ */
 
-let destinatarioID = null; // Guardará el ID del documento (ej. el email)
+// Variables globales para este módulo
+let destinatarioID = null;
 let destinatarioData = null;
 
-function abrirModalTransferencia() {
+// 1. Abrir Modal (Público)
+window.abrirModalTransferencia = function() {
     const modal = document.getElementById('modalTransferencia');
     if(modal) {
-        modal.classList.add('visible');
-        // Aseguramos estilos visibles por si acaso
+        modal.classList.add('visible'); // Usamos la clase del CSS nuevo
+        // Refuerzo de estilos inline por si acaso
         modal.style.opacity = "1";
         modal.style.visibility = "visible";
         modal.style.pointerEvents = "all";
         
-        // Resetear formulario
+        // Resetear visualmente
         document.getElementById('step-find-user').style.display = 'block';
         document.getElementById('step-amount').style.display = 'none';
         document.getElementById('inputDestinatario').value = '';
         document.getElementById('inputMontoTransferir').value = '';
+        
+        console.log("Modal abierto correctamente");
+    } else {
+        alert("Error: No se encontró el modal en el HTML");
     }
 }
 
-function cerrarModalTransferencia() {
+// 2. Cerrar Modal (Público)
+window.cerrarModalTransferencia = function() {
     const modal = document.getElementById('modalTransferencia');
     if(modal) {
         modal.classList.remove('visible');
@@ -1235,101 +1242,138 @@ function cerrarModalTransferencia() {
     }
 }
 
-// Lógica para buscar usuario
-async function verificarDestinatario() {
-    const nicknameInput = document.getElementById('inputDestinatario').value.trim();
-    const user = firebase.auth().currentUser;
+// 3. Buscar Jugador (Público y con Diagnóstico)
+window.verificarDestinatario = async function() {
+    // DIAGNÓSTICO: Si ves esta alerta, el botón sí funciona
+    // alert("Iniciando búsqueda..."); 
 
-    if (!user) return alert("Debes iniciar sesión para transferir.");
-    if (!nicknameInput) return alert("Por favor escribe un nickname.");
+    const input = document.getElementById('inputDestinatario');
+    const nicknameInput = input.value.trim(); // Quitamos espacios extra
+    
+    // Verificamos Auth
+    const user = firebase.auth().currentUser;
+    if (!user) {
+        alert("⚠️ Error: No se detecta tu sesión iniciada. Intenta recargar la página.");
+        return;
+    }
+
+    if (!nicknameInput) {
+        alert("⚠️ Por favor escribe un nickname.");
+        return;
+    }
 
     try {
-        // CORRECCIÓN: Cambiado 'users' por 'usuarios'
-        const snapshot = await db.collection('usuarios').where('nickname', '==', nicknameInput).get();
+        // Buscamos en la colección 'usuarios' (en español, como en tu foto)
+        const snapshot = await db.collection('usuarios')
+                                 .where('nickname', '==', nicknameInput)
+                                 .get();
 
         if (snapshot.empty) {
-            alert("❌ No se encontró ningún jugador con ese nickname.");
+            alert(`❌ No se encontró al jugador: "${nicknameInput}"\nVerifica mayúsculas y minúsculas.`);
             return;
         }
 
+        // Tomamos el primer resultado
         const doc = snapshot.docs[0];
         const data = doc.data();
 
-        // Validación: No transferirse a uno mismo
-        // Comparamos el email del auth actual con el email del documento encontrado
+        // Evitar auto-transferencia
+        // Comparamos emails porque en tu base de datos el ID es el email
         if (data.email === user.email) {
             alert("⚠️ No puedes transferirte monedas a ti mismo.");
             return;
         }
 
-        destinatarioID = doc.id; // Guardamos el ID del documento (ej. el email)
+        // Guardamos datos para el siguiente paso
+        destinatarioID = doc.id; 
         destinatarioData = data;
 
-        // Mostrar paso 2
+        // ÉXITO: Cambiamos de pantalla en el modal
         document.getElementById('step-find-user').style.display = 'none';
         document.getElementById('step-amount').style.display = 'block';
-        document.getElementById('userFoundMsg').textContent = `✅ Jugador: ${destinatarioData.nickname}`;
+        document.getElementById('userFoundMsg').textContent = `✅ Jugador encontrado: ${data.nickname}`;
 
     } catch (error) {
         console.error("Error al buscar:", error);
-        alert("Error de conexión al buscar jugador.");
+        alert("❌ Error de conexión: " + error.message);
+        // Si pide índice, el error.message te dará un link, cópialo y ábrelo.
     }
 }
 
-function cancelarTransferencia() {
+// 4. Cancelar (Público)
+window.cancelarTransferencia = function() {
     document.getElementById('step-find-user').style.display = 'block';
     document.getElementById('step-amount').style.display = 'none';
     destinatarioID = null;
+    destinatarioData = null;
 }
 
-async function realizarTransferencia() {
+// 5. Enviar Dinero (Público)
+window.realizarTransferencia = async function() {
     const monto = parseInt(document.getElementById('inputMontoTransferir').value);
     const user = firebase.auth().currentUser;
 
-    if (!monto || monto < 2) return alert("⚠️ La transferencia mínima es de 2 monedas.");
+    if (!monto || monto < 2) {
+        alert("⚠️ La transferencia mínima es de 2 monedas.");
+        return;
+    }
+
+    // Botón de carga visual (Opcional: deshabilita para que no den doble click)
+    const btnConfirmar = event.target; 
+    const textoOriginal = btnConfirmar.innerText;
+    btnConfirmar.innerText = "Enviando...";
+    btnConfirmar.disabled = true;
 
     try {
         await db.runTransaction(async (transaction) => {
-            // CORRECCIÓN: Buscamos al remitente por su email en la colección 'usuarios'
-            // Asumimos que el ID del documento es el email, basado en tus capturas.
-            // Si el ID no es el email, habría que hacer un query primero.
-            // INTENTO 1: Usar el email como ID (como se ve en la captura)
+            // Referencia al que envía (TÚ)
+            // IMPORTANTE: En tu foto el ID es el email. Usamos user.email.
             let senderRef = db.collection('usuarios').doc(user.email);
             
-            // Verificamos si existe con ese ID, si no, intentamos buscarlo
+            // Intento de lectura
             let senderDoc = await transaction.get(senderRef);
             
+            // Si no existe por ID de email, buscamos por query (plan B)
             if (!senderDoc.exists) {
-                // Si no existe por ID de email, busquemos por campo email
                 const querySender = await db.collection('usuarios').where('email', '==', user.email).get();
-                if (querySender.empty) throw "No se encontró tu cuenta de usuario.";
+                if (querySender.empty) throw "No se encontró tu cuenta en la base de datos.";
                 senderRef = querySender.docs[0].ref;
                 senderDoc = await transaction.get(senderRef);
             }
 
+            // Referencia al que recibe
             const receiverRef = db.collection('usuarios').doc(destinatarioID);
             
+            // Validar Saldo
             const saldoActual = senderDoc.data().monedas || 0;
-
             if (saldoActual < monto) {
                 throw "Saldo insuficiente. Tienes: " + saldoActual;
             }
 
-            // Restar al que envía
-            transaction.update(senderRef, { monedas: saldoActual - monto });
-            // Sumar al que recibe (usando increment por seguridad)
-            transaction.update(receiverRef, { monedas: firebase.firestore.FieldValue.increment(monto) });
+            // Ejecutar la magia
+            transaction.update(senderRef, { 
+                monedas: saldoActual - monto 
+            });
+            transaction.update(receiverRef, { 
+                monedas: firebase.firestore.FieldValue.increment(monto) 
+            });
         });
 
-        cerrarModalTransferencia();
-        alert(`🎉 ¡Transferencia exitosa!\nEnvaste ${monto} monedas a ${destinatarioData.nickname}`);
+        // Éxito
+        window.cerrarModalTransferencia();
+        alert(`🎉 ¡ÉXITO!\n\nEnviaste $${monto} monedas a ${destinatarioData.nickname}.`);
         
-        // Actualizar UI del monedero
-        actualizarMonederoVisual(); 
+        // Actualizamos el monedero visualmente
+        if(window.actualizarMonederoVisual) window.actualizarMonederoVisual();
 
     } catch (e) {
         console.error(e);
-        alert("Error: " + e);
+        let msg = typeof e === 'string' ? e : e.message;
+        alert("❌ Error: " + msg);
+    } finally {
+        // Restaurar botón
+        btnConfirmar.innerText = textoOriginal;
+        btnConfirmar.disabled = false;
     }
 }
 
