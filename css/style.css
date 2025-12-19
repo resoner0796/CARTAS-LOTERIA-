@@ -1,5 +1,10 @@
 /* css/style.css - TEMA "FERIA NARANJA" PRO (MASTER FINAL V10 - PULIDO) */
 
+html, body {
+    max-width: 100%;
+    overflow-x: hidden; /* Esto evita que la pantalla se mueva a los lados */
+}
+
 :root {
   /* Paleta CÁLIDA Y VIVA */
   --primary-bg: #ff6f00;      /* Naranja vibrante base */
@@ -714,25 +719,32 @@ button[onclick*="unirseSala"], #btnBarajear, #btnLimpiarCartas {
 
 #menuMonedas {
     position: absolute;
-    /* AJUSTE DE POSICIÓN: Más a la izquierda y un poco arriba */
-    top: 25%; 
-    left: -80%; 
-    transform: translate(-50%, -50%);
+    /* CENTRADO PERFECTO INICIAL */
+    top: 50%; 
+    left: 50%; 
+    /* AJUSTE FINO: (-50%, -50%) es el centro exacto. 
+       Si quieres más arriba, cambia el segundo valor a -60% o -70%.
+       Si quieres más a la izquierda, cambia el primer valor a -60% */
+    transform: translate(-50%, -65%); 
     
     margin: 0;
     color: white;
     
-    /* FUENTE NUEVA: Montserrat Bold */
+    /* FUENTE Y ESTILO */
     font-family: 'Montserrat', sans-serif;
-    font-weight: 800; /* Extra negrita */
-    font-style: normal; /* Quitamos cursiva si la tenía */
-    font-size: 3.5rem; /* Tamaño grande */
+    font-weight: 900; /* Extra negrita para que se vea grueso */
+    font-size: 3.5rem; 
+    white-space: nowrap; /* Evita que el número se parta en dos líneas */
     
-    letter-spacing: 1px;
-    text-shadow: 1px 2px 4px rgba(0,0,0,0.5); /* Sombra más sutil y elegante */
-    z-index: 2;
-    width: 100%; /* Para asegurar que el centrado funcione bien */
-    text-align: center; /* Alineación del texto */
+    text-shadow: 2px 2px 5px rgba(0,0,0,0.6);
+    z-index: 10;
+    width: auto; /* IMPORTANTE: 'auto' para que no ocupe 100% y cause scroll */
+    pointer-events: none; /* Para que los clicks pasen a través si es necesario */
+}
+
+/* Ajuste para pantallas pequeñas */
+@media (max-width: 380px) {
+    #menuMonedas { font-size: 2.8rem; }
 }
 
 
