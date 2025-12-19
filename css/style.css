@@ -706,7 +706,7 @@ button[onclick*="unirseSala"], #btnBarajear, #btnLimpiarCartas {
     position: relative;
     width: 100%;
     max-width: 380px;
-    margin: 20px auto;
+    margin: 20px auto 10px auto; /* Reduje el margen inferior para pegar los botones */
 }
 
 .monedero-card-img {
@@ -719,27 +719,26 @@ button[onclick*="unirseSala"], #btnBarajear, #btnLimpiarCartas {
 
 #menuMonedas {
     position: absolute;
-    /* CENTRADO PERFECTO INICIAL */
-    top: 50%; 
-    left: 50%; 
-    /* AJUSTE FINO: (-50%, -50%) es el centro exacto. 
-       Si quieres más arriba, cambia el segundo valor a -60% o -70%.
-       Si quieres más a la izquierda, cambia el primer valor a -60% */
-    transform: translate(-50%, -65%); 
+    /* --- AJUSTE DE POSICIÓN (ARRIBA Y A LA IZQUIERDA) --- */
+    top: 42%;  /* Antes 50%, lo subí al 42% */
+    left: 42%; /* Antes 50%, lo moví a la izquierda al 42% */
+    
+    /* El transform termina de acomodarlo */
+    transform: translate(-50%, -50%); 
     
     margin: 0;
     color: white;
     
     /* FUENTE Y ESTILO */
     font-family: 'Montserrat', sans-serif;
-    font-weight: 900; /* Extra negrita para que se vea grueso */
+    font-weight: 900; 
     font-size: 3.5rem; 
-    white-space: nowrap; /* Evita que el número se parta en dos líneas */
+    white-space: nowrap; 
     
     text-shadow: 2px 2px 5px rgba(0,0,0,0.6);
     z-index: 10;
-    width: auto; /* IMPORTANTE: 'auto' para que no ocupe 100% y cause scroll */
-    pointer-events: none; /* Para que los clicks pasen a través si es necesario */
+    width: auto; 
+    pointer-events: none; 
 }
 
 /* Ajuste para pantallas pequeñas */
@@ -747,31 +746,79 @@ button[onclick*="unirseSala"], #btnBarajear, #btnLimpiarCartas {
     #menuMonedas { font-size: 2.8rem; }
 }
 
+/* --- NUEVO CONTENEDOR DE BOTONES (Recargar + Transferir) --- */
+.wallet-actions-container {
+    display: flex; /* Para ponerlos lado a lado */
+    align-items: center; /* Centrados verticalmente */
+    justify-content: space-between; /* Espacio entre ellos */
+    gap: 12px; /* Separación entre el botón dorado y la imagen */
+    width: 100%;
+    max-width: 380px;
+    margin: 0 auto; /* Centrado horizontal */
+}
 
-/* --- BOTÓN RECARGAR DORADO --- */
+/* --- BOTÓN RECARGAR DORADO (AJUSTADO) --- */
 .btn-recargar-gold {
-    background: linear-gradient(to bottom, #ffd700, #ffb300); /* Degradado dorado */
-    color: #4a3f00; /* Color de texto oscuro para contraste */
+    /* Flex grow para que ocupe el espacio disponible menos el de la imagen */
+    flex-grow: 1; 
+    
+    background: linear-gradient(to bottom, #ffd700, #ffb300);
+    color: #4a3f00; 
     font-weight: 900;
     font-size: 1.1rem;
-    padding: 12px 30px;
+    padding: 12px 20px; /* Ajusté un poco el padding lateral */
     border-radius: 50px;
     border: none;
-    /* Sombra brillante dorada */
     box-shadow: 0 5px 15px rgba(255, 215, 0, 0.5);
     cursor: pointer;
     transition: all 0.2s ease;
     font-family: 'Montserrat', sans-serif;
     letter-spacing: 1px;
-    margin-top: 10px;
+    margin-top: 0; /* Quitamos margen top porque lo maneja el contenedor */
+    
+    /* Asegura que el texto no se rompa feo */
+    white-space: nowrap; 
 }
 
 .btn-recargar-gold:hover {
-    transform: translateY(-3px) scale(1.02); /* Efecto "levitar" al pasar el mouse */
+    transform: translateY(-3px) scale(1.02);
     box-shadow: 0 8px 20px rgba(255, 215, 0, 0.7);
 }
 
 .btn-recargar-gold:active {
     transform: translateY(1px) scale(0.98);
     box-shadow: 0 3px 10px rgba(255, 215, 0, 0.5);
+}
+
+/* --- BOTÓN IMAGEN TRANSFERIR --- */
+.btn-transferir-img {
+    /* Tamaño fijo o flexible según prefieras */
+    flex-shrink: 0; /* Evita que se aplaste */
+    width: 65px; /* Tamaño base de la imagen */
+    height: auto;
+    
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    transition: transform 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-transferir-img img {
+    width: 100%;
+    height: auto;
+    display: block;
+    /* Sombrita a la imagen para que resalte */
+    filter: drop-shadow(0 4px 6px rgba(0,0,0,0.3));
+}
+
+.btn-transferir-img:hover {
+    transform: scale(1.1) rotate(5deg); /* Efecto divertido al pasar el mouse */
+}
+
+.btn-transferir-img:active {
+    transform: scale(0.95);
 }
