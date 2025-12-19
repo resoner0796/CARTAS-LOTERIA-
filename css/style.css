@@ -481,10 +481,15 @@ button[onclick*="unirseSala"], #btnBarajear, #btnLimpiarCartas {
 .menu-acciones::-webkit-scrollbar { display: none; }
 
 .menu-card {
-    min-width: 85%; /* En móvil ocupa casi toda la pantalla */
-    scroll-snap-align: center; /* Se detiene en el centro */
+    /* MÓVIL */
+    min-width: 85%; 
+    scroll-snap-align: center;
     display: flex;
     flex-direction: column;
+    
+    /* --- AGREGADO PARA ESTANDARIZAR --- */
+    height: 520px; /* Altura fija para que todos sean iguales */
+    justify-content: space-between; /* Distribuye el contenido (botón siempre abajo) */
 }
 
 /* Indicadores (Puntos) */
