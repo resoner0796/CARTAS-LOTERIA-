@@ -1201,25 +1201,24 @@ function sincronizarDatosForzoso() {
     }
 }
 
-// ==================== SISTEMA DE TRANSFERENCIAS ====================
+// ==================== SISTEMA DE TRANSFERENCIAS (CORREGIDO) ====================
 
-let destinatarioConfirmado = null; // Aquí guardamos al usuario encontrado
+let destinatarioConfirmado = null; // Guardamos {email, nickname}
 
 function abrirModalTransferencia() {
     const modal = document.getElementById("modalTransferencia");
     if(modal) {
         modal.classList.add("active");
-        // Resetear formulario al abrir
-        document.getElementById("inputDestinatario").value = "";
-        document.getElementById("inputMontoTransferencia").value = "";
-        document.getElementById("msgValidacionDestinatario").innerText = "";
-        document.getElementById("msgValidacionDestinatario").style.color = "white";
-        destinatarioConfirmado = null;
         
-        // Bloquear área de monto
-        const areaMonto = document.getElementById("areaMontoTransferencia");
-        areaMonto.style.opacity = "0.5";
-        areaMonto.style.pointerEvents = "none";
+        // Resetear formulario visualmente
+        document.getElementById("inputDestinatario").value = "";
+        document.getElementById("inputMontoTransferir").value = ""; // Ojo: en HTML es inputMontoTransferir
+        
+        // Volver al Paso 1
+        document.getElementById("step-find-user").style.display = "block";
+        document.getElementById("step-amount").style.display = "none";
+        
+        destinatarioConfirmado = null;
     }
 }
 
@@ -1228,66 +1227,82 @@ function cerrarModalTransferencia() {
     if(modal) modal.classList.remove("active");
 }
 
-// 1. BUSCAR Y VALIDAR
+// 4. Cancelar (Público)
+window.cancelarTransferencia = function() {
+    document.getElementById('step-find-user').style.display = 'block';
+    document.getElementById('step-amount').style.display = 'none';
+    destinatarioConfirmado = null;
+}
+
+// 1. BUSCAR JUGADOR
 window.verificarDestinatario = async () => {
-    const nickname = document.getElementById("inputDestinatario").value.trim();
-    const msgLabel = document.getElementById("msgValidacionDestinatario");
-    const areaMonto = document.getElementById("areaMontoTransferencia");
+    const nicknameInput = document.getElementById("inputDestinatario");
+    const nickname = nicknameInput.value.trim();
+    
+    // Referencia al botón para efecto de carga
+    const btnBuscar = event.target; 
+    const textoOriginal = btnBuscar.innerText;
 
-    if (!nickname) return mostrarAlerta("Escribe un nickname", "Error");
-    if (nickname === usuarioActual.nickname) return mostrarAlerta("No puedes enviarte a ti mismo", "Error");
+    if (!nickname) return mostrarAlerta("Escribe un nickname", "Dato faltante");
+    if (usuarioActual && nickname === usuarioActual.nickname) return mostrarAlerta("No puedes enviarte a ti mismo", "Error");
 
-    msgLabel.style.color = "yellow";
-    msgLabel.innerText = "Buscando...";
+    // Efecto visual de carga
+    btnBuscar.innerText = "🔍 Buscando...";
+    btnBuscar.disabled = true;
 
     try {
+        // Hacemos la petición al servidor
         const res = await fetch(`${API_URL}/buscar-destinatario?nickname=${encodeURIComponent(nickname)}`);
         const data = await res.json();
 
         if (data.success) {
-            // ¡ÉXITO!
-            destinatarioConfirmado = data.destinatario; // Guardamos {email, nickname}
+            // ¡ÉXITO! Guardamos datos
+            destinatarioConfirmado = data.destinatario; 
             
-            // Actualizamos UI sin abrir otro modal estorboso
-            msgLabel.style.color = "#76ff03"; // Verde
-            msgLabel.innerText = `✅ Enviar a: ${data.destinatario.nickname}`;
+            // Actualizamos UI: Pasamos al paso 2
+            document.getElementById("step-find-user").style.display = "none";
+            document.getElementById("step-amount").style.display = "block";
             
-            // Desbloqueamos el botón de enviar
-            areaMonto.style.opacity = "1";
-            areaMonto.style.pointerEvents = "auto";
-            document.getElementById("inputMontoTransferencia").focus();
+            // Mensaje de éxito
+            document.getElementById("userFoundMsg").textContent = `✅ Enviar a: ${destinatarioConfirmado.nickname}`;
+            
+            // Enfocar campo de monto
+            document.getElementById("inputMontoTransferir").focus();
 
         } else {
-            // ERROR
+            // ERROR: No encontrado
+            mostrarAlerta("❌ Jugador no encontrado. Verifica mayúsculas/minúsculas.", "No existe");
             destinatarioConfirmado = null;
-            msgLabel.style.color = "#ff1744"; // Rojo
-            msgLabel.innerText = "❌ Jugador no encontrado";
-            areaMonto.style.opacity = "0.5";
-            areaMonto.style.pointerEvents = "none";
         }
 
     } catch (e) {
         console.error(e);
-        msgLabel.innerText = "Error de conexión";
+        mostrarAlerta("Error de conexión con el servidor.", "Error");
+    } finally {
+        // Restaurar botón
+        btnBuscar.innerText = textoOriginal;
+        btnBuscar.disabled = false;
     }
 };
 
-// 2. EJECUTAR EL ENVÍO (Backend)
-window.ejecutarTransferencia = async () => {
-    const monto = parseInt(document.getElementById("inputMontoTransferencia").value);
+// 2. REALIZAR TRANSFERENCIA (El nombre debe coincidir con el HTML)
+window.realizarTransferencia = async () => {
+    // Ojo: en tu HTML el ID es "inputMontoTransferir"
+    const inputMonto = document.getElementById("inputMontoTransferir");
+    const monto = parseInt(inputMonto.value);
     
-    if(!destinatarioConfirmado) return mostrarAlerta("Primero busca un jugador válido");
-    if(!monto || monto <= 0) return mostrarAlerta("Ingresa una cantidad válida");
-    if(monto > usuarioActual.monedas) return mostrarAlerta("No tienes suficientes monedas");
+    if(!destinatarioConfirmado) return mostrarAlerta("Error interno: Destinatario perdido", "Reinicia");
+    if(!monto || monto < 2) return mostrarAlerta("La transferencia mínima es de $2 monedas", "Monto inválido");
+    if(monto > usuarioActual.monedas) return mostrarAlerta("No tienes suficientes monedas", "Saldo insuficiente");
 
-    mostrarConfirmacion(`¿Enviar $${monto} monedas a ${destinatarioConfirmado.nickname}?`, async () => {
+    // Confirmación final antes de enviar
+    mostrarConfirmacion(`¿Seguro que quieres enviar $${monto} monedas a ${destinatarioConfirmado.nickname}?`, async () => {
+        
+        // Feedback visual en el botón de confirmar
+        const btnConfirmar = event.target || document.querySelector("#step-amount button:last-child");
+        if(btnConfirmar) btnConfirmar.innerText = "Enviando...";
+        
         try {
-            // Feedback visual de carga
-            const btn = document.getElementById("btnEnviarTransferencia");
-            const textoOriginal = btn.innerText;
-            btn.innerText = "Enviando...";
-            btn.disabled = true;
-
             const res = await fetch(`${API_URL}/transferir-saldo`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -1301,41 +1316,29 @@ window.ejecutarTransferencia = async () => {
             const data = await res.json();
             
             if (data.success) {
-                mostrarAlerta(`¡Transferencia exitosa! Enviaste $${monto}`, "Hecho");
-                cerrarModalTransferencia();
-                
-                // Actualizar mi saldo localmente de inmediato (Optimistic UI)
+                // Actualizar saldo local (Optimistic UI)
                 usuarioActual.monedas -= monto;
+                localStorage.setItem("loteria_usuario", JSON.stringify(usuarioActual));
                 
-                // Forzar sincronización completa
+                // Actualizar interfaz
+                const menuMonedas = document.getElementById("menuMonedas");
+                if(menuMonedas) menuMonedas.textContent = usuarioActual.monedas;
+                
+                // Sincronizar sockets para asegurar
                 sincronizarDatosForzoso();
+
+                cerrarModalTransferencia();
+                mostrarAlerta(`🎉 ¡Enviaste $${monto} a ${destinatarioConfirmado.nickname}!`, "¡Transferencia Exitosa!");
                 
             } else {
                 mostrarAlerta(data.error || "Falló la transferencia", "Error");
             }
             
-            btn.innerText = textoOriginal;
-            btn.disabled = false;
-
         } catch (e) {
             console.error(e);
-            mostrarAlerta("Error de red al transferir", "Fallo");
-            document.getElementById("btnEnviarTransferencia").disabled = false;
+            mostrarAlerta("Error de red al intentar transferir", "Fallo");
+        } finally {
+            if(btnConfirmar) btnConfirmar.innerText = "CONFIRMAR";
         }
     });
 };
-
-// Función auxiliar para refrescar el saldo visualmente
-function actualizarMonederoVisual() {
-    const user = firebase.auth().currentUser;
-    if(user) {
-        // Forzamos una recarga rápida de los datos del usuario
-        db.collection('usuarios').where('email', '==', user.email).get().then(snap => {
-            if(!snap.empty) {
-                const monedas = snap.docs[0].data().monedas;
-                document.getElementById('menuMonedas').innerText = monedas;
-                document.getElementById('monedas-valor').innerText = monedas;
-            }
-        });
-    }
-}
