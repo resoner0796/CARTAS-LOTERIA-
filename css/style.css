@@ -662,11 +662,17 @@ button[onclick*="unirseSala"], #btnBarajear, #btnLimpiarCartas {
 
 /* --- PANTALLA SPLASH MEJORADA --- */
 #pantallaSplash {
-    /* Asegura que el fondo sea el degradado naranja/rojo */
+    position: fixed; /* OBLIGATORIO: Lo fija a la pantalla */
+    top: 0;
+    left: 0;
+    width: 100vw; /* Ancho total */
+    height: 100vh; /* Alto total */
+    z-index: 9999; /* Se asegura de estar encima de todo */
     background: linear-gradient(135deg, #ff9100 0%, #ff3d00 100%);
     display: flex;
     justify-content: center;
     align-items: center;
+    transition: opacity 0.5s ease; /* Suaviza la desaparición */
 }
 
 .splash-content {
@@ -692,10 +698,10 @@ button[onclick*="unirseSala"], #btnBarajear, #btnLimpiarCartas {
 
 /* --- MONEDERO ELECTRÓNICO (MENÚ) --- */
 .monedero-container {
-    position: relative; /* Para poder posicionar el saldo encima */
+    position: relative;
     width: 100%;
-    max-width: 380px; /* Ancho máximo de la tarjeta */
-    margin: 20px auto; /* Centrado y con margen */
+    max-width: 380px;
+    margin: 20px auto;
 }
 
 .monedero-card-img {
@@ -708,19 +714,25 @@ button[onclick*="unirseSala"], #btnBarajear, #btnLimpiarCartas {
 
 #menuMonedas {
     position: absolute;
-    /* Posicionamiento para que quede en el centro de la tarjeta (ajusta según tu imagen) */
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%); /* Centrado perfecto */
+    /* AJUSTE DE POSICIÓN: Más a la izquierda y un poco arriba */
+    top: 45%; 
+    left: 40%; 
+    transform: translate(-50%, -50%);
     
     margin: 0;
-    color: white; /* Texto blanco para contraste */
-    font-family: 'Bangers', cursive; /* Usamos la fuente Bangers si la tienes, o una sans-serif gruesa */
-    font-size: 4rem; /* Tamaño grande para el número */
-    letter-spacing: 2px;
-    /* Sombra de texto para que resalte más sobre el fondo de la tarjeta */
-    text-shadow: 2px 2px 4px rgba(0,0,0,0.6);
-    z-index: 2; /* Asegura que esté encima de la imagen */
+    color: white;
+    
+    /* FUENTE NUEVA: Montserrat Bold */
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 800; /* Extra negrita */
+    font-style: normal; /* Quitamos cursiva si la tenía */
+    font-size: 3.5rem; /* Tamaño grande */
+    
+    letter-spacing: 1px;
+    text-shadow: 1px 2px 4px rgba(0,0,0,0.5); /* Sombra más sutil y elegante */
+    z-index: 2;
+    width: 100%; /* Para asegurar que el centrado funcione bien */
+    text-align: center; /* Alineación del texto */
 }
 
 
@@ -750,4 +762,9 @@ button[onclick*="unirseSala"], #btnBarajear, #btnLimpiarCartas {
 .btn-recargar-gold:active {
     transform: translateY(1px) scale(0.98);
     box-shadow: 0 3px 10px rgba(255, 215, 0, 0.5);
+}
+
+/* Ajuste responsivo para pantallas pequeñas */
+@media (max-width: 380px) {
+    #menuMonedas { font-size: 2.8rem; }
 }
