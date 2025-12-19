@@ -457,3 +457,117 @@ button[onclick*="unirseSala"], #btnBarajear, #btnLimpiarCartas {
     #monedas-valor { font-size: 3.5rem; }
     #bote-valor { font-size: 2.5rem; }
 }
+
+/* --- CARRUSEL Y TIENDA (UI MODERNA) --- */
+
+.menu-acciones-wrapper {
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+    position: relative;
+}
+
+.menu-acciones {
+    display: flex; /* Fila horizontal */
+    overflow-x: auto; /* Scroll lateral */
+    gap: 20px;
+    padding: 10px 20px 20px 20px;
+    box-sizing: border-box;
+    /* Efecto imán para que se centre la tarjeta */
+    scroll-snap-type: x mandatory; 
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none; /* Ocultar barra scroll */
+}
+.menu-acciones::-webkit-scrollbar { display: none; }
+
+.menu-card {
+    min-width: 85%; /* En móvil ocupa casi toda la pantalla */
+    scroll-snap-align: center; /* Se detiene en el centro */
+    display: flex;
+    flex-direction: column;
+}
+
+/* Indicadores (Puntos) */
+.carrusel-indicadores {
+    display: flex; justify-content: center; gap: 8px; margin-bottom: 20px;
+}
+.dot {
+    width: 8px; height: 8px; background: rgba(255,255,255,0.3); border-radius: 50%;
+}
+
+/* ESTILOS INTERNOS DE LA TIENDA */
+.tienda-categoria {
+    background: rgba(0,0,0,0.2);
+    border-radius: 12px;
+    padding: 10px;
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden; /* Para contener el scroll interno */
+}
+
+.lista-items-scroll {
+    overflow-y: auto; /* Scroll vertical para los sonidos */
+    max-height: 250px; /* Altura máxima de la lista */
+    padding-right: 5px;
+}
+
+.item-sonido {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: rgba(255, 255, 255, 0.08);
+    margin-bottom: 8px;
+    padding: 10px;
+    border-radius: 10px;
+    border: 1px solid transparent;
+    transition: background 0.2s;
+}
+
+.item-sonido.comprado {
+    border-color: var(--verde-limon);
+    background: rgba(118, 255, 3, 0.15);
+}
+
+.info-sonido {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-grow: 1;
+    text-align: left;
+}
+
+.emoji-icon { font-size: 1.5rem; }
+.nombre-sonido { font-size: 0.9rem; font-weight: 600; }
+
+.btn-play-preview {
+    background: none; border: none; font-size: 1.2rem; cursor: pointer; color: white; padding: 0; margin-right: 10px;
+}
+
+.btn-accion-tienda {
+    font-size: 0.75rem;
+    padding: 6px 12px;
+    border-radius: 20px;
+    border: none;
+    font-weight: bold;
+    cursor: pointer;
+    min-width: 70px;
+}
+
+.btn-comprar { background: gold; color: black; box-shadow: 0 2px 5px rgba(255, 215, 0, 0.3); }
+.btn-gratis { background: var(--azul-cielo); color: white; }
+.btn-listo { background: transparent; color: var(--verde-limon); border: 1px solid var(--verde-limon); cursor: default; }
+
+/* ESCRITORIO (GRID) */
+@media (min-width: 1024px) {
+    .menu-acciones {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr; /* 3 Columnas */
+        overflow-x: visible;
+        max-width: 1200px;
+        margin: 0 auto;
+    }
+    .menu-card { min-width: auto; width: 100%; }
+    .carrusel-indicadores { display: none; }
+    .lista-items-scroll { max-height: 350px; }
+}
