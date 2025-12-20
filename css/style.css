@@ -884,3 +884,53 @@ button[onclick*="unirseSala"], #btnBarajear, #btnLimpiarCartas {
 #modalSistema.active {
     background-color: rgba(0, 0, 0, 0.85); 
 }
+
+/* --- ESTILOS HISTORIAL --- */
+.monedero-container:active {
+    transform: scale(0.98); /* Efecto de click en la tarjeta */
+    transition: transform 0.1s;
+}
+
+.historial-lista-container {
+    flex-grow: 1;
+    overflow-y: auto;
+    background: rgba(0,0,0,0.2);
+    border-radius: 10px;
+    padding: 10px;
+    border: 1px solid #333;
+}
+
+.item-historial {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+
+.item-historial:last-child { border-bottom: none; }
+
+.hist-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    text-align: left;
+}
+
+.hist-icon {
+    font-size: 1.5rem;
+    width: 40px;
+    height: 40px;
+    background: rgba(255,255,255,0.05);
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.hist-desc { font-weight: 600; font-size: 0.9rem; color: white; }
+.hist-fecha { font-size: 0.7rem; color: #aaa; }
+
+.hist-monto { font-weight: 900; font-size: 1rem; }
+.hist-positivo { color: #76ff03; } /* Verde */
+.hist-negativo { color: #ff1744; } /* Rojo */

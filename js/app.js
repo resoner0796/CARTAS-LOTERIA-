@@ -761,8 +761,18 @@ socket.on("falsa-alarma-masiva", () => {
 if(btnApostar) btnApostar.addEventListener("click", () => {
   if (!salaActual) return mostrarAlerta("Únete a una sala primero.");
   if (haApostadoLocal) return mostrarAlerta("Ya apostaste esta ronda.");
+  
+  // Calculamos la cantidad (por defecto 1 o el número de cartas)
   const cantidad = Math.max(1, seleccionadas.length || 1);
-  socket.emit("apostar", { sala: salaActual, cantidad });
+  
+  // --- CAMBIO IMPORTANTE PARA EL HISTORIAL ---
+  // Enviamos también el email para que el server registre el movimiento
+  socket.emit("apostar", { 
+      sala: salaActual, 
+      cantidad: cantidad,
+      email: usuarioActual.email // <--- ESTA LÍNEA ES LA CLAVE
+  });
+  
   haApostadoLocal = true;
   btnApostar.disabled = true;
 });
@@ -1371,3 +1381,81 @@ window.realizarTransferencia = async () => {
         }
     });
 };
+
+// ==================== HISTORIAL DE MOVIMIENTOS ====================
+
+function abrirHistorial() {
+    const modal = document.getElementById("modalHistorial");
+    if(!modal) return;
+    
+    modal.classList.add("active");
+    cargarMovimientos();
+}
+
+function cerrarModalHistorial() {
+    document.getElementById("modalHistorial").classList.remove("active");
+}
+
+async function cargarMovimientos() {
+    const contenedor = document.getElementById("listaHistorial");
+    contenedor.innerHTML = '<div style="padding:20px; text-align:center;">Cargando... ⏳</div>';
+
+    try {
+        if(!usuarioActual || !usuarioActual.email) return;
+
+        const res = await fetch(`${API_URL}/historial-usuario?email=${usuarioActual.email}`);
+        const data = await res.json();
+
+        if (data.success) {
+            renderizarHistorial(data.movimientos);
+        } else {
+            contenedor.innerHTML = '<p>No se pudo cargar el historial.</p>';
+        }
+
+    } catch (e) {
+        console.error(e);
+        contenedor.innerHTML = '<p>Error de conexión.</p>';
+    }
+}
+
+function renderizarHistorial(movimientos) {
+    const contenedor = document.getElementById("listaHistorial");
+    contenedor.innerHTML = "";
+
+    if (!movimientos || movimientos.length === 0) {
+        contenedor.innerHTML = '<div style="padding:20px; color:#777;">Aún no tienes movimientos.</div>';
+        return;
+    }
+
+    movimientos.forEach(mov => {
+        // Icono y color según tipo
+        let icono = '📄';
+        if (mov.tipo === 'recarga') icono = '💳';
+        if (mov.tipo === 'compra') icono = '🛒';
+        if (mov.tipo === 'apuesta') icono = '🎲';
+        if (mov.tipo === 'transferencia') icono = mov.esIngreso ? '↙️' : '↗️';
+
+        const signo = mov.esIngreso ? '+' : '-';
+        const claseColor = mov.esIngreso ? 'hist-positivo' : 'hist-negativo';
+        
+        // Formato fecha (ej: 20/12 14:30)
+        const fechaObj = new Date(mov.fecha);
+        const fechaStr = `${fechaObj.getDate()}/${fechaObj.getMonth()+1} ${fechaObj.getHours()}:${String(fechaObj.getMinutes()).padStart(2,'0')}`;
+
+        const item = document.createElement("div");
+        item.className = "item-historial";
+        item.innerHTML = `
+            <div class="hist-info">
+                <div class="hist-icon">${icono}</div>
+                <div>
+                    <div class="hist-desc">${mov.descripcion}</div>
+                    <div class="hist-fecha">${fechaStr}</div>
+                </div>
+            </div>
+            <div class="hist-monto ${claseColor}">
+                ${signo}$${mov.monto}
+            </div>
+        `;
+        contenedor.appendChild(item);
+    });
+}
