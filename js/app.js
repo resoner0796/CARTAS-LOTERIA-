@@ -419,7 +419,11 @@ function marcarFicha(e, contenedor) {
   if(navigator.vibrate) navigator.vibrate(30);
 
   const ficha = document.createElement("img");
-  ficha.src = "assets/imagenes/ui/ficha.PNG";
+  
+  // CORRECCIÓN: Usamos la skin seleccionada (Bitcoin, Frijol, etc.)
+  // Si no ha elegido ninguna, usará la default automáticamente.
+  ficha.src = fichaActivaUrl; 
+  
   ficha.classList.add("ficha");
   ficha.style.left = `${px}%`;
   ficha.style.top = `${py}%`;
@@ -983,9 +987,9 @@ async function ejecutarRecargaAdmin() {
     });
 }
 
-// ==================== LÓGICA DE TIENDA DE SONIDOS ====================
+// ==================== LÓGICA DE TIENDA (MEJORADA) ====================
 
-// 1. Catálogo Definido (Precios y Archivos)
+// 1. Catálogo Definido (Sonidos)
 const catalogoSonidos = [
     { id: 'snd_risa', nombre: 'Risa', emoji: '😂', precio: 0, file: 'assets/audios/tienda/risa.mp3' },
     { id: 'snd_corneta', nombre: 'Corneta', emoji: '📯', precio: 0, file: 'assets/audios/tienda/corneta.mp3' },
@@ -996,49 +1000,120 @@ const catalogoSonidos = [
     { id: 'snd_disparo', nombre: 'Disparo', emoji: '🔫', precio: 8, file: 'assets/audios/tienda/disparo.mp3' }
 ];
 
+// 2. Catálogo de Fichas (Skins)
+const catalogoFichas = [
+    { id: 'skin_default', nombre: 'Clásica', precio: 0, img: 'assets/imagenes/ui/ficha.PNG' },
+    { id: 'skin_bitcoin', nombre: 'Bitcoin', precio: 5, img: 'assets/imagenes/ui/fichasbitcoin.png' },
+    { id: 'skin_corazon', nombre: 'Corazones', precio: 5, img: 'assets/imagenes/ui/fichascorazones.png' },
+    { id: 'skin_verde',   nombre: 'Verde Neon', precio: 5, img: 'assets/imagenes/ui/fichasverdes.png' },
+    { id: 'skin_frijol',  nombre: 'Frijolito', precio: 5, img: 'assets/imagenes/ui/fichasfrijol.png' }
+];
+
+// Ficha activa localmente (Persistencia)
+let fichaActivaUrl = localStorage.getItem("loteria_ficha_activa") || 'assets/imagenes/ui/ficha.PNG';
+
 const audioPlayerTienda = new Audio();
 
-function cargarTienda() {
-    const contenedor = document.getElementById('listaSonidosTienda');
-    const saldoTxt = document.getElementById('saldoTienda');
-    
+// Función auxiliar para actualizar saldo en el menú principal
+function actualizarSaldoUI() {
     if(!usuarioActual) return;
+    const menuMonedasEl = document.getElementById('menuMonedas');
+    const saldoTiendaEl = document.getElementById('saldoTienda');
+    
+    if(menuMonedasEl) menuMonedasEl.textContent = usuarioActual.monedas;
+    if(saldoTiendaEl) saldoTiendaEl.innerHTML = `Tu saldo: <span style="color:white;">$${usuarioActual.monedas}</span>`;
+}
 
-    // Actualizar texto de saldo (con estilo HTML)
-    if(saldoTxt) saldoTxt.innerHTML = `Tu saldo: <span style="color:white;">$${usuarioActual.monedas}</span>`;
+// Recargar saldo al iniciar (Llama a esto en window.onload y login)
+function cargarTienda() {
+    actualizarSaldoUI();
+}
 
-    if(contenedor) {
-        contenedor.innerHTML = ''; 
-        const inventario = usuarioActual.inventario || []; 
+// --- ABRIR CATEGORÍA ---
+let categoriaActual = '';
 
-        catalogoSonidos.forEach(item => {
-            const yaLoTiene = inventario.includes(item.id);
-            const div = document.createElement('div');
-            div.className = `item-sonido ${yaLoTiene ? 'comprado' : ''}`;
-            
-            let botonHTML = '';
-            if (yaLoTiene) {
-                botonHTML = `<button class="btn-accion-tienda btn-listo">✔ Listo</button>`;
-            } else if (item.precio === 0) {
-                botonHTML = `<button class="btn-accion-tienda btn-gratis" onclick="comprarItem('${item.id}', 0)">GRATIS</button>`;
-            } else {
-                botonHTML = `<button class="btn-accion-tienda btn-comprar" onclick="comprarItem('${item.id}', ${item.precio})">$${item.precio}</button>`;
-            }
+function abrirCategoriaTienda(categoria) {
+    categoriaActual = categoria;
+    const modal = document.getElementById("modalTiendaDetalle");
+    const titulo = document.getElementById("tituloCategoriaTienda");
+    const grid = document.getElementById("gridTiendaItems");
+    
+    modal.classList.add("active");
+    grid.innerHTML = ""; // Limpiar
 
-            div.innerHTML = `
-                <div class="info-sonido">
-                    <button class="btn-play-preview" onclick="previewSonido('${item.file}')">▶</button>
-                    <div>
-                        <span class="emoji-icon">${item.emoji}</span>
-                        <span class="nombre-sonido">${item.nombre}</span>
-                    </div>
-                </div>
-                ${botonHTML}
-            `;
-            contenedor.appendChild(div);
-        });
+    if (categoria === 'sonidos') {
+        titulo.textContent = "Efectos de Sonido 🔊";
+        renderizarSonidos(grid);
+    } else if (categoria === 'fichas') {
+        titulo.textContent = "Skins de Fichas 🟣";
+        renderizarFichas(grid);
     }
 }
+
+function cerrarModalTiendaDetalle() {
+    document.getElementById("modalTiendaDetalle").classList.remove("active");
+}
+
+// --- RENDERIZADO DE ITEMS ---
+
+function renderizarSonidos(contenedor) {
+    if (!usuarioActual) return;
+    const inventario = usuarioActual.inventario || [];
+
+    catalogoSonidos.forEach(item => {
+        const yaLoTiene = inventario.includes(item.id) || item.precio === 0;
+        
+        const div = document.createElement('div');
+        div.className = "item-tienda-card";
+        
+        // Botón de acción
+        let btnHtml = '';
+        if (yaLoTiene) {
+            btnHtml = `<button class="btn-owned">✔ Listo</button>`;
+        } else {
+            btnHtml = `<button class="btn-buy" onclick="comprarItem('${item.id}', ${item.precio})">$${item.precio}</button>`;
+        }
+
+        div.innerHTML = `
+            <div style="font-size: 2rem; cursor:pointer;" onclick="previewSonido('${item.file}')">${item.emoji}</div>
+            <span class="item-nombre">${item.nombre}</span>
+            ${btnHtml}
+        `;
+        contenedor.appendChild(div);
+    });
+}
+
+function renderizarFichas(contenedor) {
+    if (!usuarioActual) return;
+    const inventario = usuarioActual.inventario || [];
+
+    catalogoFichas.forEach(item => {
+        // La default siempre la tiene (precio 0 o ID default)
+        const yaLoTiene = inventario.includes(item.id) || item.precio === 0;
+        const esLaActiva = (item.img === fichaActivaUrl);
+
+        const div = document.createElement('div');
+        div.className = "item-tienda-card";
+        
+        let btnHtml = '';
+        if (esLaActiva) {
+            btnHtml = `<button class="btn-use btn-active">En Uso</button>`;
+        } else if (yaLoTiene) {
+            btnHtml = `<button class="btn-use" onclick="usarFicha('${item.img}')">Usar</button>`;
+        } else {
+            btnHtml = `<button class="btn-buy" onclick="comprarItem('${item.id}', ${item.precio})">$${item.precio}</button>`;
+        }
+
+        div.innerHTML = `
+            <img src="${item.img}" class="preview-img-tienda">
+            <span class="item-nombre">${item.nombre}</span>
+            ${btnHtml}
+        `;
+        contenedor.appendChild(div);
+    });
+}
+
+// --- ACCIONES ---
 
 function previewSonido(ruta) {
     audioPlayerTienda.src = ruta;
@@ -1046,18 +1121,33 @@ function previewSonido(ruta) {
     audioPlayerTienda.play().catch(e => console.log("Error preview:", e));
 }
 
+// Función para ACTIVAR una ficha (Guardar preferencia local)
+function usarFicha(urlImagen) {
+    fichaActivaUrl = urlImagen;
+    localStorage.setItem("loteria_ficha_activa", urlImagen);
+    
+    mostrarAlerta("¡Ficha actualizada!", "Estilo Nuevo 😎");
+    
+    // Refrescar el modal para que se vea el botón verde "En Uso"
+    const grid = document.getElementById("gridTiendaItems");
+    grid.innerHTML = "";
+    renderizarFichas(grid);
+}
+
+// Comprar (Genérico para sonidos y fichas)
 async function comprarItem(itemId, precio) {
     if (!usuarioActual) return;
 
     if (usuarioActual.monedas < precio) {
         if(confirm("¡No tienes suficientes monedas! ¿Quieres recargar?")) {
+            cerrarModalTiendaDetalle(); // Cerrar detalle para abrir recarga
             abrirModalRecarga();
         }
         return;
     }
 
     if (precio > 0) {
-        if (!confirm(`¿Comprar este sonido por $${precio} monedas?`)) return;
+        if (!confirm(`¿Comprar por $${precio} monedas?`)) return;
     }
 
     // --- OPTIMISTIC UI ---
@@ -1065,10 +1155,13 @@ async function comprarItem(itemId, precio) {
     if (!usuarioActual.inventario) usuarioActual.inventario = [];
     usuarioActual.inventario.push(itemId);
     
-    cargarTienda();
-    // Actualizar el saldo en el menú principal
-    const menuMonedasEl = document.getElementById('menuMonedas');
-    if(menuMonedasEl) menuMonedasEl.textContent = usuarioActual.monedas;
+    actualizarSaldoUI();
+    
+    // Refrescar modal actual
+    const grid = document.getElementById("gridTiendaItems");
+    grid.innerHTML = "";
+    if(categoriaActual === 'sonidos') renderizarSonidos(grid);
+    if(categoriaActual === 'fichas') renderizarFichas(grid);
 
     // --- ENVIAR AL SERVIDOR ---
     socket.emit('comprar-item', { 

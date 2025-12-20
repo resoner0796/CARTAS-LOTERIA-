@@ -146,12 +146,18 @@
 
             <div class="sala-box menu-card tienda-card">
                 <h3 style="color: var(--verde-limon); margin-bottom: 5px;">Tienda 🛒</h3>
-                <p id="saldoTienda" style="font-size: 1rem; color: gold; font-weight: bold; margin-bottom: 10px;">Cargando saldo...</p>
+                <p id="saldoTienda" style="font-size: 1rem; color: gold; font-weight: bold; margin-bottom: 20px;">Cargando saldo...</p>
                 
-                <div class="tienda-categoria">
-                    <h4 style="margin: 5px 0; text-align: left; font-size: 0.9rem; color: #ccc;">🔊 Efectos de Sonido</h4>
-                    <div id="listaSonidosTienda" class="lista-items-scroll">
-                        </div>
+                <div class="tienda-hub">
+                    <button class="btn-categoria-tienda" onclick="abrirCategoriaTienda('sonidos')">
+                        <span style="font-size: 2rem;">🔊</span>
+                        <span>Efectos de Sonido</span>
+                    </button>
+
+                    <button class="btn-categoria-tienda" onclick="abrirCategoriaTienda('fichas')">
+                        <span style="font-size: 2rem;">🟣</span>
+                        <span>Skins de Fichas</span>
+                    </button>
                 </div>
             </div>
 
@@ -360,6 +366,20 @@
     <button onclick="cerrarModalHistorial()" style="background: #444; margin-top: 15px;">Cerrar</button>
   </div>
 </div>
+
+<div id="modalTiendaDetalle" class="modal">
+    <div class="modal-content" style="max-height: 80vh; display: flex; flex-direction: column;">
+        
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+            <h2 id="tituloCategoriaTienda" style="color: gold; margin: 0;">Catálogo</h2>
+            <button onclick="cerrarModalTiendaDetalle()" style="background:none; border:none; font-size:1.5rem; color:white;">✕</button>
+        </div>
+
+        <div id="gridTiendaItems" class="tienda-grid-container"></div>
+
+        <button onclick="cerrarModalTiendaDetalle()" style="background: #444; margin-top: 15px;">Volver</button>
+    </div>
+  </div>
 
   <div id="modalTienda" class="modal">
     <div class="modal-content" style="max-width: 500px; width: 95%;"> 
