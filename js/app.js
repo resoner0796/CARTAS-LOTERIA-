@@ -63,6 +63,37 @@ const audioAplausos = document.getElementById("audioAplausos");
 const audioKachin = new Audio("assets/audios/kachin.mp3"); // Sonido de apuesta
 const loteriaMensaje = document.getElementById("loteriaMensaje");
 
+
+// ==================== AUTO-LOGIN DESDE EL HUB (SSO) ====================
+(function verificarSSO() {
+    const params = new URLSearchParams(window.location.search);
+    const tokenSSO = params.get('sso');
+    
+    if (tokenSSO) {
+        try {
+            // 1. Decodificar el token (Base64 -> JSON)
+            const jsonUsuario = atob(tokenSSO);
+            const usuarioHub = JSON.parse(jsonUsuario);
+            
+            console.log("🔓 Login Automático desde Hub:", usuarioHub.nickname);
+
+            // 2. Guardar en el LocalStorage de la Lotería
+            localStorage.setItem("loteria_usuario", JSON.stringify(usuarioHub));
+            
+            // 3. Limpiar la URL para que no se vea el token feo
+            const nuevaUrl = window.location.pathname;
+            window.history.replaceState({}, document.title, nuevaUrl);
+            
+            // 4. (Opcional) Si tu app no recarga sola al tener usuario en localStorage, forzar recarga
+            // window.location.reload(); 
+            
+        } catch (e) {
+            console.error("Error procesando SSO:", e);
+        }
+    }
+})();
+// ===================================================================
+
 // ======================================================
 // SISTEMA DE MODALES PRO
 // ======================================================
