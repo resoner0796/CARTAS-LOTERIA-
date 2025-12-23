@@ -1386,46 +1386,45 @@ window.cancelarTransferencia = function() {
     destinatarioConfirmado = null;
 }
 
-// 4. LÓGICA DE BÚSQUEDA (Botón "BUSCAR JUGADOR")
+// 4. LÓGICA DE BÚSQUEDA (CORREGIDO PARA ESPACIOS)
 window.verificarDestinatario = async () => {
     const inputDest = document.getElementById("inputDestinatario");
-    const nickname = inputDest.value.trim();
+    // .trim() quita espacios al inicio y final, pero respeta los de en medio ("La Gata")
+    const nickname = inputDest.value.trim(); 
     
-    // Referencia al botón para efecto de carga
     const btnBuscar = event.target; 
     const textoOriginal = btnBuscar.innerText;
 
     if (!nickname) return mostrarAlerta("Escribe un nickname", "Dato faltante");
     if (usuarioActual && nickname === usuarioActual.nickname) return mostrarAlerta("No puedes enviarte a ti mismo", "Error");
 
-    // Efecto visual de carga
     btnBuscar.innerText = "🔍 Buscando...";
     btnBuscar.disabled = true;
 
     try {
-        // Hacemos la petición al servidor (asegúrate de que tu backend esté corriendo)
-        const res = await fetch(`${API_URL}/buscar-destinatario?nickname=${encodeURIComponent(nickname)}`);
+        // --- CAMBIO CLAVE: USAMOS POST Y JSON ---
+        const res = await fetch(`${API_URL}/buscar-destinatario`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ nickname: nickname })
+        });
+        
         const data = await res.json();
 
         if (data.success) {
-            // ¡ÉXITO! Guardamos datos
             destinatarioConfirmado = data.destinatario; 
             
-            // CAMBIAMOS DE PASO EN EL HTML
             document.getElementById("step-find-user").style.display = "none";
             document.getElementById("step-amount").style.display = "block";
             
-            // Actualizamos el mensaje verde
             const msg = document.getElementById("userFoundMsg");
             if(msg) msg.textContent = `✅ Enviar a: ${destinatarioConfirmado.nickname}`;
             
-            // Enfocar campo de monto si existe
             const inputMonto = document.getElementById("inputMontoTransferir");
             if(inputMonto) inputMonto.focus();
 
         } else {
-            // ERROR: No encontrado
-            mostrarAlerta("❌ Jugador no encontrado. Verifica mayúsculas/minúsculas.", "No existe");
+            mostrarAlerta("❌ Jugador no encontrado. Verifica mayúsculas y espacios.", "No existe");
             destinatarioConfirmado = null;
         }
 
@@ -1433,7 +1432,6 @@ window.verificarDestinatario = async () => {
         console.error(e);
         mostrarAlerta("Error de conexión con el servidor.", "Error de Red");
     } finally {
-        // Restaurar botón
         btnBuscar.innerText = textoOriginal;
         btnBuscar.disabled = false;
     }
