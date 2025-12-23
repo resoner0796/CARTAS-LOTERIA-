@@ -1039,3 +1039,36 @@ button[onclick*="unirseSala"], #btnBarajear, #btnLimpiarCartas {
 .btn-use { background: #4dd0e1; color: black; font-weight: bold; padding: 5px 10px; font-size: 0.8rem; width: 100%; }
 .btn-owned { background: #aed581; color: black; font-weight: bold; padding: 5px 10px; font-size: 0.8rem; width: 100%; cursor: default; }
 .btn-active { background: #76ff03; color: black; border: 2px solid white; box-shadow: 0 0 10px #76ff03; }
+
+/* --- BOTÓN INICIAR FLOTANTE (FIXED) --- */
+#btnIniciar {
+    display: none; /* Se controla con JS */
+    position: fixed; /* Se queda pegado a la pantalla */
+    bottom: 30px;    /* Distancia desde abajo */
+    left: 50%;       /* Centrado horizontal */
+    transform: translateX(-50%); /* Ajuste fino del centro */
+    
+    z-index: 1000;   /* Siempre encima de las cartas */
+    
+    width: 90%;      /* Ancho responsivo */
+    max-width: 350px; /* Tope para que no se vea gigante en PC */
+    
+    /* Estética para que resalte */
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5); 
+    border: 2px solid white; /* Borde para separar del fondo */
+    
+    /* Animación de entrada */
+    animation: subirBoton 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes subirBoton {
+    from { transform: translate(-50%, 100px); opacity: 0; }
+    to { transform: translate(-50%, 0); opacity: 1; }
+}
+
+/* --- ESPACIO EXTRA AL FINAL DE LAS CARTAS --- */
+/* Importante: Agregamos padding abajo al contenedor para que 
+   el botón flotante no tape las últimas cartas si scrolleas hasta el final */
+#contenedorCartas {
+    padding-bottom: 120px !important; 
+}
