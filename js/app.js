@@ -400,7 +400,6 @@ function generarCartas() {
 
     if (modoJuegoActual === 'pozo') {
         // CORRECCIÓN POZO: Usamos el número directo (1, 2, 3... 20) SIN CEROS
-        // Asegúrate que tus archivos sean "1.jpg", "10.jpg", etc.
         nombreArchivo = `${i}.jpg`;
         dataId = String(i); 
     } else {
@@ -417,11 +416,11 @@ function generarCartas() {
     // Al dar click, seleccionamos y ACTUALIZAMOS EL BOTÓN
     img.onclick = () => {
         seleccionarCarta(img);
-        actualizarTextoBotonApuesta(); // <--- Nueva función
+        actualizarTextoBotonApuesta(); 
     };
     
     contenedorCartas.appendChild(img);
-    });
+  } // <--- AQUÍ ESTABA EL ERROR, TENÍAS UN "});" EXTRA. YA LO QUITÉ.
 }
 
 function seleccionarCarta(img) {
@@ -617,6 +616,7 @@ socket.on('info-sala', (data) => {
         btnApostar.innerText = "Selecciona cartas";
         btnApostar.disabled = true;
         btnApostar.style.opacity = "0.5";
+    } // <--- AQUÍ FALTABA ESTA LLAVE DE CIERRE '}'
     
     // Regenerar el grid de selección con la ruta correcta
     generarCartas(); 
