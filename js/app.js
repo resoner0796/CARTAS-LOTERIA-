@@ -386,49 +386,75 @@ function generarCartas() {
   
   let totalCartasAMostrar = 54;
   
-  // Si es Pozo, solo mostramos 20
+  // Si es Pozo, son 20 cartas
   if (modoJuegoActual === 'pozo') {
       totalCartasAMostrar = 20;
   }
 
-  // Generamos IDs (1 al 20 o 1 al 54)
-  // OJO: Si tus imágenes en '/cuatro/' se llaman "1.jpg" (sin cero), usa String(i+1)
-  // Si se llaman "01.jpg", usa .padStart(2, '0')
-  // Aquí asumo que usas el estándar "01.jpg" como en el resto de la app.
-  const ids = Array.from({ length: totalCartasAMostrar }, (_, i) => String(i + 1).padStart(2, '0'));
-
-  ids.forEach(id => {
+  // Generamos el array de números (1 al total)
+  for (let i = 1; i <= totalCartasAMostrar; i++) {
     const img = document.createElement("img");
     
-    // USAMOS LA RUTA DINÁMICA QUE DEFINIMOS EN info-sala
-    img.src = `${rutaCartasJugador}${id}.jpg`;
-    
+    let nombreArchivo = "";
+    let dataId = "";
+
+    if (modoJuegoActual === 'pozo') {
+        // CORRECCIÓN POZO: Usamos el número directo (1, 2, 3... 20) SIN CEROS
+        // Asegúrate que tus archivos sean "1.jpg", "10.jpg", etc.
+        nombreArchivo = `${i}.jpg`;
+        dataId = String(i); 
+    } else {
+        // TRADICIONAL: Usamos formato con ceros (01, 02... 54)
+        const numeroConCero = String(i).padStart(2, '0');
+        nombreArchivo = `${numeroConCero}.jpg`;
+        dataId = numeroConCero;
+    }
+
+    img.src = `${rutaCartasJugador}${nombreArchivo}`;
     img.classList.add("carta-img");
-    img.dataset.id = id;
-    img.onclick = () => seleccionarCarta(img);
+    img.dataset.id = dataId; // Guardamos el ID limpio
+    
+    // Al dar click, seleccionamos y ACTUALIZAMOS EL BOTÓN
+    img.onclick = () => {
+        seleccionarCarta(img);
+        actualizarTextoBotonApuesta(); // <--- Nueva función
+    };
+    
     contenedorCartas.appendChild(img);
-  });
+  }
 }
+
 function seleccionarCarta(img) {
   const id = img.dataset.id;
    
+  // CASO 1: YA ESTABA SELECCIONADA (DESMARCAR)
   if (seleccionadas.includes(id)) {
       seleccionadas = seleccionadas.filter(c => c !== id);
       img.classList.remove("seleccionada");
       socket.emit("deseleccionar-carta", { carta: id, sala: salaActual });
       
+      // Lógica del Host (Botón Iniciar)
       if (seleccionadas.length < 2) btnIniciar.style.display = "none";
+      
+      // ACTUALIZAR PRECIO DEL BOTÓN APOSTAR
+      actualizarTextoBotonApuesta();
       return;
   }
 
+  // Verificar si la carta está ocupada por otro (bloqueada)
   if (img.style.pointerEvents === 'none') return; 
    
+  // CASO 2: SELECCIONAR NUEVA (MÁXIMO 4)
   if (seleccionadas.length < 4) {
     img.classList.add("seleccionada");
     seleccionadas.push(id);
     socket.emit("seleccionar-carta", { carta: id, sala: salaActual });
     
+    // Lógica del Host (Botón Iniciar)
     if (seleccionadas.length >= 2) btnIniciar.style.display = "block";
+    
+    // ACTUALIZAR PRECIO DEL BOTÓN APOSTAR
+    actualizarTextoBotonApuesta();
   }
 }
 
@@ -450,6 +476,27 @@ btnIniciar.onclick = () => {
   
   renderizarSonidosJuego();
 };
+
+function actualizarTextoBotonApuesta() {
+    const btn = document.getElementById("btnApostar");
+    if (!btn) return;
+
+    // Contamos cuántas cartas visuales tienen la clase "seleccionada"
+    const seleccionadasVisuales = document.querySelectorAll("#contenedorCartas .carta-img.seleccionada").length;
+    
+    // Calculamos el total
+    const totalPagar = seleccionadasVisuales * costoCartaActual;
+
+    if (seleccionadasVisuales > 0) {
+        btn.innerText = `Apostar $${totalPagar}`;
+        btn.disabled = false;
+        btn.style.opacity = "1";
+    } else {
+        btn.innerText = "Selecciona cartas";
+        btn.disabled = true;
+        btn.style.opacity = "0.5";
+    }
+}
 
 function marcarFicha(e, contenedor) {
   const elementoClickeado = e.target;
@@ -566,9 +613,11 @@ socket.on('info-sala', (data) => {
         rutaCartasJugador = 'assets/imagenes/cartas/'; 
     }
 
-    // Actualizar texto del botón apostar
-    if(btnApostar) btnApostar.innerText = `Apostar $${costoCartaActual}`;
-
+    if(btnApostar) {
+        btnApostar.innerText = "Selecciona cartas";
+        btnApostar.disabled = true;
+        btnApostar.style.opacity = "0.5";
+    
     // Regenerar el grid de selección con la ruta correcta
     generarCartas(); 
 });
