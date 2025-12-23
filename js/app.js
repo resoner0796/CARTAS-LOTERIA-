@@ -1583,3 +1583,109 @@ function renderizarHistorial(movimientos) {
         contenedor.appendChild(item);
     });
 }
+
+// ======================================================
+// FUNCIONALIDAD: BOTÓN FLOTANTE ARRASTRABLE (DRAGGABLE)
+// ======================================================
+
+function iniciarFabDraggable() {
+    const fab = document.getElementById("fabSonidosContainer");
+    const btn = document.getElementById("btnToggleSonidos");
+    
+    if (!fab || !btn) return;
+
+    let isDragging = false;
+    let startX, startY, initialLeft, initialTop;
+    let moved = false; // Para diferenciar entre click y arrastre
+
+    // --- TOUCH EVENTS (Móvil) ---
+    btn.addEventListener('touchstart', (e) => {
+        isDragging = true;
+        moved = false;
+        startX = e.touches[0].clientX;
+        startY = e.touches[0].clientY;
+        
+        const rect = fab.getBoundingClientRect();
+        initialLeft = rect.left;
+        initialTop = rect.top;
+        
+        // Quitamos transición para que el movimiento sea instantáneo
+        fab.style.transition = 'none';
+    }, { passive: false });
+
+    document.addEventListener('touchmove', (e) => {
+        if (!isDragging) return;
+        
+        const currentX = e.touches[0].clientX;
+        const currentY = e.touches[0].clientY;
+        const deltaX = currentX - startX;
+        const deltaY = currentY - startY;
+
+        // Si se movió más de 5px, lo consideramos un arrastre, no un click
+        if (Math.abs(deltaX) > 5 || Math.abs(deltaY) > 5) moved = true;
+
+        if (moved) {
+            e.preventDefault(); // Evitar scroll de pantalla
+            fab.style.left = `${initialLeft + deltaX}px`;
+            fab.style.top = `${initialTop + deltaY}px`;
+            fab.style.bottom = 'auto'; // Desactivar bottom para usar top
+            fab.style.right = 'auto';
+        }
+    }, { passive: false });
+
+    document.addEventListener('touchend', () => {
+        isDragging = false;
+        fab.style.transition = 'transform 0.2s'; // Restaurar animación suave
+    });
+
+    // --- MOUSE EVENTS (PC) ---
+    btn.addEventListener('mousedown', (e) => {
+        isDragging = true;
+        moved = false;
+        startX = e.clientX;
+        startY = e.clientY;
+        
+        const rect = fab.getBoundingClientRect();
+        initialLeft = rect.left;
+        initialTop = rect.top;
+        fab.style.transition = 'none';
+    });
+
+    document.addEventListener('mousemove', (e) => {
+        if (!isDragging) return;
+        
+        const deltaX = e.clientX - startX;
+        const deltaY = e.clientY - startY;
+
+        if (Math.abs(deltaX) > 5 || Math.abs(deltaY) > 5) moved = true;
+
+        if (moved) {
+            e.preventDefault();
+            fab.style.left = `${initialLeft + deltaX}px`;
+            fab.style.top = `${initialTop + deltaY}px`;
+            fab.style.bottom = 'auto';
+        }
+    });
+
+    document.addEventListener('mouseup', () => {
+        isDragging = false;
+    });
+
+    // Modificar la función toggle para que NO se abra si se arrastró
+    const originalToggle = window.toggleMenuSonidos;
+    window.toggleMenuSonidos = function() {
+        if (!moved) {
+            // Solo abrimos si fue un click limpio, no un arrastre
+            const menu = document.getElementById("menuSonidosDesplegable");
+            if(menu) {
+                menu.classList.toggle("mostrar");
+                if (menu.classList.contains("mostrar")) {
+                    renderizarSonidosJuego();
+                }
+            }
+        }
+    };
+}
+
+// Iniciar al cargar la página
+window.addEventListener('load', iniciarFabDraggable);
