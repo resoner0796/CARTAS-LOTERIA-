@@ -124,13 +124,12 @@
                 <h3>Crear Sala</h3>
                 <p style="margin-bottom:5px; font-size: 0.8rem;">Nombre:</p>
                 <input type="text" id="inputCrearSala" placeholder="Ej: Familia">
-                <p style="margin-bottom:5px; font-size: 0.8rem;">Modo:</p>
-                <select id="inputModoJuego" style="background:rgba(0,0,0,0.5); border:1px solid gold; color:white; margin-bottom:15px;">
-                    <option value="clasico">🏆 Clásica</option>
-                    <option value="esquinas">🧱 4 Esquinas</option>
-                    <option value="centro">🎯 El Pozo</option>
-                    <option value="linea">➖ Línea</option>
-                </select>
+                <p style="margin-bottom:5px; font-size: 0.8rem;">Modo de Juego:</p>
+<select id="inputModoJuego" style="background:rgba(0,0,0,0.5); border:1px solid gold; color:white; margin-bottom:15px;">
+    <option value="tradicional">🏆 Tradicional ($1) - Gana con todo</option>
+    <option value="llena">⚫ Carta Llena ($2) - Llenar todo</option>
+    <option value="pozo">🎯 Pozo y Esquinas ($2) - Baraja Especial</option>
+</select>
                 <div style="flex-grow: 1;"></div>
                 <button onclick="crearSalaPropia()" class="btn-full">Crear ▶</button>
             </div>
