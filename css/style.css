@@ -605,52 +605,51 @@ button[onclick*="unirseSala"], #btnBarajear, #btnLimpiarCartas {
 }
 
 
-/* --- FAB SONIDOS (SOUNDBOARD) --- */
-
-.fab-container {
-    position: fixed;
-    bottom: 20px;
-    left: 20px; /* A la izquierda para no estorbar al botón Loteria */
-    z-index: 2000;
-    display: flex;
-    flex-direction: column-reverse; /* Para que el menú salga hacia arriba */
-    align-items: center;
+/* --- FAB SONIDOS (DRAGGABLE + NO BLOQUEO) --- */
+.fab-container { 
+    position: fixed; 
+    /* Posición inicial */
+    bottom: 80px; /* Un poco más arriba para no chocar con bordes */
+    left: 20px; 
+    z-index: 2000; 
+    display: flex; 
+    flex-direction: column-reverse; 
+    align-items: center; 
     gap: 10px;
+    
+    /* MAGIA: Esto permite dar click A TRAVÉS del área vacía del contenedor */
+    pointer-events: none; 
+    
+    /* Para que la animación de arrastre sea fluida (se controla por JS) */
+    touch-action: none; 
 }
 
-.fab-btn-main {
-    width: 60px;
-    height: 60px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, #2196F3, #0D47A1); /* Azul eléctrico */
-    color: white;
-    font-size: 1.8rem;
-    border: none;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.4);
-    cursor: pointer;
-    transition: transform 0.2s;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+.fab-btn-main { 
+    width: 60px; height: 60px; 
+    border-radius: 50%; 
+    background: linear-gradient(135deg, #2196F3, #0D47A1); 
+    color: white; font-size: 1.8rem; border: none; 
+    box-shadow: 0 4px 15px rgba(0,0,0,0.4); 
+    cursor: grab; /* Cursor de manita para indicar que se mueve */
+    display: flex; align-items: center; justify-content: center;
+    
+    /* MAGIA: Reactivamos los clicks solo en el botón */
+    pointer-events: auto; 
 }
 
-.fab-btn-main:active { transform: scale(0.9); }
+.fab-btn-main:active { cursor: grabbing; }
 
-.fab-menu {
-    background: rgba(0, 0, 0, 0.8);
-    backdrop-filter: blur(5px);
-    padding: 10px;
-    border-radius: 20px;
-    display: flex; /* Flex para mostrar, 'none' para ocultar */
-    flex-direction: column;
-    gap: 10px;
-    transform: scale(0); /* Oculto por defecto con animación */
-    transform-origin: bottom center;
-    transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    margin-bottom: 10px;
-    border: 1px solid rgba(255,255,255,0.2);
-    max-height: 300px;
-    overflow-y: auto;
+.fab-menu { 
+    background: rgba(0, 0, 0, 0.8); backdrop-filter: blur(5px); 
+    padding: 10px; border-radius: 20px; 
+    display: flex; flex-direction: column; gap: 10px; 
+    transform: scale(0); transform-origin: bottom center; 
+    transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
+    margin-bottom: 10px; border: 1px solid rgba(255,255,255,0.2); 
+    max-height: 300px; overflow-y: auto;
+    
+    /* Reactivamos clicks en el menú desplegable */
+    pointer-events: auto; 
 }
 
 .fab-menu.mostrar {
@@ -687,34 +686,54 @@ button[onclick*="unirseSala"], #btnBarajear, #btnLimpiarCartas {
    NUEVOS ESTILOS UI (MONEDERO Y SPLASH)
    ========================================= */
 
-/* --- PANTALLA SPLASH MEJORADA --- */
+/* --- PANTALLA SPLASH (FIX TEXTO ABAJO) --- */
 #pantallaSplash {
-    position: fixed; /* OBLIGATORIO: Lo fija a la pantalla */
-    top: 0;
-    left: 0;
-    width: 100vw; /* Ancho total */
-    height: 100vh; /* Alto total */
-    z-index: 9999; /* Se asegura de estar encima de todo */
-    /* Degradado actualizado */
+    position: fixed; top: 0; left: 0;
+    width: 100vw; height: 100vh;
+    z-index: 9999; 
     background: linear-gradient(135deg, #ff9100 0%, #ff3d00 100%);
-    display: flex;
-    justify-content: center;
+    display: flex; 
+    flex-direction: column; /* Organiza verticalmente */
+    justify-content: center; 
     align-items: center;
-    transition: opacity 0.5s ease; /* Suaviza la desaparición */
+    transition: opacity 0.5s ease;
 }
 
-.splash-content {
-    text-align: center;
-    animation: fadeInUp 1s ease-out; /* Pequeña animación de entrada */
+.splash-content { 
+    text-align: center; 
+    animation: fadeInUp 1s ease-out;
+    position: relative;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
 }
 
 .splash-icon {
-    width: 180px; /* Tamaño del icono */
-    height: 180px;
-    border-radius: 35px; /* Bordes redondeados estilo app */
-    /* Sombra para efecto de "brillo" y elevación */
+    width: 180px; height: 180px;
+    border-radius: 35px;
     box-shadow: 0 10px 25px rgba(0,0,0,0.3), 0 0 50px rgba(255, 255, 255, 0.2) inset;
-    border: 3px solid rgba(255,255,255,0.2); /* Borde sutil */
+    border: 3px solid rgba(255,255,255,0.2);
+    /* El icono se queda en el centro visual */
+    margin-bottom: 50px; 
+}
+
+/* EL TEXTO SE FIJA ABAJO ABSOLUTAMENTE */
+#pantallaSplash h1 { 
+    position: absolute; 
+    bottom: 15%; /* Fijo al 15% de abajo siempre */
+    left: 0; 
+    width: 100%;
+    text-align: center;
+    font-size: 1.5rem; 
+    font-weight: 700; 
+    color: white !important;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+    opacity: 1 !important; 
+    animation: pulseGlow 2s infinite; /* Efecto respiración */
+    margin: 0;
 }
 
 /* Animación simple de entrada */
