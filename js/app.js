@@ -1557,14 +1557,16 @@ function renderizarHistorial(movimientos) {
         if (mov.tipo === 'recarga') icono = '💳';
         if (mov.tipo === 'compra') icono = '🛒';
         if (mov.tipo === 'apuesta') icono = '🎲';
+        if (mov.tipo === 'victoria') icono = '🏆'; // Agregué copa para victorias
+        if (mov.tipo === 'premio') icono = '🎁';   // Agregué regalo
         if (mov.tipo === 'transferencia') icono = mov.esIngreso ? '↙️' : '↗️';
 
         const signo = mov.esIngreso ? '+' : '-';
         const claseColor = mov.esIngreso ? 'hist-positivo' : 'hist-negativo';
         
-        // Formato fecha (ej: 20/12 14:30)
-        const fechaObj = new Date(mov.fecha);
-        const fechaStr = `${fechaObj.getDate()}/${fechaObj.getMonth()+1} ${fechaObj.getHours()}:${String(fechaObj.getMinutes()).padStart(2,'0')}`;
+        // CORRECCIÓN: Usamos la fecha directa del servidor (ya viene formateada)
+        // Si por alguna razón viniera vacía, ponemos "---"
+        const fechaStr = mov.fecha || "---";
 
         const item = document.createElement("div");
         item.className = "item-historial";
