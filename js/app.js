@@ -384,7 +384,7 @@ function resetearUI() {
 function generarCartas() {
   contenedorCartas.innerHTML = "";
   
-  let totalCartasAMostrar = 54;
+  let totalCartasAMostrar = 30;
   
   // Si es Pozo, son 20 cartas
   if (modoJuegoActual === 'pozo') {
