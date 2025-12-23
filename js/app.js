@@ -421,7 +421,7 @@ function generarCartas() {
     };
     
     contenedorCartas.appendChild(img);
-  }
+    });
 }
 
 function seleccionarCarta(img) {
