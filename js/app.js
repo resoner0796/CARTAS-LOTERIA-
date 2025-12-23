@@ -744,7 +744,12 @@ function emitirLoteria() {
   audioCampana.pause();
   audioBarajear.pause();
    
-  const boardState = { cards: seleccionadas, chips: {} };
+  // AQUI AGREGAMOS "skin: fichaActivaUrl" PARA QUE SEPAN CUÁL USAMOS
+  const boardState = { 
+      cards: seleccionadas, 
+      chips: {}, 
+      skin: fichaActivaUrl 
+  };
 
   document.querySelectorAll('#juegoCartas .carta-juego').forEach(cardContainer => {
     const cardId = cardContainer.dataset.id;
@@ -803,6 +808,7 @@ function abrirModalValidacionHost(candidato, index, total) {
     modalLoteriaTitulo.textContent = `Validando Ganador (${index} de ${total})`;
     modalLoteriaTexto.textContent = `${candidato.nickname} reclama victoria. Revisa su tabla.`;
     
+    // Historial (Cartas cantadas - Estas siempre son de la baraja normal)
     const modalHistorialFlex = document.getElementById("modalHistorialFlex");
     modalHistorialFlex.innerHTML = "";
     historialIdsGlobal.forEach(cartaId => {
@@ -811,14 +817,24 @@ function abrirModalValidacionHost(candidato, index, total) {
          modalHistorialFlex.appendChild(img);
     });
 
+    // Tabla del Jugador (AQUÍ ESTABA EL ERROR)
     modalVerificationArea.innerHTML = '';
     const bs = candidato.boardState;
+    
+    // Recuperamos la skin del jugador o usamos la default si no viene
+    const skinJugador = bs.skin || "assets/imagenes/ui/ficha.PNG";
+
     if (bs && bs.cards) {
         bs.cards.forEach(cardId => {
             const cardContainer = document.createElement('div');
             cardContainer.className = 'carta-juego';
+            
             const cardImg = document.createElement('img');
-            cardImg.src = `assets/imagenes/cartas/${cardId}.jpg`;
+            
+            // --- CORRECCIÓN 1: USAR LA RUTA DINÁMICA ---
+            // Ya no usamos "assets/imagenes/cartas/...", usamos la variable
+            cardImg.src = `${rutaCartasJugador}${cardId}.jpg`;
+            
             cardImg.className = 'carta-img seleccionada';
             cardImg.style.pointerEvents = "none";
             cardContainer.appendChild(cardImg);
@@ -826,7 +842,10 @@ function abrirModalValidacionHost(candidato, index, total) {
             if (bs.chips && bs.chips[cardId]) {
                 bs.chips[cardId].forEach(chipPos => {
                     const ficha = document.createElement("img");
-                    ficha.src = "assets/imagenes/ui/ficha.PNG";
+                    
+                    // --- CORRECCIÓN 2: USAR LA SKIN DEL JUGADOR ---
+                    ficha.src = skinJugador;
+                    
                     ficha.className = "ficha";
                     ficha.style.left = chipPos.left;
                     ficha.style.top = chipPos.top;
