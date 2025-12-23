@@ -16,6 +16,10 @@ let salaActual = "";
 let haApostadoLocal = false;
 let historialIdsGlobal = [];
 let checkoutInstance = null; // Variable global para Stripe
+let modoJuegoActual = 'tradicional';
+let costoCartaActual = 1;
+// Ruta por defecto para Tradicional/Llena
+let rutaCartasJugador = 'assets/imagenes/cartas/';
 
 // Generamos IDs de cartas (del 01 al 54) - Ajustado a 30 por tu código anterior
 const cartasDisponibles = Array.from({ length: 30 }, (_, i) => String(i + 1).padStart(2, '0'));
@@ -379,16 +383,32 @@ function resetearUI() {
 
 function generarCartas() {
   contenedorCartas.innerHTML = "";
-  cartasDisponibles.forEach(id => {
+  
+  let totalCartasAMostrar = 54;
+  
+  // Si es Pozo, solo mostramos 20
+  if (modoJuegoActual === 'pozo') {
+      totalCartasAMostrar = 20;
+  }
+
+  // Generamos IDs (1 al 20 o 1 al 54)
+  // OJO: Si tus imágenes en '/cuatro/' se llaman "1.jpg" (sin cero), usa String(i+1)
+  // Si se llaman "01.jpg", usa .padStart(2, '0')
+  // Aquí asumo que usas el estándar "01.jpg" como en el resto de la app.
+  const ids = Array.from({ length: totalCartasAMostrar }, (_, i) => String(i + 1).padStart(2, '0'));
+
+  ids.forEach(id => {
     const img = document.createElement("img");
-    img.src = `assets/imagenes/cartas/${id}.jpg`;
+    
+    // USAMOS LA RUTA DINÁMICA QUE DEFINIMOS EN info-sala
+    img.src = `${rutaCartasJugador}${id}.jpg`;
+    
     img.classList.add("carta-img");
     img.dataset.id = id;
     img.onclick = () => seleccionarCarta(img);
     contenedorCartas.appendChild(img);
   });
 }
-
 function seleccionarCarta(img) {
   const id = img.dataset.id;
    
@@ -415,16 +435,19 @@ function seleccionarCarta(img) {
 btnIniciar.onclick = () => {
   cambiarPantalla("juego");
   juegoCartas.innerHTML = "";
+  
   seleccionadas.forEach(id => {
     const contenedor = document.createElement("div");
     contenedor.classList.add("carta-juego");
     contenedor.dataset.id = id;
-    contenedor.innerHTML = `<img src="assets/imagenes/cartas/${id}.jpg" class="carta-img seleccionada">`;
+    
+    // USAMOS LA RUTA DINÁMICA AQUÍ TAMBIÉN
+    contenedor.innerHTML = `<img src="${rutaCartasJugador}${id}.jpg" class="carta-img seleccionada">`;
+    
     contenedor.onclick = e => marcarFicha(e, contenedor);
     juegoCartas.appendChild(contenedor);
   });
   
-  // Mostrar botón de sonidos al entrar al juego
   renderizarSonidosJuego();
 };
 
@@ -524,6 +547,30 @@ socket.on("rol-asignado", ({ host }) => {
           }
       }
   });
+});
+
+socket.on('info-sala', (data) => {
+    modoJuegoActual = data.modo;
+    costoCartaActual = data.costo;
+
+    // Actualizar Título
+    document.getElementById("tituloSalaActual").innerHTML = 
+        `Sala: ${salaActual} <br><span style="font-size:0.8rem; color:gold;">${modoJuegoActual.toUpperCase()} ($${costoCartaActual})</span>`;
+
+    // --- LÓGICA DE RUTAS ---
+    if (modoJuegoActual === 'pozo') {
+        // Si es Pozo, usamos la carpeta especial y solo 20 cartas
+        rutaCartasJugador = 'assets/imagenes/cartas/cuatro/'; 
+    } else {
+        // Si es otro, usamos la carpeta normal
+        rutaCartasJugador = 'assets/imagenes/cartas/'; 
+    }
+
+    // Actualizar texto del botón apostar
+    if(btnApostar) btnApostar.innerText = `Apostar $${costoCartaActual}`;
+
+    // Regenerar el grid de selección con la ruta correcta
+    generarCartas(); 
 });
 
 socket.on('estado-sala-restaurado', (estado) => {
