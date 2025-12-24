@@ -307,6 +307,52 @@ function configurarMenu() {
 // ======================================================
 // GESTIÓN DE SALAS
 // ======================================================
+// ==================== COMPARTIR SALA (FIX GLOBAL) ====================
+
+// Al usar "window.compartirSala =", la hacemos accesible desde el HTML 
+// sin importar dónde la pegaste en el código.
+window.compartirSala = function() {
+    console.log("📢 Botón compartir presionado..."); // CHIVATO PARA VER SI REACCIONA
+
+    // Validamos que haya una sala activa
+    if (!salaActual) return mostrarAlerta("Primero debes entrar a una sala.", "Error");
+
+    // 1. Construimos el Link
+    const urlBase = window.location.origin + window.location.pathname;
+    const linkInvitacion = `${urlBase}?sala=${encodeURIComponent(salaActual)}`;
+
+    const datosShare = {
+        title: '¡Juguemos Lotería! 🎰',
+        text: `Únete a mi sala "${salaActual}" en Juegos en la Nube ☁️. ¡Apúrale que ya vamos a empezar!`,
+        url: linkInvitacion
+    };
+
+    // 2. Intentamos compartir (Celulares)
+    if (navigator.share) {
+        navigator.share(datosShare)
+            .then(() => console.log('Compartido con éxito'))
+            .catch((error) => console.log('Error al compartir:', error));
+    } else {
+        // 3. Fallback (PC/Navegadores sin share)
+        // OJO: Esto requiere que la página tenga foco
+        if (navigator.clipboard) {
+             navigator.clipboard.writeText(linkInvitacion)
+                .then(() => {
+                    mostrarAlerta("Enlace copiado al portapapeles 📋\n¡Mándalo por WhatsApp!", "¡Listo!");
+                    if(navigator.vibrate) navigator.vibrate(50);
+                })
+                .catch(err => {
+                    console.error('Error al copiar:', err);
+                    // Si falla el portapapeles, mostramos el link en pantalla
+                    prompt("Copia el link manualmente:", linkInvitacion);
+                });
+        } else {
+             prompt("Copia el link manualmente:", linkInvitacion);
+        }
+    }
+};
+
+
 
 function crearSalaPropia() {
     const nombreSala = document.getElementById("inputCrearSala").value.trim();
@@ -377,50 +423,7 @@ function resetearUI() {
   window.history.pushState({}, document.title, window.location.pathname);
 }
 
-// ==================== COMPARTIR SALA (FIX GLOBAL) ====================
 
-// Al usar "window.compartirSala =", la hacemos accesible desde el HTML 
-// sin importar dónde la pegaste en el código.
-window.compartirSala = function() {
-    console.log("📢 Botón compartir presionado..."); // CHIVATO PARA VER SI REACCIONA
-
-    // Validamos que haya una sala activa
-    if (!salaActual) return mostrarAlerta("Primero debes entrar a una sala.", "Error");
-
-    // 1. Construimos el Link
-    const urlBase = window.location.origin + window.location.pathname;
-    const linkInvitacion = `${urlBase}?sala=${encodeURIComponent(salaActual)}`;
-
-    const datosShare = {
-        title: '¡Juguemos Lotería! 🎰',
-        text: `Únete a mi sala "${salaActual}" en Juegos en la Nube ☁️. ¡Apúrale que ya vamos a empezar!`,
-        url: linkInvitacion
-    };
-
-    // 2. Intentamos compartir (Celulares)
-    if (navigator.share) {
-        navigator.share(datosShare)
-            .then(() => console.log('Compartido con éxito'))
-            .catch((error) => console.log('Error al compartir:', error));
-    } else {
-        // 3. Fallback (PC/Navegadores sin share)
-        // OJO: Esto requiere que la página tenga foco
-        if (navigator.clipboard) {
-             navigator.clipboard.writeText(linkInvitacion)
-                .then(() => {
-                    mostrarAlerta("Enlace copiado al portapapeles 📋\n¡Mándalo por WhatsApp!", "¡Listo!");
-                    if(navigator.vibrate) navigator.vibrate(50);
-                })
-                .catch(err => {
-                    console.error('Error al copiar:', err);
-                    // Si falla el portapapeles, mostramos el link en pantalla
-                    prompt("Copia el link manualmente:", linkInvitacion);
-                });
-        } else {
-             prompt("Copia el link manualmente:", linkInvitacion);
-        }
-    }
-};
 
 // ======================================================
 // LÓGICA DE JUEGO (CLIENTE)
