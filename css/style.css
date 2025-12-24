@@ -1101,3 +1101,24 @@ body {
     margin-bottom: 20px;
 }
 
+
+/* =========================================================
+   FIX ESPECÍFICO: PANTALLA DE JUEGO (SCROLL INFINITO) 🎲
+   ========================================================= */
+
+#pantallaJuego {
+    /* Le quitamos el límite de altura para que el tablero quepa completo */
+    height: auto !important; 
+    min-height: 100dvh; 
+    
+    /* Aseguramos que se pueda scrollear si el juego es largo */
+    overflow-y: visible !important; 
+    
+    /* Un colchón abajo para que el último botón no quede pegado al borde del cel */
+    padding-bottom: 150px !important; 
+}
+
+/* Evita que las cartas intenten "aplastarse" si falta espacio */
+#juegoCartas {
+    flex-shrink: 0;
+}
