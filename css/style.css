@@ -1072,3 +1072,32 @@ button[onclick*="unirseSala"], #btnBarajear, #btnLimpiarCartas {
 #contenedorCartas {
     padding-bottom: 120px !important; 
 }
+
+/* =========================================================
+   FIX DEFINITIVO: TECLADO MÓVIL (CREAR SALA / LOGIN) 📱
+   ========================================================= */
+
+/* 1. Hacemos que el body se adapte al tamaño real visible (sin teclado) */
+body {
+    min-height: 100vh;
+    height: 100dvh; /* Dynamic Viewport Height: Clave para móviles modernos */
+}
+
+/* 2. Blindamos las tarjetas donde hay formularios (Crear Sala, Login, etc.) */
+.sala-box, 
+.menu-card, 
+.auth-container, 
+.form-container {
+    /* Si el teclado sale, la tarjeta nunca será más alta que el espacio disponible */
+    max-height: 85vh; 
+    
+    /* Si el contenido no cabe (por el teclado), aparece scroll DENTRO de la tarjeta */
+    overflow-y: auto; 
+    
+    /* Suavidad para iPhone */
+    -webkit-overflow-scrolling: touch; 
+    
+    /* Un margen abajo para que el botón no quede pegado al teclado */
+    margin-bottom: 20px;
+}
+
