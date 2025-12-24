@@ -377,6 +377,42 @@ function resetearUI() {
   window.history.pushState({}, document.title, window.location.pathname);
 }
 
+// ==================== COMPARTIR SALA ====================
+
+function compartirSala() {
+    // Validamos que haya una sala activa
+    if (!salaActual) return mostrarAlerta("Primero debes entrar a una sala.", "Error");
+
+    // 1. Construimos el Link Mágico
+    // Toma la URL base (ej: tudominio.com) y le pega "?sala=NombreSala"
+    const urlBase = window.location.origin + window.location.pathname;
+    const linkInvitacion = `${urlBase}?sala=${encodeURIComponent(salaActual)}`;
+
+    const datosShare = {
+        title: '¡Juguemos Lotería! 🎰',
+        text: `Únete a mi sala "${salaActual}" en Juegos en la Nube ☁️. ¡Apúrale que ya vamos a empezar!`,
+        url: linkInvitacion
+    };
+
+    // 2. Intentamos usar el Compartir Nativo (Celulares)
+    if (navigator.share) {
+        navigator.share(datosShare)
+            .then(() => console.log('Compartido con éxito'))
+            .catch((error) => console.log('Error al compartir:', error));
+    } else {
+        // 3. Fallback para PC: Copiar al Portapapeles
+        navigator.clipboard.writeText(linkInvitacion)
+            .then(() => {
+                mostrarAlerta("Enlace copiado al portapapeles 📋\n¡Pégalo en WhatsApp!", "¡Listo!");
+                if(navigator.vibrate) navigator.vibrate(50);
+            })
+            .catch(err => {
+                console.error('Error al copiar:', err);
+                mostrarAlerta("No se pudo copiar el enlace automáticante.", "Error");
+            });
+    }
+}
+
 // ======================================================
 // LÓGICA DE JUEGO (CLIENTE)
 // ======================================================
