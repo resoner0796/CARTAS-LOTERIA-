@@ -309,45 +309,40 @@ function configurarMenu() {
 // ======================================================
 // ==================== COMPARTIR SALA (FIX GLOBAL) ====================
 
-// Al usar "window.compartirSala =", la hacemos accesible desde el HTML 
-// sin importar dónde la pegaste en el código.
-window.compartirSala = function() {
-    console.log("📢 Botón compartir presionado..."); // CHIVATO PARA VER SI REACCIONA
-
-    // Validamos que haya una sala activa
+window.compartirSala = async function() {
     if (!salaActual) return mostrarAlerta("Primero debes entrar a una sala.", "Error");
 
-    // 1. Construimos el Link
     const urlBase = window.location.origin + window.location.pathname;
     const linkInvitacion = `${urlBase}?sala=${encodeURIComponent(salaActual)}`;
-
+    
     const datosShare = {
         title: '¡Juguemos Lotería! 🎰',
-        text: `Únete a mi sala "${salaActual}" en Juegos en la Nube ☁️. ¡Apúrale que ya vamos a empezar!`,
+        text: `Únete a mi sala "${salaActual}". ¡Córrele!`,
         url: linkInvitacion
     };
 
-    // 2. Intentamos compartir (Celulares)
-    if (navigator.share) {
-        navigator.share(datosShare)
-            .then(() => console.log('Compartido con éxito'))
-            .catch((error) => console.log('Error al compartir:', error));
-    } else {
-        // 3. Fallback (PC/Navegadores sin share)
-        // OJO: Esto requiere que la página tenga foco
-        if (navigator.clipboard) {
-             navigator.clipboard.writeText(linkInvitacion)
-                .then(() => {
-                    mostrarAlerta("Enlace copiado al portapapeles 📋\n¡Mándalo por WhatsApp!", "¡Listo!");
-                    if(navigator.vibrate) navigator.vibrate(50);
-                })
-                .catch(err => {
-                    console.error('Error al copiar:', err);
-                    // Si falla el portapapeles, mostramos el link en pantalla
-                    prompt("Copia el link manualmente:", linkInvitacion);
-                });
-        } else {
-             prompt("Copia el link manualmente:", linkInvitacion);
+    try {
+        // INTENTO 1: Compartir Nativo (Celular)
+        if (navigator.share) {
+            await navigator.share(datosShare);
+            console.log("Compartido nativamente");
+            return;
+        } 
+        throw new Error("No share support");
+    } catch (e) {
+        // Si falla (o estamos en PC/Iframe bloqueado), vamos al INTENTO 2
+        console.log("Share falló, intentando clipboard...");
+        
+        try {
+            // INTENTO 2: Portapapeles
+            await navigator.clipboard.writeText(linkInvitacion);
+            mostrarAlerta("Enlace copiado al portapapeles 📋", "¡Listo!");
+            if(navigator.vibrate) navigator.vibrate(50);
+        } catch (errClip) {
+            // INTENTO 3: La Vieja Confiable (Prompt)
+            // Si todo falla, mostramos el link en pantalla para que el usuario lo copie manual
+            console.log("Clipboard falló, mostrando prompt...");
+            window.prompt("Copia este enlace y envíalo:", linkInvitacion);
         }
     }
 };
