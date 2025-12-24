@@ -309,7 +309,7 @@ function configurarMenu() {
 // ======================================================
 // ==================== COMPARTIR SALA (FIX GLOBAL) ====================
 
-window.compartirSala = async function() {
+window.compartirSala = function() {
     if (!salaActual) return mostrarAlerta("Primero debes entrar a una sala.", "Error");
 
     const urlBase = window.location.origin + window.location.pathname;
@@ -317,33 +317,28 @@ window.compartirSala = async function() {
     
     const datosShare = {
         title: '¡Juguemos Lotería! 🎰',
-        text: `Únete a mi sala "${salaActual}". ¡Córrele!`,
+        text: `Únete a mi sala "${salaActual}" en Juegos en la Nube. ¡Entra ya!`,
         url: linkInvitacion
     };
 
-    try {
-        // INTENTO 1: Compartir Nativo (Celular)
-        if (navigator.share) {
-            await navigator.share(datosShare);
-            console.log("Compartido nativamente");
-            return;
-        } 
-        throw new Error("No share support");
-    } catch (e) {
-        // Si falla (o estamos en PC/Iframe bloqueado), vamos al INTENTO 2
-        console.log("Share falló, intentando clipboard...");
-        
-        try {
-            // INTENTO 2: Portapapeles
-            await navigator.clipboard.writeText(linkInvitacion);
-            mostrarAlerta("Enlace copiado al portapapeles 📋", "¡Listo!");
-            if(navigator.vibrate) navigator.vibrate(50);
-        } catch (errClip) {
-            // INTENTO 3: La Vieja Confiable (Prompt)
-            // Si todo falla, mostramos el link en pantalla para que el usuario lo copie manual
-            console.log("Clipboard falló, mostrando prompt...");
-            window.prompt("Copia este enlace y envíalo:", linkInvitacion);
-        }
+    // 1. Detectamos si estamos dentro del HUB (Iframe)
+    if (window.self !== window.top) {
+        console.log("📡 Enviando señal al HUB para compartir...");
+        // Le mandamos el mensaje al Padre (HUB)
+        window.parent.postMessage({
+            action: 'COMPARTIR_NATIVO',
+            datos: datosShare
+        }, '*');
+        return; // El HUB se encarga, nosotros terminamos aquí.
+    }
+
+    // 2. Si NO estamos en el Hub (estamos directo en la página), intentamos normal
+    if (navigator.share) {
+        navigator.share(datosShare).catch(console.error);
+    } else {
+        // Fallback PC
+        navigator.clipboard.writeText(linkInvitacion)
+            .then(() => mostrarAlerta("Link copiado 📋", "Listo"));
     }
 };
 
