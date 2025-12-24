@@ -377,14 +377,17 @@ function resetearUI() {
   window.history.pushState({}, document.title, window.location.pathname);
 }
 
-// ==================== COMPARTIR SALA ====================
+// ==================== COMPARTIR SALA (FIX GLOBAL) ====================
 
-function compartirSala() {
+// Al usar "window.compartirSala =", la hacemos accesible desde el HTML 
+// sin importar dónde la pegaste en el código.
+window.compartirSala = function() {
+    console.log("📢 Botón compartir presionado..."); // CHIVATO PARA VER SI REACCIONA
+
     // Validamos que haya una sala activa
     if (!salaActual) return mostrarAlerta("Primero debes entrar a una sala.", "Error");
 
-    // 1. Construimos el Link Mágico
-    // Toma la URL base (ej: tudominio.com) y le pega "?sala=NombreSala"
+    // 1. Construimos el Link
     const urlBase = window.location.origin + window.location.pathname;
     const linkInvitacion = `${urlBase}?sala=${encodeURIComponent(salaActual)}`;
 
@@ -394,24 +397,30 @@ function compartirSala() {
         url: linkInvitacion
     };
 
-    // 2. Intentamos usar el Compartir Nativo (Celulares)
+    // 2. Intentamos compartir (Celulares)
     if (navigator.share) {
         navigator.share(datosShare)
             .then(() => console.log('Compartido con éxito'))
             .catch((error) => console.log('Error al compartir:', error));
     } else {
-        // 3. Fallback para PC: Copiar al Portapapeles
-        navigator.clipboard.writeText(linkInvitacion)
-            .then(() => {
-                mostrarAlerta("Enlace copiado al portapapeles 📋\n¡Pégalo en WhatsApp!", "¡Listo!");
-                if(navigator.vibrate) navigator.vibrate(50);
-            })
-            .catch(err => {
-                console.error('Error al copiar:', err);
-                mostrarAlerta("No se pudo copiar el enlace automáticante.", "Error");
-            });
+        // 3. Fallback (PC/Navegadores sin share)
+        // OJO: Esto requiere que la página tenga foco
+        if (navigator.clipboard) {
+             navigator.clipboard.writeText(linkInvitacion)
+                .then(() => {
+                    mostrarAlerta("Enlace copiado al portapapeles 📋\n¡Mándalo por WhatsApp!", "¡Listo!");
+                    if(navigator.vibrate) navigator.vibrate(50);
+                })
+                .catch(err => {
+                    console.error('Error al copiar:', err);
+                    // Si falla el portapapeles, mostramos el link en pantalla
+                    prompt("Copia el link manualmente:", linkInvitacion);
+                });
+        } else {
+             prompt("Copia el link manualmente:", linkInvitacion);
+        }
     }
-}
+};
 
 // ======================================================
 // LÓGICA DE JUEGO (CLIENTE)
