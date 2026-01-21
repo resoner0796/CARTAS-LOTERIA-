@@ -303,16 +303,39 @@ input::placeholder { color: rgba(255,255,255,0.6); }
     box-sizing: border-box;
 }
 
+/* --- AJUSTE DE CONTENEDOR DE CARTA --- */
 #modalVerificationArea .carta-juego {
-    /* Ajuste de tamaño para que se vean grandes y parejas */
+    /* Ajuste de tamaño */
     width: 100% !important;
-    max-width: 160px; /* Tope para que no se vean gigantes en tablets */
-    aspect-ratio: 2 / 3; /* Mantiene la forma rectangular de la carta */
+    max-width: 140px; /* Reduje un poco para dar margen en pantallas chicas */
+    aspect-ratio: 2 / 3; 
     
-    /* Reseteamos propiedades flex viejas */
+    /* 🔥 CLAVE: Esto encierra a la ficha dentro de la carta */
+    position: relative !important; 
+    overflow: hidden; /* Corta cualquier cosa que se quiera salir */
+    
+    /* Resetear estilos viejos */
     flex: none !important; 
     min-width: auto !important;
     margin: 0 !important;
+}
+
+/* --- AJUSTE DE LA FICHA (SKIN) --- */
+#modalVerificationArea .ficha {
+    /* Tamaño relativo a la carta pequeña */
+    width: 28% !important; /* Un poco más grande para que se note */
+    height: auto !important;
+    
+    /* Aseguramos que se posicione desde el centro de su coordenada */
+    transform: translate(-50%, -50%) !important; 
+    
+    /* Evitar que flote fuera */
+    position: absolute !important;
+    z-index: 10;
+    
+    /* Sombra para que se desprenda del fondo */
+    filter: drop-shadow(0 2px 3px rgba(0,0,0,0.6));
+    pointer-events: none;
 }
 
 #modalVerificationArea .carta-img {
@@ -323,10 +346,6 @@ input::placeholder { color: rgba(255,255,255,0.6); }
     box-shadow: 0 4px 10px rgba(0,0,0,0.5);
 }
 
-/* Ajuste de la ficha encima de la carta (para que no se mueva) */
-#modalVerificationArea .ficha {
-    width: 25% !important; /* Tamaño proporcional de la ficha */
-}
 
 /* --- BOTONES (RENOVADOS CON GRADIENTES PRO) --- */
 button {
