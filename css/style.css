@@ -285,16 +285,39 @@ input::placeholder { color: rgba(255,255,255,0.6); }
 
 /* MODAL VICTORIA (MÓVIL) */
 #modalVerificationArea {
+    /* Usamos GRID para forzar 2 columnas exactas */
+    display: grid !important;
+    grid-template-columns: repeat(2, 1fr); /* 2 columnas iguales */
+    gap: 15px; /* Espacio entre cartas */
+    
     width: 100%;
     justify-content: center;
+    justify-items: center; /* Centra cada carta en su celda */
+    
+    /* Quitamos flex viejos si estorbaban */
+    flex-wrap: wrap; 
+    padding: 10px;
+    box-sizing: border-box;
 }
+
 #modalVerificationArea .carta-juego {
-    flex: 1; 
-    position: relative;
-    display: flex; 
-    justify-content: center;
-    min-width: 100px; 
-    max-width: 180px; 
+    /* Ajuste de tamaño para que se vean grandes y parejas */
+    width: 100% !important;
+    max-width: 160px; /* Tope para que no se vean gigantes en tablets */
+    aspect-ratio: 2 / 3; /* Mantiene la forma rectangular de la carta */
+    
+    /* Reseteamos propiedades flex viejas */
+    flex: none !important; 
+    min-width: auto !important;
+    margin: 0 !important;
+}
+
+#modalVerificationArea .carta-img {
+    width: 100%;
+    height: 100%;
+    object-fit: fill; /* Asegura que la imagen llene el hueco */
+    border-radius: 8px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.5);
 }
 
 /* --- BOTONES (RENOVADOS CON GRADIENTES PRO) --- */
