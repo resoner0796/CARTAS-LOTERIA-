@@ -256,9 +256,19 @@ async function login() {
             usuarioActual = data;
             localStorage.setItem("loteria_usuario", JSON.stringify(data));
             
+            // 🔥 FIX IMPORTANTE: Actualizar la variable global de la ficha AL INSTANTE
+            if (data.fichaActiva) {
+                fichaActivaUrl = data.fichaActiva;
+            }
+
+            // Sincronizar cartas si existen
+            if(data.cartasFavoritas && data.cartasFavoritas.length > 0) {
+                localStorage.setItem("loteria_cartas_fav", JSON.stringify(data.cartasFavoritas));
+            }
+            
             configurarMenu();
-            cargarTienda(); // <--- Cargar tienda al entrar
-            sincronizarDatosForzoso(); // <--- Asegurar datos frescos
+            cargarTienda(); 
+            sincronizarDatosForzoso(); 
             
             const urlParams = new URLSearchParams(window.location.search);
             const salaInvitacion = urlParams.get('sala');
@@ -302,8 +312,15 @@ async function registro() {
 
 function cerrarSesion() {
     localStorage.removeItem("loteria_usuario");
+    // Opcional: También limpiar favoritos locales si quieres seguridad total
+    // localStorage.removeItem("loteria_cartas_fav"); 
+    
     usuarioActual = null;
-    location.reload();
+    
+    // 🔥 FIX: Resetear la ficha a la default al salir
+    fichaActivaUrl = 'assets/imagenes/ui/ficha.PNG';
+    
+    location.reload(); // Recargar limpia todo lo demás
 }
 
 function configurarMenu() {
