@@ -745,7 +745,20 @@ socket.on("jugadores-actualizados", jugadores => {
     Object.values(jugadores).map(j => {
       const check = j.apostado ? "💸" : "";
       const crown = j.host ? "👑" : ""; 
-      return `<div>${crown} ${j.nickname} ${check}</div>`;
+      
+      // LÓGICA DE LA FLAMA 🔥
+      let fuego = "";
+      if (j.racha > 0) {
+          fuego = "🔥";
+          if (j.racha > 1) fuego += `<small style="color:orange; font-weight:bold;">x${j.racha}</small>`;
+      }
+
+      // Le damos un estilo "flex" para que se vea alineado
+      return `
+        <div style="display:flex; justify-content:space-between; align-items:center; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.1);">
+            <span>${crown} ${j.nickname} ${fuego}</span>
+            <span>${check}</span>
+        </div>`;
     }).join("");
     
   if(jugadoresLista) jugadoresLista.innerHTML = htmlLista;
@@ -993,8 +1006,7 @@ if(btnApostar) btnApostar.addEventListener("click", () => {
   // Calculamos la cantidad (por defecto 1 o el número de cartas)
   const cantidad = Math.max(1, seleccionadas.length || 1);
   
-  // --- CAMBIO IMPORTANTE PARA EL HISTORIAL ---
-  // Enviamos también el email para que el server registre el movimiento
+  animarVueloMonedas();
   socket.emit("apostar", { 
       sala: salaActual, 
       cantidad: cantidad,
@@ -1966,6 +1978,56 @@ function iniciarFabDraggable() {
         }
     };
 }
+
+// ======================================================
+// NUEVAS FUNCIONES 21-02-2025
+// ======================================================
+
+// --- FUNCIÓN DE ANIMACIÓN DE MONEDAS ---
+function animarVueloMonedas() {
+    const origen = document.getElementById("monedas-valor");
+    const destino = document.getElementById("bote-valor");
+    
+    if(!origen || !destino) return;
+
+    // Obtener coordenadas
+    const rectOrigen = origen.getBoundingClientRect();
+    const rectDestino = destino.getBoundingClientRect();
+
+    // Lanzar 5 monedas
+    for (let i = 0; i < 5; i++) {
+        setTimeout(() => {
+            const moneda = document.createElement("img");
+            moneda.src = "assets/imagenes/ui/peso.png"; // Asegúrate que esta ruta exista
+            moneda.className = "flying-coin";
+            
+            // Posición inicial (Saldo)
+            // Agregamos un pequeño random para que no salgan todas del mismo pixel exacto
+            const randomX = (Math.random() * 20) - 10; 
+            const randomY = (Math.random() * 20) - 10;
+
+            moneda.style.left = (rectOrigen.left + 10 + randomX) + "px";
+            moneda.style.top = (rectOrigen.top + randomY) + "px";
+            
+            document.body.appendChild(moneda);
+
+            // Forzar reflow (para que el navegador detecte el cambio de posición)
+            setTimeout(() => {
+                moneda.style.left = (rectDestino.left + 10) + "px";
+                moneda.style.top = (rectDestino.top) + "px";
+                moneda.style.transform = "scale(0.5) rotate(360deg)"; // Se hacen chicas y giran
+                moneda.style.opacity = "0"; // Desaparecen al llegar
+            }, 50);
+
+            // Borrar elemento del DOM al terminar
+            setTimeout(() => {
+                moneda.remove();
+            }, 900); // 0.8s de transición + margen
+
+        }, i * 100); // Salen cada 100ms
+    }
+}
+
 
 // Iniciar al cargar la página
 window.addEventListener('load', iniciarFabDraggable);
