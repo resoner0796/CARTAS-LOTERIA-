@@ -26,12 +26,12 @@ html, body {
   --rojo-fuego: #ff1744;       
   
   /* Efectos Glassmorphism (Vidrio Ahumado) */
-  --glass-bg: rgba(20, 20, 20, 0.90); /* Más oscuro para legibilidad */
+  --glass-bg: rgba(20, 20, 20, 0.65);
   --border-color: rgba(255, 215, 0, 0.3); 
   --box-shadow-warm: 0 8px 32px 0 rgba(0, 0, 0, 0.7);
   
   /* Bordes sutiles */
-  --border-glass: 1px solid rgba(255, 255, 255, 0.1);
+  --border-glass: 1px solid rgba(255, 255, 255, 0.15);
 }
 
 body {
@@ -127,15 +127,29 @@ h1, h2, h3 {
 .auth-container, 
 #jugadoresLista, 
 #jugadoresListaIngame,
-.historial-container {
+.historial-container,
+#apuestasUI,
+.modal-content,
+.monedero-container { /* Agregué monedero si quieres que también tenga fondo, si no, quítalo */
     background: var(--glass-bg) !important;
-    backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+    
+    /* LA MAGIA DEL BLUR */
+    backdrop-filter: blur(15px); 
+    -webkit-backdrop-filter: blur(15px); /* Para iPhone */
+    
     border-radius: 20px; 
     border: var(--border-glass); 
-    box-shadow: var(--shadow-soft); 
+    
+    /* Sombra profunda para que "flote" */
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5); 
+    
     padding: 1.5rem;
-    color: white; width: 100%; max-width: 400px; margin: 10px auto;
-    box-sizing: border-box; text-align: center;
+    color: white; 
+    width: 100%; 
+    max-width: 400px; 
+    margin: 10px auto;
+    box-sizing: border-box; 
+    text-align: center;
 }
 
 /* --- HISTORIAL (HUD) --- */
@@ -1121,4 +1135,15 @@ body {
 /* Evita que las cartas intenten "aplastarse" si falta espacio */
 #juegoCartas {
     flex-shrink: 0;
+}
+
+/* --- ANIMACIÓN MONEDAS --- */
+.flying-coin {
+    position: fixed;
+    width: 30px;
+    height: 30px;
+    z-index: 9999; /* Por encima de todo */
+    pointer-events: none; /* Que no estorbe al click */
+    transition: all 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94); /* Curva suave */
+    filter: drop-shadow(0 4px 4px rgba(0,0,0,0.5));
 }
