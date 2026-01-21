@@ -167,9 +167,20 @@ window.onload = () => {
     if (sesionGuardada) {
         // === USUARIO LOGUEADO (CARGA DE DATOS) ===
         usuarioActual = JSON.parse(sesionGuardada);
+        
+        // 🔥 CARGAR PREFERENCIAS DE LA NUBE 🔥
+        if(usuarioActual.fichaActiva) {
+            fichaActivaUrl = usuarioActual.fichaActiva;
+        }
+        // Si tiene cartas favoritas en la cuenta, actualizamos el localStorage para que esté sincronizado
+        if(usuarioActual.cartasFavoritas && usuarioActual.cartasFavoritas.length > 0) {
+            localStorage.setItem("loteria_cartas_fav", JSON.stringify(usuarioActual.cartasFavoritas));
+        }
+        
         configurarMenu();
         cargarTienda();
         sincronizarDatosForzoso(); 
+        
         
         const urlParams = new URLSearchParams(window.location.search);
         const salaInvitacion = urlParams.get('sala');
@@ -1040,18 +1051,59 @@ async function iniciarPagoEmbedded(cantidadMonedas) {
 
 // ==================== PRESETS DE CARTAS ====================
 
-function guardarSetFavorito() {
+async function guardarSetFavorito() {
     if(seleccionadas.length === 0) return mostrarAlerta("Selecciona cartas primero.");
+    
+    // 1. Guardado Local
     localStorage.setItem("loteria_cartas_fav", JSON.stringify(seleccionadas));
-    mostrarAlerta("¡Cartas guardadas! Podrás usarlas en tu próxima partida.", "Guardado");
+    
+    // 2. Guardado en Nube (BD)
+    if(usuarioActual && usuarioActual.email) {
+        try {
+            const btn = event.target; // Feedback visual en el botón
+            const textoOriginal = btn.innerText;
+            btn.innerText = "Guardando...";
+            
+            await fetch(`${API_URL}/usuario/guardar-preferencias`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    email: usuarioActual.email, 
+                    cartasFavoritas: seleccionadas 
+                })
+            });
+            
+            // Actualizamos el objeto local
+            usuarioActual.cartasFavoritas = seleccionadas;
+            localStorage.setItem("loteria_usuario", JSON.stringify(usuarioActual));
+            
+            btn.innerText = textoOriginal;
+            mostrarAlerta("¡Cartas guardadas en tu cuenta! ☁️", "Guardado");
+        } catch (e) {
+            console.error(e);
+            mostrarAlerta("Se guardó localmente, pero falló la nube.", "Aviso");
+        }
+    } else {
+        mostrarAlerta("Inicia sesión para guardar en la nube.", "Guardado Local");
+    }
 }
 
 function cargarSetFavorito() {
-    const guardadas = localStorage.getItem("loteria_cartas_fav");
-    if(!guardadas) return mostrarAlerta("No tienes ningún set guardado.", "Sin datos");
+    let idsFavoritos = [];
+
+    // 1. Intentar leer del usuario logueado (Nube)
+    if (usuarioActual && usuarioActual.cartasFavoritas && usuarioActual.cartasFavoritas.length > 0) {
+        idsFavoritos = usuarioActual.cartasFavoritas;
+    } 
+    // 2. Si no, intentar leer del localStorage (Local)
+    else {
+        const guardadas = localStorage.getItem("loteria_cartas_fav");
+        if (guardadas) idsFavoritos = JSON.parse(guardadas);
+    }
+
+    if(idsFavoritos.length === 0) return mostrarAlerta("No tienes ningún set guardado.", "Sin datos");
     
-    const idsFavoritos = JSON.parse(guardadas);
-    
+    // Lógica de selección visual
     seleccionadas.forEach(id => {
         socket.emit("deseleccionar-carta", { carta: id, sala: salaActual });
     });
@@ -1194,7 +1246,7 @@ const catalogoFichas = [
 ];
 
 // Ficha activa localmente (Persistencia)
-let fichaActivaUrl = localStorage.getItem("loteria_ficha_activa") || 'assets/imagenes/ui/ficha.PNG';
+let fichaActivaUrl = 'assets/imagenes/ui/ficha.PNG';
 
 const audioPlayerTienda = new Audio();
 
@@ -1305,17 +1357,36 @@ function previewSonido(ruta) {
     audioPlayerTienda.play().catch(e => console.log("Error preview:", e));
 }
 
-// Función para ACTIVAR una ficha (Guardar preferencia local)
-function usarFicha(urlImagen) {
+// Función para ACTIVAR una ficha (Guardar en la Nube)
+async function usarFicha(urlImagen) {
+    if(!usuarioHub) return;
+
+    // 1. Actualización Local (Optimista)
     fichaActivaUrl = urlImagen;
-    localStorage.setItem("loteria_ficha_activa", urlImagen);
+    usuarioHub.fichaActiva = urlImagen;
+    localStorage.setItem("loteria_ficha_activa", urlImagen); // Backup local
     
-    mostrarAlerta("¡Ficha actualizada!", "Estilo Nuevo 😎");
-    
-    // Refrescar el modal para que se vea el botón verde "En Uso"
+    // Refrescar modal visualmente
     const grid = document.getElementById("gridTiendaItems");
-    grid.innerHTML = "";
-    renderizarFichas(grid);
+    if(grid) {
+        grid.innerHTML = "";
+        renderizarFichas(grid);
+    }
+
+    // 2. GUARDAR EN BASE DE DATOS (PERSISTENCIA REAL)
+    try {
+        await fetch(`${API_URL}/usuario/guardar-preferencias`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+                email: usuarioHub.email, 
+                fichaActiva: urlImagen 
+            })
+        });
+        hubAlerta("¡Skin Equipada!", "Se guardó en tu perfil ✅");
+    } catch (e) {
+        console.error("No se pudo guardar en la nube", e);
+    }
 }
 
 // Comprar (Genérico para sonidos y fichas)
