@@ -81,15 +81,27 @@ const loteriaMensaje = document.getElementById("loteriaMensaje");
             
             console.log("🔓 Login Automático desde Hub:", usuarioHub.nickname);
 
-            // 2. Guardar en el LocalStorage de la Lotería
+            // 2. Recuperar preferencias anteriores SI EXISTEN antes de sobrescribir
+            // Esto ayuda a que no haya un "parpadeo" de la skin default si ya estaba guardada
+            const prevFicha = localStorage.getItem("loteria_ficha_activa");
+            const prevCartas = localStorage.getItem("loteria_cartas_fav");
+
+            if(prevFicha) usuarioHub.fichaActiva = prevFicha;
+            if(prevCartas) usuarioHub.cartasFavoritas = JSON.parse(prevCartas);
+
+            // 3. Guardar en el LocalStorage de la Lotería
             localStorage.setItem("loteria_usuario", JSON.stringify(usuarioHub));
             
-            // 3. Limpiar la URL para que no se vea el token feo
+            // 4. Limpiar la URL para que no se vea el token feo
             const nuevaUrl = window.location.pathname;
             window.history.replaceState({}, document.title, nuevaUrl);
             
-            // 4. (Opcional) Si tu app no recarga sola al tener usuario en localStorage, forzar recarga
-            // window.location.reload(); 
+            // 5. 🔥 IMPORTANTE: Forzar recarga de ventana si es la primera vez que entra
+            // para asegurar que window.onload ejecute toda la lógica de conexión
+            if (!sessionStorage.getItem("sso_processed")) {
+                sessionStorage.setItem("sso_processed", "true");
+                window.location.reload();
+            }
             
         } catch (e) {
             console.error("Error procesando SSO:", e);
@@ -1544,8 +1556,25 @@ socket.on('usuario-actualizado', (datosFrescos) => {
     console.log("📥 Datos sincronizados recibidos:", datosFrescos);
 
     if (usuarioActual) {
+        // 1. Actualizar datos base
         usuarioActual.monedas = datosFrescos.monedas;
         usuarioActual.inventario = datosFrescos.inventario || [];
+        
+        // 2. 🔥 RESTAURAR PREFERENCIAS (FIX HUB SSO) 🔥
+        // Si la BD trae una ficha activa, la forzamos en la sesión local
+        if (datosFrescos.fichaActiva) {
+            usuarioActual.fichaActiva = datosFrescos.fichaActiva;
+            fichaActivaUrl = datosFrescos.fichaActiva; // Actualizar variable global del juego
+            localStorage.setItem("loteria_ficha_activa", datosFrescos.fichaActiva); // Persistir
+        }
+
+        // Si la BD trae cartas favoritas, las guardamos en localStorage
+        if (datosFrescos.cartasFavoritas && datosFrescos.cartasFavoritas.length > 0) {
+            usuarioActual.cartasFavoritas = datosFrescos.cartasFavoritas;
+            localStorage.setItem("loteria_cartas_fav", JSON.stringify(datosFrescos.cartasFavoritas));
+        }
+
+        // Guardamos el objeto completo actualizado
         localStorage.setItem("loteria_usuario", JSON.stringify(usuarioActual));
     }
 
@@ -1559,9 +1588,13 @@ socket.on('usuario-actualizado', (datosFrescos) => {
     const saldoTienda = document.getElementById("saldoTienda");
     if(saldoTienda) saldoTienda.innerHTML = `Tu saldo: <span style="color:white;">$${datosFrescos.monedas}</span>`;
     
-    // Si la tienda está visible, recargamos la lista
-    if(document.querySelector('.tienda-card')) {
-        cargarTienda(); 
+    // Si la tienda está visible, recargamos la lista para que se marquen los items comprados
+    if(document.querySelector('.tienda-card') || document.getElementById('modalTiendaDetalle').classList.contains('active')) {
+        // Si el modal de detalles está abierto, refrescamos para ver el botón "En Uso"
+        const grid = document.getElementById("gridTiendaItems");
+        if(grid && grid.innerHTML !== "") {
+             if(categoriaActual === 'fichas') renderizarFichas(grid);
+        }
     }
 
     // 3. Juego
