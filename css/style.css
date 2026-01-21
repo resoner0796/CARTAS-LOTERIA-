@@ -253,8 +253,8 @@ input::placeholder { color: rgba(255,255,255,0.6); }
 /* --- FICHA (AJUSTADA TAMAÑO MÓVIL) --- */
 .ficha {
     position: absolute;
-    width: 28%; 
-    max-width: 68px;
+    width: 25%; 
+    max-width: 60px;
     height: auto;
     top: 50%; left: 50%;
     transform: translate(-50%, -50%);
@@ -266,7 +266,7 @@ input::placeholder { color: rgba(255,255,255,0.6); }
 
 /* FICHA EN MODAL VICTORIA (MÁS CHICA) */
 #modalVerificationArea .ficha {
-    width: 20% !important; 
+    width: 25% !important; 
 }
 
 /* TAMAÑOS MÓVIL BASE */
@@ -291,7 +291,7 @@ input::placeholder { color: rgba(255,255,255,0.6); }
     /* Usamos GRID para forzar 2 columnas exactas */
     display: grid !important;
     grid-template-columns: repeat(2, 1fr); /* 2 columnas iguales */
-    gap: 15px; /* Espacio entre cartas */
+    gap: 10px; /* Espacio entre cartas */
     
     width: 100%;
     justify-content: center;
@@ -307,7 +307,7 @@ input::placeholder { color: rgba(255,255,255,0.6); }
 #modalVerificationArea .carta-juego {
     /* Ajuste de tamaño */
     width: 110% !important;
-    max-width: 140px; /* Reduje un poco para dar margen en pantallas chicas */
+    max-width: 160px; /* Reduje un poco para dar margen en pantallas chicas */
     aspect-ratio: 2 / 3; 
     
     /* 🔥 CLAVE: Esto encierra a la ficha dentro de la carta */
@@ -323,7 +323,7 @@ input::placeholder { color: rgba(255,255,255,0.6); }
 /* --- AJUSTE DE LA FICHA (SKIN) --- */
 #modalVerificationArea .ficha {
     /* Tamaño relativo a la carta pequeña */
-    width: 20% !important; /* Un poco más grande para que se note */
+    width: 25% !important; /* Un poco más grande para que se note */
     height: auto !important;
     
     /* Aseguramos que se posicione desde el centro de su coordenada */
