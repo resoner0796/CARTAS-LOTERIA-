@@ -1359,19 +1359,24 @@ function previewSonido(ruta) {
 
 // Función para ACTIVAR una ficha (Guardar en la Nube)
 async function usarFicha(urlImagen) {
-    if(!usuarioHub) return;
+    // CORRECCIÓN: Aquí decía 'usuarioHub', debe ser 'usuarioActual'
+    if(!usuarioActual) return; 
 
-    // 1. Actualización Local (Optimista)
+    // 1. Actualización Local (Rápida / Optimistic UI)
     fichaActivaUrl = urlImagen;
-    usuarioHub.fichaActiva = urlImagen;
+    usuarioActual.fichaActiva = urlImagen; // Guardamos en el objeto en memoria
     localStorage.setItem("loteria_ficha_activa", urlImagen); // Backup local
-    
-    // Refrescar modal visualmente
+    localStorage.setItem("loteria_usuario", JSON.stringify(usuarioActual)); // Actualizar sesión local completa
+
+    // Refrescar modal visualmente para que aparezca el botón verde "En Uso"
     const grid = document.getElementById("gridTiendaItems");
     if(grid) {
         grid.innerHTML = "";
         renderizarFichas(grid);
     }
+    
+    // Feedback visual inmediato
+    mostrarAlerta("¡Ficha actualizada!", "Estilo Nuevo 😎");
 
     // 2. GUARDAR EN BASE DE DATOS (PERSISTENCIA REAL)
     try {
@@ -1379,13 +1384,14 @@ async function usarFicha(urlImagen) {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ 
-                email: usuarioHub.email, 
+                email: usuarioActual.email, // <--- Aquí también corregido
                 fichaActiva: urlImagen 
             })
         });
-        hubAlerta("¡Skin Equipada!", "Se guardó en tu perfil ✅");
+        console.log("Skin guardada en la nube");
     } catch (e) {
         console.error("No se pudo guardar en la nube", e);
+        // No mostramos alerta de error para no interrumpir, ya que localmente sí funcionó
     }
 }
 
