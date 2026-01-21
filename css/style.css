@@ -283,7 +283,10 @@ input::placeholder { color: rgba(255,255,255,0.6); }
     display: flex; justify-content: center;
 }
 
-/* MODAL VICTORIA (MÓVIL) */
+/* =========================================================
+   MODAL VICTORIA - AJUSTE DE CUADRÍCULA 2x2 
+   ========================================================= */
+
 #modalVerificationArea {
     /* Usamos GRID para forzar 2 columnas exactas */
     display: grid !important;
@@ -318,6 +321,11 @@ input::placeholder { color: rgba(255,255,255,0.6); }
     object-fit: fill; /* Asegura que la imagen llene el hueco */
     border-radius: 8px;
     box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+}
+
+/* Ajuste de la ficha encima de la carta (para que no se mueva) */
+#modalVerificationArea .ficha {
+    width: 25% !important; /* Tamaño proporcional de la ficha */
 }
 
 /* --- BOTONES (RENOVADOS CON GRADIENTES PRO) --- */
