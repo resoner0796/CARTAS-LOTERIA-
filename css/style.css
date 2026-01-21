@@ -254,7 +254,7 @@ input::placeholder { color: rgba(255,255,255,0.6); }
 .ficha {
     position: absolute;
     width: 28%; 
-    max-width: 80px;
+    max-width: 68px;
     height: auto;
     top: 50%; left: 50%;
     transform: translate(-50%, -50%);
@@ -306,7 +306,7 @@ input::placeholder { color: rgba(255,255,255,0.6); }
 /* --- AJUSTE DE CONTENEDOR DE CARTA --- */
 #modalVerificationArea .carta-juego {
     /* Ajuste de tamaño */
-    width: 100% !important;
+    width: 110% !important;
     max-width: 140px; /* Reduje un poco para dar margen en pantallas chicas */
     aspect-ratio: 2 / 3; 
     
@@ -323,7 +323,7 @@ input::placeholder { color: rgba(255,255,255,0.6); }
 /* --- AJUSTE DE LA FICHA (SKIN) --- */
 #modalVerificationArea .ficha {
     /* Tamaño relativo a la carta pequeña */
-    width: 28% !important; /* Un poco más grande para que se note */
+    width: 20% !important; /* Un poco más grande para que se note */
     height: auto !important;
     
     /* Aseguramos que se posicione desde el centro de su coordenada */
