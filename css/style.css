@@ -419,8 +419,68 @@ button[onclick*="unirseSala"], #btnBarajear, #btnLimpiarCartas {
 #jugadoresLista div:last-child, #jugadoresListaIngame div:last-child { border-bottom: none; }
 
 /* MODAL Y EXTRAS */
-#loteriaMensaje { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 4rem; color: var(--amarillo-maiz); font-weight: bold; background-color: rgba(0,0,0,0.9); backdrop-filter: blur(5px); padding: 30px 60px; border-radius: 20px; z-index: 9999; display: none; border: 3px solid var(--rosa-mexicano); animation: pulsate 1s infinite alternate; box-shadow: 0 0 30px var(--rosa-mexicano); }
-@keyframes pulsate { from { transform: translate(-50%, -50%) scale(1); } to { transform: translate(-50%, -50%) scale(1.1); } }
+/* =========================================================
+   MODAL "BUENAS" (NOTIFICACIÓN COMPACTA INFERIOR) 
+   ========================================================= */
+
+#loteriaMensaje {
+    /* 1. Posicionamiento: Abajo y al centro (No tapa cartas) */
+    position: fixed;
+    top: auto !important;      /* Quitamos el centrado vertical viejo */
+    bottom: 130px;             /* Se coloca sobre los botones de control */
+    left: 50%;
+    transform: translateX(-50%) !important; /* Solo centrado horizontal */
+    
+    /* 2. Dimensiones: Rectangular y ancho */
+    width: 90%;                /* Ocupa buen ancho en cel */
+    max-width: 400px;          /* Tope en PC */
+    height: auto;
+    padding: 20px;
+    box-sizing: border-box;
+
+    /* 3. Estética "Dark Premium" */
+    background-color: rgba(10, 10, 10, 0.95); /* Casi negro sólido */
+    backdrop-filter: blur(10px);
+    border-radius: 15px;
+    border: 2px solid var(--rosa-mexicano); /* Borde neón distintivo */
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8); /* Sombra fuerte para resaltar */
+    
+    /* 4. Comportamiento */
+    z-index: 10000;            /* Encima de todo */
+    display: none;             /* JS lo activa */
+    animation: slideUpToast 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+/* --- AJUSTE DE TEXTOS INTERNOS (Sobrescribe al JS) --- */
+
+/* Título (¡X gritó BUENAS!) */
+#loteriaMensaje div:first-child {
+    font-size: 1.4rem !important; /* Tamaño ideal para leer sin estorbar */
+    line-height: 1.2;
+    text-shadow: 0 2px 4px rgba(0,0,0,1) !important;
+    margin-bottom: 8px;
+    color: var(--amarillo-maiz) !important;
+}
+
+/* Subtítulo (Esperando empates...) */
+#loteriaMensaje div:last-child {
+    font-size: 1rem !important;
+    color: #ccc !important;
+    margin-top: 5px !important;
+}
+
+/* Contador de segundos */
+#loteriaMensaje span#contadorEmpate {
+    color: white !important;
+    font-size: 1.2rem !important;
+    font-weight: bold;
+}
+
+/* Animación de entrada (Sube desde abajo) */
+@keyframes slideUpToast {
+    from { opacity: 0; transform: translate(-50%, 50px); }
+    to { opacity: 1; transform: translate(-50%, 0); }
+}
 .confeti { position: fixed; width: 10px; height: 10px; background-color: var(--amarillo-maiz); z-index: 9998; animation: caer 4s linear forwards; border-radius: 50%; }
 @keyframes caer { to { transform: translateY(100vh) rotate(360deg); opacity: 0; } }
 
