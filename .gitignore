@@ -1,0 +1,32 @@
+# macOS
+.DS_Store
+**/.DS_Store
+.AppleDouble
+.LSOverride
+Icon?
+
+# Node
+node_modules/
+npm-debug.log*
+yarn-error.log*
+
+# Entornos y secretos
+.env
+.env.*
+!.env.example
+*.pem
+serviceAccountKey.json
+firebase-adminsdk*.json
+
+# Editores
+.vscode/
+.idea/
+*.swp
+*~
+
+# Deploy
+.vercel
+
+# Auditoría de seguridad — contiene detalle de vulnerabilidades sin parchar.
+# Quitar de aquí solo cuando estén corregidas.
+AUDITORIA-SEGURIDAD.md
