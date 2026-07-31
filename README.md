@@ -35,12 +35,15 @@ Vercel lo publica tras ofuscar el JS en el build.
 **Sin el backend en Render no hay juego.** Ahí vive quién está en cada sala, quién es
 host, quién apostó, el canto de cartas y la validación de ganadores.
 
-### Los dos repos
+### Los cinco repos
 
-| Repo | Rol | Deploy |
-|---|---|---|
-| [`CARTAS-LOTERIA-`](https://github.com/resoner0796/CARTAS-LOTERIA-) | Frontend (este) | Vercel, automático en push a `main` |
-| [`loteria-backend`](https://github.com/resoner0796/loteria-backend) | `server.js` + `package.json` | Render, automático en push a `main` |
+| Repo | Rol |
+|---|---|
+| [`juegosenalnube`](https://github.com/resoner0796/juegosenalnube) | Hub: login, monedero, catálogo |
+| [`loteria-backend`](https://github.com/resoner0796/loteria-backend) | Backend común de todos los juegos |
+| **`CARTAS-LOTERIA-`** | **Este.** Lotería mexicana |
+| [`Serpientesyescaleras`](https://github.com/resoner0796/Serpientesyescaleras) | Serpientes y Escaleras |
+| [`Pirinola-Online`](https://github.com/resoner0796/Pirinola-Online) | Pirinola |
 
 El backend también sirve a **Serpientes y Escaleras**, **Pirinola** y la API del Hub.
 Es un solo proceso para todo el ecosistema.

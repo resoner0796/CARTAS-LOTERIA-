@@ -33,15 +33,31 @@ NAVEGADOR
 Vercel **solo sirve archivos**, no ejecuta nada. Toda la lógica de servidor,
 persistencia y dinero vive en Render.
 
-## Los dos repos
+## El ecosistema: cinco repos
 
-| Repo | Contenido | Deploy | Ruta local |
+| Repo | Rol | Producción | Ruta local |
 |---|---|---|---|
-| `resoner0796/CARTAS-LOTERIA-` | Este. Frontend | Vercel (auto en push a `main`) | `~/CARTAS-LOTERIA--1` |
-| `resoner0796/loteria-backend` | `server.js` + `package.json` | Render (auto en push a `main`) | `~/loteria-backend-repo` |
+| `juegosenalnube` | **Hub**: el único con login | www.juegosenlanube.com | `~/juegosenalnube` |
+| `loteria-backend` | **Backend**: API + Socket.IO para todos | loteria-backend-3nde.onrender.com | `~/loteria-backend-repo` |
+| `CARTAS-LOTERIA-` | Este. Lotería mexicana | loteria.juegosenlanube.com | `~/CARTAS-LOTERIA--1` |
+| `Serpientesyescaleras` | Serpientes y Escaleras | serpientes.juegosenlanube.com | `~/Serpientesyescaleras` |
+| `Pirinola-Online` | Pirinola | pirinola.juegosenlanube.com | `~/Pirinola-Online` |
 
-**Casi cualquier cambio de comportamiento toca los dos repos.** Antes de modificar un
-evento de socket o un endpoint, revisa el otro lado en `~/loteria-backend-repo/server.js`.
+```
+        HUB (login, monedero, catálogo)
+                 │  reparte el token en la URL (?tk=...)
+   ┌─────────────┼─────────────┐
+LOTERÍA ←aquí SERPIENTES   PIRINOLA
+   └─────────────┼─────────────┘
+                 ▼
+       BACKEND (Render): Socket.IO + /api/*
+                 │
+            FIRESTORE · STRIPE · FCM
+```
+
+**Casi cualquier cambio de comportamiento toca los dos repos.** Antes de modificar
+un evento de socket o un endpoint, revisa el otro lado en
+`~/loteria-backend-repo/server.js`.
 
 ### Carpetas locales obsoletas — NO USAR
 - `~/CARTAS-LOTERIA-` — clon viejo del frontend, archivos sueltos sin estructura (dic 2025).
@@ -93,8 +109,12 @@ al final que los 33 identificadores que el HTML necesita sigan existiendo en la 
   los `div.pantalla`. Referencias en el objeto `pantallas` (arriba de `app.js`).
 - **Modales**: usa `mostrarAlerta()` / `mostrarConfirmacion()`, no `alert()` ni
   `confirm()` nativos. (Quedan algunos `confirm()` en `comprarItem` — deuda técnica.)
-- **Sesión**: el objeto completo del usuario vive en `localStorage` bajo
-  `loteria_usuario`. No hay tokens.
+- **Sesión**: el token JWT vive en `localStorage.loteria_token` y el perfil
+  cacheado en `loteria_usuario`. Toda llamada a la API pasa por el helper `api()`,
+  que añade `Authorization: Bearer`. El socket manda el token en su handshake.
+  Nunca uses `fetch` directo contra la API.
+- **SSO desde el Hub**: llega como `?tk=<JWT>`. El parámetro `sso` (base64 sin
+  firmar) era el mecanismo viejo; el Hub ya no lo genera.
 - **Cartas**: modo `pozo` usa `assets/imagenes/cartas/cuatro/` con nombres sin ceros
   (`1.jpg`); los demás modos usan `assets/imagenes/cartas/` con ceros (`01.jpg`).
   La variable es `rutaCartasJugador`. Las cartas cantadas del historial siempre salen
@@ -136,12 +156,14 @@ de 54, sin importar el modo.
 
 ## Deuda técnica conocida
 
-Seguridad (crítica, ver README para el detalle):
-- El backend no autentica: confía en el email que le manden en el body. Se puede
-  vaciar la cuenta de cualquiera y auto-recargarse monedas.
-- El "admin" se valida comparando un header de texto plano contra `ADMIN_EMAIL`.
-  Ya no está hardcodeado en el cliente, pero sigue siendo autorización débil.
-- El SSO del Hub es base64 sin firmar → falsificable.
+Seguridad: cerrada. El backend exige JWT (`AUTH_ESTRICTA` activo), hay rate
+limiting, CORS restringido, pagos idempotentes con webhook firmado y los datos de
+usuario se escapan antes de pintarse. Detalle en el README del backend.
+
+**Al escribir en el DOM, escapa siempre lo que venga de otra persona** con
+`escaparHtml()`. Nicknames y nombres de sala los escribe gente: sin escapar, un
+nickname como `<img src=x onerror=...>` ejecuta código en el navegador de todos
+los de la sala, y la sesión vive en `localStorage`.
 
 Bugs:
 - El service worker nunca se registra.
