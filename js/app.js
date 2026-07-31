@@ -6,9 +6,33 @@
 const API_URL = "https://loteria-backend-3nde.onrender.com/api";
 // El token va en el handshake. `auth` como función se vuelve a evaluar en cada
 // reconexión, así que en cuanto inicias sesión el socket ya viaja identificado.
-const socket = io("https://loteria-backend-3nde.onrender.com", {
-  auth: (cb) => cb({ token: localStorage.getItem("loteria_token") || null })
-});
+//
+// El guión de Socket.IO se sirve DESDE EL BACKEND. Si ese servidor está dormido
+// o caído, el guión no llega y `io` no existe. Sin esta comprobación la línea
+// reventaba, y como es de las primeras del archivo, se llevaba por delante TODO
+// lo demás: la página se quedaba congelada en el splash sin explicación. Es
+// preferible cargar la app y avisar que no hay servidor.
+const socket = (typeof io !== "undefined")
+    ? io("https://loteria-backend-3nde.onrender.com", {
+          auth: (cb) => cb({ token: localStorage.getItem("loteria_token") || null })
+      })
+    : (function socketAusente() {
+          console.error("No se pudo cargar Socket.IO: el servidor no responde.");
+          setTimeout(() => {
+              if (typeof mostrarAlerta === "function") {
+                  mostrarAlerta(
+                      "No pudimos conectar con el servidor del juego. Revisa tu conexión y vuelve a entrar.",
+                      "Sin conexión"
+                  );
+              }
+          }, 1500);
+          // Objeto mínimo para que el resto del archivo no truene.
+          return {
+              on() {}, once() {}, emit() {},
+              disconnect() { return this; }, connect() { return this; },
+              connected: false, id: null
+          };
+      })();
 
 // ==================== POZO ACUMULADO ====================
 // Bote aparte que crece $1 por partida y por jugador que se apunte, y que solo
@@ -176,6 +200,14 @@ const loteriaMensaje = document.getElementById("loteriaMensaje");
 
 
 // ==================== AUTO-LOGIN DESDE EL HUB (SSO) ====================
+// Se marca ANTES de que window.onload pueda ejecutarse. Sin esto había una
+// carrera: el arranque miraba el localStorage y, como el perfil todavía no
+// había llegado del servidor, daba la sesión por inexistente y sacaba la
+// pantalla de acceso. Con el arranque en frío de Render esa petición puede
+// tardar bastante, así que el jugador que venía del Hub se quedaba viendo un
+// login que no debía existir.
+let entrandoDesdeHub = false;
+
 (function verificarSSO() {
     const params = new URLSearchParams(window.location.search);
     // `tk` es el formato actual: el token firmado que reparte el Hub.
@@ -195,23 +227,57 @@ const loteriaMensaje = document.getElementById("loteriaMensaje");
     // verifica en cada petición. Eso es justo lo que le faltaba al formato viejo,
     // que era JSON en base64 sin firma y cualquiera podía fabricarse uno.
     if (tokenSSO.split('.').length === 3) {
+        entrandoDesdeHub = true;
         localStorage.setItem("loteria_token", tokenSSO);
         api('/usuario/datos-frescos')
             .then(r => r.json())
             .then(d => {
                 if (!d.success) throw new Error("el servidor rechazó el token");
-                localStorage.setItem("loteria_usuario", JSON.stringify({
+                const perfil = {
                     email: d.email, nickname: d.nickname, monedas: d.monedas,
                     esAdmin: !!d.esAdmin, inventario: d.inventario || [],
                     fichaActiva: d.fichaActiva, cartasFavoritas: d.cartasFavoritas || []
-                }));
+                };
+                localStorage.setItem("loteria_usuario", JSON.stringify(perfil));
                 limpiarUrl();
-                window.location.reload();
+
+                // Se entra en el momento, sin recargar. Recargar significaba
+                // esperar dos veces: la petición del perfil y la carga entera
+                // de la página otra vez.
+                usuarioActual = perfil;
+                if (perfil.fichaActiva) fichaActivaUrl = perfil.fichaActiva;
+                if (perfil.cartasFavoritas?.length) {
+                    localStorage.setItem("loteria_cartas_fav", JSON.stringify(perfil.cartasFavoritas));
+                }
+                entrandoDesdeHub = false;
+
+                // Primero se entra, y solo después lo accesorio. Si algo de esto
+                // fallara —el socket, una imagen, la tienda— no tiene por qué
+                // costarle la sesión a alguien que ya se identificó bien.
+                cambiarPantalla("menu");
+                ocultarSplashGlobal();
+
+                try {
+                    configurarMenu();
+                    cargarTienda();
+                    sincronizarDatosForzoso();
+                    if (typeof socket !== "undefined" && socket) socket.disconnect().connect();
+
+                    const invitacion = new URLSearchParams(window.location.search).get('sala');
+                    if (invitacion) unirseSalaDirecto(invitacion, null);
+                } catch (fallo) {
+                    console.warn("Entramos, pero algo del arranque falló:", fallo);
+                }
             })
             .catch(e => {
                 console.error("SSO:", e);
                 localStorage.removeItem("loteria_token");
                 limpiarUrl();
+                entrandoDesdeHub = false;
+                ocultarSplashGlobal(() => {
+                    cambiarPantalla("login");
+                    mostrarAlerta("No pudimos validar tu sesión del Hub. Entra de nuevo.", "Sesión");
+                });
             });
         return;
     }
@@ -318,6 +384,11 @@ function mostrarAlerta(mensaje, titulo = "Aviso del Sistema", prueba = null) {
 function mostrarConfirmacion(mensaje, callbackAceptar) {
     modalTitulo.textContent = "¿Estás seguro?";
     modalMensaje.textContent = mensaje;
+
+    // Los dos modales comparten el mismo contenedor, así que hay que borrar la
+    // tabla ganadora de la vez anterior. Si no, al pedir confirmación para salir
+    // aparecía otra vez la tabla del último que ganó.
+    limpiarPruebaVictoria();
     btnModalCancelar.style.display = "inline-block";
     btnModalAceptar.textContent = "Sí";
     
@@ -329,9 +400,18 @@ function mostrarConfirmacion(mensaje, callbackAceptar) {
     modalSistema.classList.add("active");
 }
 
+/** Borra la tabla ganadora del modal compartido. */
+function limpiarPruebaVictoria() {
+    const zona = document.getElementById("modalCartaGanadora");
+    if (!zona) return;
+    zona.innerHTML = "";
+    zona.style.display = "none";
+}
+
 function cerrarModal() {
     modalSistema.classList.remove("active");
     onModalAceptar = null;
+    limpiarPruebaVictoria();
 }
 
 if(btnModalAceptar) btnModalAceptar.onclick = () => { if (onModalAceptar) onModalAceptar(); else cerrarModal(); };
@@ -342,20 +422,30 @@ if(btnModalCancelar) btnModalCancelar.onclick = () => cerrarModal();
 // INICIO Y AUTENTICACIÓN
 // ======================================================
 
+/** Desvanece el splash. Vive fuera de onload porque el SSO también lo necesita. */
+function ocultarSplashGlobal(callback) {
+    if (!pantallas.splash) { if (callback) callback(); return; }
+    pantallas.splash.style.opacity = '0';
+    setTimeout(() => {
+        pantallas.splash.style.display = 'none';
+        if (callback) callback();
+    }, 500); // 500ms es lo que tarda la transición CSS
+}
+
 window.onload = () => {
     // 1. Revisar sesión guardada
     let sesionGuardada = localStorage.getItem("loteria_usuario");
 
-    // Función auxiliar para desvanecer el splash
-    const ocultarSplash = (callback) => {
-        if(pantallas.splash) {
-            pantallas.splash.style.opacity = '0';
-            setTimeout(() => {
-                pantallas.splash.style.display = 'none';
-                if(callback) callback();
-            }, 500); // 500ms es lo que tarda la transición CSS
-        }
-    };
+    const ocultarSplash = ocultarSplashGlobal;
+
+    // Si venimos del Hub con token, el perfil todavía viene en camino. No hay
+    // que decidir nada aquí: el splash se queda y el propio SSO abre el menú
+    // cuando llegue la respuesta, o el login si el servidor lo rechaza.
+    if (entrandoDesdeHub) {
+        const aviso = document.querySelector('#pantallaSplash h1');
+        if (aviso) aviso.textContent = 'Entrando...';
+        return;
+    }
 
     // --- MIGRACIÓN A SESIONES CON TOKEN ---
     // Las sesiones anteriores al cambio a JWT no tienen token y en localStorage
