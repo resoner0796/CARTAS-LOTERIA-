@@ -502,6 +502,9 @@
 
   <script src="https://js.stripe.com/v3/"></script>
   <script src="https://loteria-backend-3nde.onrender.com/socket.io/socket.io.js"></script>
-  <script src="js/app.js"></script>
+  <!-- type="module" para que el navegador resuelva los imports de js/modulos/*
+       en desarrollo. En producción este archivo llega ya empaquetado por esbuild
+       y ofuscado, en un solo bloque; cargarlo como módulo le sienta igual. -->
+  <script type="module" src="js/app.js"></script>
 </body>
 </html>

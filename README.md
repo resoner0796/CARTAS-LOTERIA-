@@ -55,23 +55,32 @@ Es un solo proceso para todo el ecosistema.
 ```
 index.html          Todas las pantallas (login, menú, sala, selección, juego, admin)
 css/style.css       Estilos
-js/app.js           Toda la lógica de cliente (en claro)
-scripts/            Ofuscador que corre Vercel en el build
+js/app.js           Punto de entrada y grueso de la lógica (en claro)
+js/modulos/         Piezas ya separadas: config.js, utiles.js
+scripts/            Empaquetado + ofuscación, corre en el build de Vercel
 vercel.json         Configuración de build
-service-worker.js   Cacheo offline — actualmente NO se registra
+service-worker.js   Cacheo offline
 manifest.json       PWA
 assets/imagenes/    Cartas, barajas, fondos, fichas, UI
 assets/audios/      Voz de cada una de las 54 cartas + efectos
 ```
 
-### Ofuscación
+### Build: empaquetado y ofuscación
 
-El repo guarda **siempre** `js/app.js` legible. La ofuscación la hace Vercel en cada
-despliegue (`npm run build` → `scripts/obfuscate.js`), reescribiendo el archivo dentro
-de su contenedor de build. Nunca se commitea código ofuscado.
+El repo guarda **siempre** la fuente legible. Nunca se commitea código ofuscado.
+Vercel hace dos cosas en cada despliegue (`npm run build` → `scripts/obfuscate.js`):
+
+```
+js/app.js + js/modulos/*.js  ──esbuild──▶  un solo IIFE  ──ofuscador──▶  js/app.js
+```
+
+Primero empaqueta, porque el ofuscador trabaja sobre un archivo suelto y no sabe
+seguir un `import`. Después borra `js/modulos/` de la copia efímera: el bundle ya
+lleva todo dentro, y si la carpeta se quedara se publicarían las fuentes legibles
+junto al archivo ofuscado.
 
 ```bash
-npm run build:dry   # simulacro local: valida sin escribir nada
+npm run build:dry   # simulacro local: valida sin escribir ni borrar nada
 ```
 
 Ten presente que la ofuscación de JS de cliente **no es una medida de seguridad**:
@@ -82,15 +91,19 @@ seguridad real vive en el servidor.
 
 ## 🚀 Correr local
 
-Cualquier servidor estático sirve la carpeta tal cual:
+No hace falta build: `index.html` carga `app.js` como módulo ES y el navegador
+resuelve los `import` solo. Cualquier servidor estático sirve la carpeta tal cual:
 
 ```bash
 python3 -m http.server 8000
 # → http://localhost:8000
 ```
 
-> ⚠️ La URL del backend está hardcodeada al inicio de `js/app.js` y apunta a
-> **producción**. Lo que hagas en local afecta monedas y usuarios reales.
+(Abrir el `index.html` con doble clic **no** funciona: los módulos ES necesitan
+`http://`, con `file://` el navegador los bloquea.)
+
+> ⚠️ La URL del backend vive en `js/modulos/config.js` y apunta a **producción**.
+> Lo que hagas en local afecta monedas y usuarios reales.
 
 ---
 
@@ -140,21 +153,29 @@ El bote se reparte entre los ganadores validados por el host.
 
 ## 🔐 Estado de seguridad
 
-> **Este proyecto mueve dinero real (Stripe live) y hoy no tiene autenticación.**
+Este proyecto mueve dinero real (Stripe live). La auditoría se cerró: **23 de 24
+hallazgos resueltos y verificados atacando producción**, no leyendo el diff.
 
-El backend confía en el email que se le mande en el cuerpo de la petición. No hay
-sesiones ni tokens firmados. Consecuencias conocidas:
+Lo que hay hoy:
 
-1. **Vaciado de cuentas** — `/api/buscar-destinatario` devuelve el email de cualquier
-   nickname, y `/api/transferir-saldo` no valida que quien pide sea el dueño de la
-   cuenta de origen.
-2. **Autorización de admin débil** — los endpoints `/api/admin/*` se autorizan con un
-   header de texto plano comparado contra `ADMIN_EMAIL`. El email ya salió del cliente,
-   pero comparar un email no es autenticación.
-3. **SSO falsificable** — el token del Hub es JSON en base64 sin firma.
+- **JWT obligatorio** (`AUTH_ESTRICTA` activo). El login emite un token firmado; el
+  backend saca la identidad de ahí y **ya no confía en el email del cuerpo de la
+  petición**. El socket lo manda en su handshake.
+- **Autorización de admin** resuelta en el servidor, en cada endpoint. El flag que
+  llega al cliente solo decide si se pinta el botón.
+- **SSO firmado**: el Hub reparte el JWT en `?tk=`. El viejo `?sso=` (JSON en base64
+  sin firma, falsificable) ya no se genera. **No lo reintroduzcas.**
+- **Pagos idempotentes** con webhook de firma verificada.
+- **Rate limiting**, CORS restringido y validación de entrada.
+- **XSS**: todo lo que escribe una persona se escapa antes de pintarse.
+- **El perfil que sale al cliente pasa por lista blanca**, así que ni el hash de la
+  contraseña ni el `fcmToken` salen del servidor.
 
-**Plan:** migrar a JWT (login emite token firmado, el backend lo lee del header
-`Authorization` y deja de confiar en el body). Toca los dos repos.
+El detalle explotable vive en `AUDITORIA-SEGURIDAD.md`, que está en `.gitignore` a
+propósito.
+
+> La ofuscación del JS **no cuenta como seguridad**: cualquiera la revierte. La
+> seguridad vive en el backend.
 
 ---
 
@@ -162,15 +183,18 @@ sesiones ni tokens firmados. Consecuencias conocidas:
 
 - [x] Documentar arquitectura (`CLAUDE.md`, `README.md`, `.gitignore`)
 - [x] Fase 0 de contención: idempotencia de pagos, caída remota, admin fuera del cliente
-- [ ] **Autenticación JWT** y cierre de los tres huecos de arriba
-- [ ] Rate limiting y validación de entrada en el backend
+- [x] **Autenticación JWT** y cierre de los huecos de la auditoría
+- [x] Rate limiting y validación de entrada en el backend
 - [x] Bug: ruta de tablas al reconectar en modo Pozo
 - [x] XSS del nickname escapado en los 5 puntos de inyección
-- [ ] Registrar el service worker y arreglar `manifest.json` (PWA real)
+- [x] Dejar de mandar el hash de la contraseña al navegador
+- [x] Registrar el service worker
+- [ ] Arreglar `manifest.json` (íconos apuntan a rutas rotas)
 - [ ] Optimizar assets a WebP (~100 MB actuales)
 - [x] Ofuscación automática en el build de Vercel
 - [x] Quitar los `onclick` del HTML (paso previo a modularizar)
-- [ ] Partir `app.js` en módulos ES
+- [x] Empaquetado con esbuild antes de ofuscar (habilita los módulos)
+- [ ] Partir `app.js` en módulos ES — **en curso**: van `config.js` y `utiles.js`
 - [ ] Evaluar migración de Render a VPS propio
 
 ---

@@ -68,42 +68,89 @@ un evento de socket o un endpoint, revisa el otro lado en
 
 ```
 index.html            Todas las pantallas en un solo archivo (SPA por clases CSS)
-css/style.css         Estilos (~1,250 líneas)
-js/app.js             Toda la lógica de cliente (~2,030 líneas), en claro
-scripts/obfuscate.js  Ofuscador que corre Vercel en el build — ver abajo
+css/style.css         Estilos (~1,900 líneas)
+js/app.js             Punto de entrada y grueso de la lógica (~2,000 líneas)
+js/modulos/           Piezas ya separadas (ver "Modularización")
+  config.js             Direcciones, clave pública de Stripe, catálogos de tienda
+  utiles.js             escaparHtml() y actualizarValor()
+scripts/obfuscate.js  Empaqueta y ofusca en el build de Vercel — ver abajo
 vercel.json           buildCommand + outputDirectory
-service-worker.js     Existe pero NUNCA se registra (PWA no funciona)
+service-worker.js     Estrategias de caché (PWA)
 manifest.json         Íconos apuntan a rutas rotas
 assets/imagenes/      151 archivos, ~100 MB. Fondos PNG de 2–4 MB c/u
 assets/audios/        70 archivos (voz de cada carta + efectos)
-package.json          Scripts de build y devDependency del ofuscador
+package.json          Scripts de build; esbuild y el ofuscador como devDependencies
 ```
 
-### Ofuscación: ocurre en el build de Vercel, nunca en el repo
+### El build: empaquetar y ofuscar, en Vercel, nunca en el repo
 
-**El repo guarda siempre `js/app.js` legible.** No se commitea código ofuscado.
+**El repo guarda siempre la fuente legible.** No se commitea código ofuscado.
 
-Vercel clona, corre `npm run build` (`scripts/obfuscate.js`) que reescribe `js/app.js`
+Son dos pasos encadenados:
+
+```
+js/app.js + js/modulos/*.js  ──esbuild──▶  un solo IIFE  ──ofuscador──▶  js/app.js
+```
+
+Vercel clona, corre `npm run build` (`scripts/obfuscate.js`), que hace las dos cosas
 dentro de su contenedor efímero, y publica el resultado. Tu working tree no se toca.
 
-- `npm run build:dry` — simulacro local: ofusca en memoria y valida, sin escribir.
+- `npm run build:dry` — simulacro local: empaqueta y ofusca en memoria, valida, y no
+  escribe nada.
 - `npm run build` — se **niega** a correr fuera de Vercel (revisa `process.env.VERCEL`),
   para que nadie deje la fuente ofuscada por accidente.
 
-Configuración en `vercel.json` (`buildCommand` + `outputDirectory: "."`).
+**El empaquetado va primero por necesidad**, no por gusto: el ofuscador trabaja sobre
+un archivo suelto y no sabe seguir un `import`. Si extraes un módulo y el build no
+empaqueta, lo que llega a producción es un archivo con imports que el ofuscador no
+entiende.
+
+**El build borra `js/modulos/` del contenedor tras empaquetar.** El bundle ya lleva
+todo dentro; si la carpeta se quedara, Vercel publicaría también las fuentes legibles
+y cualquiera podría pedir `js/modulos/config.js` para leer sin ofuscar justo lo que
+se acaba de ofuscar. Se borra de la copia efímera, jamás del repo.
 
 **Sobre la ofuscación y los nombres:** `renameGlobals` va en `true`. Desde que el
-HTML dejó de llamar funciones por su nombre, casi todo se puede renombrar: de 68
-funciones solo 1 conserva su nombre. El script sigue escaneando el HTML **y** el
-propio JS por si alguien reintroduce un atributo inline, reserva esos nombres, y
-después carga el bundle en un DOM simulado para comprobar con `typeof` que
-resuelvan. Si vuelves a meter un `onclick`, esa red lo cubre — pero mejor no.
+HTML dejó de llamar funciones por su nombre, **ya no queda ninguna función con su
+nombre visible** (de 68 declaradas, cero). El script sigue escaneando el HTML **y**
+las fuentes JS por si alguien reintroduce un atributo inline, reserva esos nombres, y
+después carga el bundle en un DOM simulado para comprobar con `typeof` que resuelvan.
+Si vuelves a meter un `onclick`, esa red lo cubre — pero mejor no.
+
+> El escáner ignora los comentarios a propósito: varios documentan el patrón viejo
+> (`antes era onclick="login()"`) y los tomaba por código real, reservando nombres
+> que ya nadie invoca. No rompía nada, pero falseaba la cuenta final.
+
+### Modularización (en curso)
+
+`app.js` se está partiendo en `js/modulos/`, **un módulo a la vez**, verificando
+después de cada movimiento. Van dos: `config.js` y `utiles.js`, los dos sin
+dependencias (hojas del grafo), así que se pueden importar desde cualquier sitio sin
+crear ciclos.
+
+Qué va en cada sitio:
+
+- **`config.js`** — lo que no cambia en tiempo de ejecución: direcciones, la clave
+  pública de Stripe, los catálogos de la tienda. No toca el DOM.
+- **`utiles.js`** — funciones sueltas que usa medio archivo y no pertenecen a ninguna
+  parte concreta.
+- **`app.js`** — todo lo demás, por ahora.
+
+⚠️ **Nunca metas en `config.js` referencias al DOM** (`getElementById`) ni variables
+que el juego reasigne mientras corre. Lo primero depende de que la página ya esté
+parseada; lo segundo convierte un módulo de datos en estado compartido.
+
+Pendiente de repartir: sesión, socket, sala, selección, juego, apuestas, validación,
+tienda, monedero y admin.
 
 ## Convenciones
 
 - **Todo en español**: variables, funciones, comentarios, eventos de socket
   (`unirse-sala`, `carta-cantada`, `jugadores-actualizados`).
-- **Sin módulos ni bundler todavía.** `app.js` se carga con `<script>` plano.
+- **Módulos ES.** `index.html` carga `app.js` con `<script type="module">`. En
+  desarrollo el navegador resuelve los `import` solo, sin build; en producción llega
+  todo empaquetado en un archivo. Al ser módulo, nada de lo que declares es global:
+  si algo tiene que estar en `window`, ponlo ahí explícitamente.
 - **El HTML no llama funciones por su nombre.** Cada elemento declara *qué* hace
   y un único escucha en el documento resuelve el clic:
 
@@ -188,13 +235,34 @@ los de la sala, y la sesión vive en `localStorage`.
   decidía antes de tiempo que no había sesión. Existe `entrandoDesdeHub`.
 - **Los modales de aviso y confirmación comparten contenedor.** Hay que limpiar
   la prueba de victoria o reaparece donde no toca.
+- **El backend mandaba el documento entero del usuario al navegador.**
+  `usuario-actualizado` emitía `doc.data()` tal cual en los diez sitios donde se
+  dispara, así que el hash bcrypt de la contraseña y el `fcmToken` viajaban al
+  cliente y quedaban a la vista en la consola. Existe `perfilPublico()`, que es
+  **lista blanca**: con lista negra, cualquier campo sensible que se añada al
+  documento más adelante se filtraría solo y en silencio. Si tocas ese evento,
+  pásalo por ahí.
+- **Cachear respuestas parciales revienta la Cache API.** Los `<audio>` se piden
+  por rangos y el servidor responde `206`; `cache.put()` solo admite respuestas
+  completas y rechazaba con "Cache.put() encountered a network error". Como los
+  `put` iban sin `.catch()`, cada fallo salía como *Uncaught (in promise)* y
+  enterraba los errores de verdad. Se filtran antes y el guardado ya no puede
+  tumbar nada.
+
+**Para verificar de verdad un cambio en el cliente**, compara tres copias con el
+mismo guion: la versión anterior (`git archive HEAD`), la nueva sin empaquetar y la
+nueva empaquetada+ofuscada. Sin la primera no sabes si un fallo lo trajiste tú; sin
+la tercera no sabes qué hace el código que realmente se publica. Los dos bugs más
+caros de este repo —botones renombrados por el ofuscador— los encontró la
+ejecución, nunca la lectura del diff.
 
 Bugs pendientes:
-- El service worker nunca se registra.
 - `manifest.json` apunta a íconos que no existen en esa ruta.
-- `cartasDisponibles` (arriba de `app.js`) es código muerto.
-- `guardarSetFavorito` y `verificarDestinatario` usan el `event` global implícito
-  (solo funciona en Chrome).
+- Los cuatro `icon-192`/`icon-512` son **el mismo blob de 1.5 MB** duplicado bajo
+  cuatro nombres que solo difieren en mayúsculas. Para un icono de 192px sobra
+  entero.
+- `cargar-usuarios-admin` y `gritar-loteria` truenan si `usuarioActual` es `null`.
+  No se alcanza jugando normal —ambas exigen sesión— pero les falta la guarda.
 
 Rendimiento:
 - ~100 MB de assets sin optimizar. Fondos PNG de 2–4 MB.

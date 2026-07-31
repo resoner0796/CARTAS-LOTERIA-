@@ -9,6 +9,7 @@
     "dev": "python3 -m http.server 8000"
   },
   "devDependencies": {
+    "esbuild": "^0.28.1",
     "javascript-obfuscator": "^4.1.1"
   },
   "repository": {

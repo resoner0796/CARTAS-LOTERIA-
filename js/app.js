@@ -1,9 +1,16 @@
 // ======================================================
 // CONFIGURACIÓN E INICIALIZACIÓN
 // ======================================================
+//
+// Este archivo es el punto de entrada. En desarrollo el navegador resuelve los
+// imports de abajo por su cuenta; en el despliegue, esbuild lo empaqueta todo en
+// un solo archivo antes de ofuscarlo (ver scripts/obfuscate.js).
 
-// URL DEL BACKEND (Render)
-const API_URL = "https://loteria-backend-3nde.onrender.com/api";
+import {
+    API_URL, SERVIDOR, STRIPE_CLAVE_PUBLICA, FICHA_POR_DEFECTO,
+    catalogoSonidos, catalogoFichas
+} from './modulos/config.js';
+import { escaparHtml, actualizarValor } from './modulos/utiles.js';
 // El token va en el handshake. `auth` como función se vuelve a evaluar en cada
 // reconexión, así que en cuanto inicias sesión el socket ya viaja identificado.
 //
@@ -13,7 +20,7 @@ const API_URL = "https://loteria-backend-3nde.onrender.com/api";
 // lo demás: la página se quedaba congelada en el splash sin explicación. Es
 // preferible cargar la app y avisar que no hay servidor.
 const socket = (typeof io !== "undefined")
-    ? io("https://loteria-backend-3nde.onrender.com", {
+    ? io(SERVIDOR, {
           auth: (cb) => cb({ token: localStorage.getItem("loteria_token") || null })
       })
     : (function socketAusente() {
@@ -75,36 +82,6 @@ socket.on("estas-silenciado", () => {
     mostrarAlerta("El anfitrión silenció tus efectos de sonido en esta sala.", "Sin sonidos 🔇");
 });
 
-// ==================== FEEDBACK VISUAL DE SALDO ====================
-/**
- * Pinta un número y, si cambió respecto a lo que ya había, le da un latido
- * dorado. Sin esto el saldo cambiaba en silencio: apostabas y el número
- * simplemente era otro, sin nada que dijera "acabas de pagar".
- */
-function actualizarValor(elemento, valor) {
-    if (!elemento) return;
-    const nuevo = String(valor);
-    const cambio = elemento.textContent !== "" && elemento.textContent !== nuevo;
-    elemento.textContent = nuevo;
-    if (!cambio) return;
-
-    elemento.classList.remove("saldo-cambio");
-    void elemento.offsetWidth;          // reinicia la animación
-    elemento.classList.add("saldo-cambio");
-    setTimeout(() => elemento.classList.remove("saldo-cambio"), 700);
-}
-
-// ==================== ESCAPE DE HTML ====================
-// Nicknames, nombres de sala y correos los escribe gente, y varios de ellos se
-// pintan con innerHTML. Sin escapar, un nickname como <img src=x onerror=...>
-// ejecuta código en el navegador de TODOS los de la sala. Y como la sesión vive
-// en localStorage, ese código puede robarla.
-function escaparHtml(texto) {
-    return String(texto ?? "").replace(/[&<>"']/g, c => ({
-        "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
-    })[c]);
-}
-
 // ==================== SESIÓN (TOKEN) ====================
 // El backend ya no confía en el email que le mandemos en el body: la identidad
 // sale de este token firmado. Mientras dure la fase de convivencia el servidor
@@ -152,10 +129,7 @@ let costoCartaActual = 1;
 // Ruta por defecto para Tradicional/Llena
 let rutaCartasJugador = 'assets/imagenes/cartas/';
 
-// Generamos IDs de cartas (del 01 al 54) - Ajustado a 30 por tu código anterior
-const cartasDisponibles = Array.from({ length: 30 }, (_, i) => String(i + 1).padStart(2, '0'));
-
-const stripePromise = Stripe("pk_live_51SfOSHHRnABvTmoyGETt893p5wdCWGOmKQOiW4YCkbquy0Vp0mx97dVdfgXlhPszaZ40iXNFW4NveUq4Lilv83wd00gCQpzFmR");
+const stripePromise = Stripe(STRIPE_CLAVE_PUBLICA);
 
 // Referencias DOM - Pantallas
 const pantallas = {
@@ -1702,28 +1676,10 @@ async function ejecutarRecargaAdmin() {
 
 // ==================== LÓGICA DE TIENDA (MEJORADA) ====================
 
-// 1. Catálogo Definido (Sonidos)
-const catalogoSonidos = [
-    { id: 'snd_risa', nombre: 'Risa', emoji: '😂', precio: 0, file: 'assets/audios/tienda/risa.mp3' },
-    { id: 'snd_corneta', nombre: 'Corneta', emoji: '📯', precio: 0, file: 'assets/audios/tienda/corneta.mp3' },
-    { id: 'snd_tepasas', nombre: 'Te pasas', emoji: '😒', precio: 8, file: 'assets/audios/tienda/tepasas.mp3' },
-    { id: 'snd_misahorros', nombre: 'Mis Ahorros', emoji: '😭', precio: 8, file: 'assets/audios/tienda/misahorros.mp3' },
-    { id: 'snd_ronquido', nombre: 'Ronquido', emoji: '😴', precio: 8, file: 'assets/audios/tienda/ronquido.mp3' },
-    { id: 'snd_cuack', nombre: 'Cuack', emoji: '🦆', precio: 8, file: 'assets/audios/tienda/cuack.mp3' },
-    { id: 'snd_disparo', nombre: 'Disparo', emoji: '🔫', precio: 8, file: 'assets/audios/tienda/disparo.mp3' }
-];
-
-// 2. Catálogo de Fichas (Skins)
-const catalogoFichas = [
-    { id: 'skin_default', nombre: 'Clásica', precio: 0, img: 'assets/imagenes/ui/ficha.PNG' },
-    { id: 'skin_bitcoin', nombre: 'Bitcoin', precio: 5, img: 'assets/imagenes/ui/fichasbitcoin.png' },
-    { id: 'skin_corazon', nombre: 'Corazones', precio: 5, img: 'assets/imagenes/ui/fichascorazones.png' },
-    { id: 'skin_verde',   nombre: 'Verde Neon', precio: 5, img: 'assets/imagenes/ui/fichasverdes.png' },
-    { id: 'skin_frijol',  nombre: 'Frijolito', precio: 5, img: 'assets/imagenes/ui/fichasfrijol.png' }
-];
+// Los catálogos de sonidos y fichas viven en modulos/config.js.
 
 // Ficha activa localmente (Persistencia)
-let fichaActivaUrl = 'assets/imagenes/ui/ficha.PNG';
+let fichaActivaUrl = FICHA_POR_DEFECTO;
 
 const audioPlayerTienda = new Audio();
 

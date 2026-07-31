@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Ofusca js/app.js DURANTE EL BUILD DE VERCEL, en el contenedor de despliegue.
+ * Empaqueta y ofusca el JS DURANTE EL BUILD DE VERCEL, en el contenedor de despliegue.
  *
  * El repo guarda siempre la versión legible. Nunca se commitea código ofuscado:
  * Vercel clona, corre esto (que reescribe js/app.js dentro de SU copia efímera)
@@ -9,19 +9,28 @@
  *   Vercel:  npm run build      (definido en vercel.json)
  *   Local:   npm run build:dry  (no escribe nada, solo comprueba que todo salga bien)
  *
- * ⚠️ renameGlobals va en false. index.html llama funciones desde atributos inline
- * (onclick="login()"); si el ofuscador las renombra, los botones dejan de servir sin
- * que salte ningún error hasta que un usuario los pica. Por eso al final verificamos
- * que cada identificador que el HTML necesita siga existiendo en la salida.
+ * Son DOS pasos encadenados:
+ *
+ *   js/app.js + js/modulos/*.js  ──esbuild──▶  un solo IIFE  ──ofuscador──▶  js/app.js
+ *
+ * El empaquetado va primero por necesidad: el ofuscador trabaja sobre un archivo
+ * suelto y no sabe seguir un `import`. Además, juntarlo todo en un ámbito antes de
+ * ofuscar es lo que permite tener `renameGlobals` en true, porque ya no queda nada
+ * que deba conservar su nombre para que lo encuentre alguien de fuera.
+ *
+ * En desarrollo no hace falta build: index.html carga app.js como módulo y el
+ * navegador resuelve los imports solo.
  */
 
 const fs = require('fs');
 const vm = require('vm');
 const path = require('path');
 const JavaScriptObfuscator = require('javascript-obfuscator');
+const esbuild = require('esbuild');
 
 const RAIZ = path.join(__dirname, '..');
 const ARCHIVO = path.join(RAIZ, 'js', 'app.js');
+const MODULOS = path.join(RAIZ, 'js', 'modulos');
 const HTML = path.join(RAIZ, 'index.html');
 
 const enSeco = process.argv.includes('--dry');
@@ -64,8 +73,15 @@ function globalesUsadosEnAtributos(...fuentes) {
             nombres.add(nombre);
         }
     };
-    for (const texto of fuentes) {
-        if (!texto) continue;
+    for (const bruto of fuentes) {
+        if (!bruto) continue;
+        // Los comentarios se descartan: varios documentan el patrón viejo
+        // (`antes se hacía onclick="login()"`) y el escáner los tomaba por código
+        // real, reservando nombres que ya nadie invoca. Reservar de más no rompe
+        // nada, pero falsea la cuenta final y hace creer que quedan funciones
+        // expuestas cuando no queda ninguna.
+        const texto = bruto.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^[ \t]*\/\/.*$/gm, '');
+
         // El prefijo NO puede exigir un espacio: dentro del JS el atributo suele
         // arrancar pegado a la comilla que abre la plantilla, como en
         // `` `onclick="abrirJuegoPWA('${url}')"` ``. Exigir espacio dejaba fuera
@@ -75,6 +91,14 @@ function globalesUsadosEnAtributos(...fuentes) {
         for (const [, codigo] of texto.matchAll(/(?:^|[^A-Za-z0-9_$])on[a-z]+\s*=\s*'([^']*)'/gim)) recolectar(codigo);
     }
     return [...nombres].sort();
+}
+
+/** Los módulos que app.js importa. Vacío mientras la modularización no avance. */
+function listarModulos() {
+    if (!fs.existsSync(MODULOS)) return [];
+    return fs.readdirSync(MODULOS)
+        .filter(f => f.endsWith('.js'))
+        .map(f => path.join(MODULOS, f));
 }
 
 /**
@@ -149,15 +173,45 @@ function verificarEjecutando(codigo, nombres) {
     return { reventó: null, faltantes };
 }
 
-const fuente = fs.readFileSync(ARCHIVO, 'utf8');
+/**
+ * Junta app.js y todo lo que importe en un único IIFE.
+ *
+ * `format: 'iife'` y no 'esm' a propósito: el resultado tiene que poder pasar por
+ * el ofuscador y luego ejecutarse en el vm de verificación, y ninguno de los dos
+ * entiende `import`. Un IIFE es un archivo plano de toda la vida.
+ *
+ * Sin minificar: de eso ya se encarga el ofuscador, y un bundle legible hace que
+ * los errores del paso siguiente se puedan leer.
+ */
+function empaquetar() {
+    const resultado = esbuild.buildSync({
+        entryPoints: [ARCHIVO],
+        bundle: true,
+        format: 'iife',
+        platform: 'browser',
+        target: 'es2018',
+        write: false,
+        minify: false,
+        legalComments: 'none'
+    });
+    return resultado.outputFiles[0].text;
+}
+
+const entrada = fs.readFileSync(ARCHIVO, 'utf8');
 const html = fs.readFileSync(HTML, 'utf8');
 
-if (/^const _0x/.test(fuente)) {
+if (/^const _0x/.test(entrada)) {
     console.error('❌ js/app.js ya viene ofuscado. Se aborta para no ofuscar dos veces.');
     process.exit(1);
 }
 
-const globales = globalesUsadosEnAtributos(html, fuente);
+// Lo que se ofusca es el bundle; lo que se escanea en busca de nombres a
+// preservar son las FUENTES, porque el bundle ya viene con los nombres internos
+// reescritos por esbuild.
+const fuentesLegibles = [entrada, ...listarModulos().map(f => fs.readFileSync(f, 'utf8'))];
+const fuente = empaquetar();
+
+const globales = globalesUsadosEnAtributos(html, ...fuentesLegibles);
 
 console.log(`🔒 Ofuscando js/app.js ${enSeco ? '(simulacro, no se escribe nada)' : '(build de Vercel)'} ...`);
 
@@ -212,9 +266,9 @@ const codigo = JavaScriptObfuscator.obfuscate(fuente, {
 // —`onclick="comprarItem('${item.id}')"`— y esas nunca existen en el ámbito
 // global, así que buscarlas ahí daría una falsa alarma. Reservarlas no estorba;
 // verificarlas sí.
-const definidosAqui = globales.filter(n =>
-    new RegExp(`^(?:async\\s+)?(?:function|var|let|const)\\s+${n}\\b|^window\\.${n}\\s*=`, 'm').test(fuente)
-);
+const definidosAqui = globales.filter(n => fuentesLegibles.some(f =>
+    new RegExp(`^(?:async\\s+)?(?:function|var|let|const)\\s+${n}\\b|^window\\.${n}\\s*=`, 'm').test(f)
+));
 
 const { reventó, faltantes } = verificarEjecutando(codigo, definidosAqui);
 
@@ -237,20 +291,37 @@ if (faltantes.length > 0) {
 // nombres coinciden con cadenas del programa —la tabla de acciones tiene claves
 // como 'login' o 'registro'— y contarlas daba una falsa alarma: parecían
 // funciones sin ofuscar cuando solo eran texto.
-const declaradas = [...fuente.matchAll(/^\s*(?:async\s+)?function\s+([A-Za-z_$][\w$]*)/gm)].map(m => m[1]);
+const declaradas = fuentesLegibles.flatMap(f =>
+    [...f.matchAll(/^\s*(?:async\s+)?function\s+([A-Za-z_$][\w$]*)/gm)].map(m => m[1])
+);
 const unicas = [...new Set(declaradas)];
 const expuestas = unicas.filter(n =>
     new RegExp(`function\\s+${n}\\b|\\b${n}\\s*=\\s*(?:async\\s*)?function|(?:var|let|const)\\s+${n}\\b`).test(codigo)
 );
 
-if (!enSeco) fs.writeFileSync(ARCHIVO, codigo);
+// Se cuenta ANTES de borrar: si se hiciera después, el informe diría siempre
+// "0 módulos" en el build de verdad y parecería que no se empaquetó nada.
+const cuantosModulos = listarModulos().length;
 
+if (!enSeco) {
+    fs.writeFileSync(ARCHIVO, codigo);
+
+    // El bundle ya lleva dentro todos los módulos. Si la carpeta se quedara,
+    // Vercel publicaría también las fuentes legibles: cualquiera podría pedir
+    // js/modulos/sesion.js y leer sin ofuscar justo lo que se acaba de ofuscar.
+    // Se borra del contenedor efímero, nunca del repo.
+    if (fs.existsSync(MODULOS)) fs.rmSync(MODULOS, { recursive: true, force: true });
+}
 const kb = t => (Buffer.byteLength(t) / 1024).toFixed(0);
-console.log(`✅ ${kb(fuente)} KB → ${kb(codigo)} KB`);
-console.log(`   ${definidosAqui.length} de los ${globales.length} identificadores invocados desde atributos inline se definen aquí: verificados intactos.`);
+const fuenteTotal = fuentesLegibles.join('\n');
+
+console.log(`✅ ${cuantosModulos + 1} archivo(s) → bundle ${kb(fuente)} KB → ofuscado ${kb(codigo)} KB`);
+console.log(`   Fuente legible: ${kb(fuenteTotal)} KB en app.js + ${cuantosModulos} módulo(s)`);
+console.log(`   Identificadores que el HTML invoca desde atributos inline: ${globales.length}` +
+            (globales.length ? ` (${definidosAqui.length} definidos aquí, verificados intactos)` : ' — ninguno, el marcado ya no llama funciones por nombre'));
 console.log(`   Funciones declaradas en la fuente: ${unicas.length}`);
-console.log(`   De esas, siguen con su nombre visible: ${expuestas.length} (las que el HTML invoca)`);
+console.log(`   De esas, siguen con su nombre visible: ${expuestas.length}`);
 if (expuestas.length > globales.length) {
     console.log('   ⚠️ Hay más nombres visibles de los reservados. Revisa renameGlobals.');
 }
-if (enSeco) console.log('   (simulacro: js/app.js quedó intacto)');
+if (enSeco) console.log('   (simulacro: no se escribió ni se borró nada)');
