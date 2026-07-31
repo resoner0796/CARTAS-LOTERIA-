@@ -118,7 +118,13 @@ const loteriaMensaje = document.getElementById("loteriaMensaje");
 // ==================== AUTO-LOGIN DESDE EL HUB (SSO) ====================
 (function verificarSSO() {
     const params = new URLSearchParams(window.location.search);
-    const tokenSSO = params.get('sso');
+    // `tk` es el formato actual: el token firmado que reparte el Hub.
+    const tk = params.get('tk');
+    if (tk) localStorage.setItem("loteria_token", tk);
+
+    // `sso` era el formato viejo, JSON en base64 sin firmar. Se sigue aceptando
+    // por si queda algún enlace antiguo circulando, pero el Hub ya no lo genera.
+    const tokenSSO = params.get('sso') || tk;
     
     if (!tokenSSO) return;
 
