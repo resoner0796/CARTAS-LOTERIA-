@@ -10,6 +10,25 @@ const socket = io("https://loteria-backend-3nde.onrender.com", {
   auth: (cb) => cb({ token: localStorage.getItem("loteria_token") || null })
 });
 
+// ==================== FEEDBACK VISUAL DE SALDO ====================
+/**
+ * Pinta un número y, si cambió respecto a lo que ya había, le da un latido
+ * dorado. Sin esto el saldo cambiaba en silencio: apostabas y el número
+ * simplemente era otro, sin nada que dijera "acabas de pagar".
+ */
+function actualizarValor(elemento, valor) {
+    if (!elemento) return;
+    const nuevo = String(valor);
+    const cambio = elemento.textContent !== "" && elemento.textContent !== nuevo;
+    elemento.textContent = nuevo;
+    if (!cambio) return;
+
+    elemento.classList.remove("saldo-cambio");
+    void elemento.offsetWidth;          // reinicia la animación
+    elemento.classList.add("saldo-cambio");
+    setTimeout(() => elemento.classList.remove("saldo-cambio"), 700);
+}
+
 // ==================== ESCAPE DE HTML ====================
 // Nicknames, nombres de sala y correos los escribe gente, y varios de ellos se
 // pintan con innerHTML. Sin escapar, un nickname como <img src=x onerror=...>
@@ -836,7 +855,7 @@ socket.on('estado-sala-restaurado', (estado) => {
     if(estado.monedas !== undefined) {
         usuarioActual.monedas = estado.monedas;
         configurarMenu();
-        if(monedasEl) monedasEl.textContent = estado.monedas;
+        actualizarValor(monedasEl, estado.monedas);
     }
 });
 
@@ -845,7 +864,7 @@ socket.on("jugadores-actualizados", jugadores => {
    
   const misDatos = Object.values(jugadores).find(j => j.email === usuarioActual?.email);
   if (misDatos) {
-    monedasEl.textContent = misDatos.monedas;
+    actualizarValor(monedasEl, misDatos.monedas);
     haApostadoLocal = misDatos.apostado; 
     usuarioActual.monedas = misDatos.monedas;
     localStorage.setItem("loteria_usuario", JSON.stringify(usuarioActual));
@@ -878,7 +897,7 @@ socket.on("jugadores-actualizados", jugadores => {
   if(jugadoresListaIngame) jugadoresListaIngame.innerHTML = htmlLista;
 });
 
-socket.on('bote-actualizado', (bote) => { boteEl.textContent = bote; });
+socket.on('bote-actualizado', (bote) => { actualizarValor(boteEl, bote); });
 
 socket.on("error-apuesta", msg => {
   mostrarAlerta(msg || "Error al apostar", "Ups");
@@ -1719,7 +1738,7 @@ socket.on('usuario-actualizado', (datosFrescos) => {
 
     // 3. Juego
     const gameMonedas = document.getElementById("monedas-valor");
-    if(gameMonedas) gameMonedas.textContent = datosFrescos.monedas;
+    actualizarValor(gameMonedas, datosFrescos.monedas);
 
     // 4. Soundboard
     const menuSonidos = document.getElementById("menuSonidosDesplegable");

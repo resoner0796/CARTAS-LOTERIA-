@@ -1563,3 +1563,151 @@ textarea::placeholder { color: rgba(255,255,255,0.6); }
    proporción real salía 0.624 en vez de los 0.616 del archivo. Poco, pero es
    lo que hacía que en el modal de validación pareciera que faltaba un trozo. */
 .carta-img { box-sizing: border-box; }
+
+
+/* =========================================================================
+   BOTONERA DE JUEGO — orden y reparto por orientación
+   ========================================================================= */
+
+/* Base (móvil vertical): dos columnas.
+   El orden del DOM es Cambiar · Limpiar · Lotería · Salir, pero de pie conviene
+   tener arriba los dos que más se pican durante la partida —Limpiar y Lotería—
+   porque son los que caen bajo el pulgar. Los de menos uso quedan debajo.
+
+       ┌───────────┬───────────┐
+       │  Limpiar  │  LOTERÍA  │
+       ├───────────┼───────────┤
+       │  Cambiar  │   Salir   │
+       └───────────┴───────────┘                                            */
+.botones-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+#btnBarajear      { order: 1; }
+#btnIniciarJuego  { order: 2; }
+#btnDetenerJuego  { order: 3; }
+#btnLimpiarCartas { order: 4; }
+#btnLoteria       { order: 5; }
+#btnCambiarCartas { order: 6; }
+#btnSalirSala     { order: 7; }
+
+/* Salir deja de ocupar la fila completa: ahora comparte renglón con Cambiar. */
+#btnSalirSala { grid-column: auto; margin-top: 0 !important; }
+
+/* El 100% solo tiene sentido dentro de la cuadrícula de dos columnas. En una
+   fila flex hace que Lotería se coma el renglón entero y empuje al resto. */
+.botones-grid #btnLoteria { width: 100%; }
+@media (min-width: 1024px) { .botones-grid #btnLoteria { width: auto; } }
+@media (orientation: landscape) and (max-height: 560px) {
+    .botones-grid #btnLoteria { width: auto; }
+}
+
+/* --- MÓVIL ACOSTADO: todo en una sola fila -------------------------------
+   De pie sobra alto y falta ancho; acostado es al revés. Aquí el orden es el
+   del DOM: Cambiar · Limpiar · Lotería · Salir.                             */
+@media (orientation: landscape) and (max-height: 560px) {
+    .botones-grid {
+        display: flex;
+        flex-direction: row;
+        flex-wrap: nowrap;
+        gap: 6px;
+        width: 100%;
+    }
+    .botones-grid button {
+        flex: 1 1 0;
+        min-width: 0;
+        width: auto;
+        height: 46px;
+        min-height: 46px;
+        font-size: 0.75rem;
+        padding: 0 4px;
+        white-space: nowrap;
+    }
+    #btnLoteria { font-size: 0.85rem; }
+
+    /* En una sola fila el `order` estorba: manda el orden del DOM. */
+    .botones-grid button { order: 0 !important; }
+
+    #controlesJuego { max-width: none; }
+    #pantallaJuego { padding-bottom: 20px !important; }
+}
+
+/* --- ESCRITORIO: una fila, orden del DOM -------------------------------- */
+@media (min-width: 1024px) {
+    .botones-grid button { order: 0 !important; }
+    #btnSalirSala { grid-column: auto; }
+}
+
+
+/* =========================================================================
+   MONEDAS DEL SALDO — brillo
+   =========================================================================
+   Un destello que recorre la moneda de lado a lado, como el reflejo de la luz
+   sobre el metal. Se hace con un pseudo-elemento encima, no tocando la imagen,
+   para poder quitarlo sin tocar el PNG.                          */
+.monedas-apiladas { position: relative; }
+
+.moneda-stack {
+    position: relative;
+    /* El brillo va desfasado por pila, para que no parpadeen las tres al mismo
+       tiempo: se lee como reflejo, no como aviso de error. */
+    animation: brilloMoneda 3.2s ease-in-out infinite;
+}
+.monedas-apiladas:nth-child(2) .moneda-stack { animation-delay: 0.4s; }
+.monedas-apiladas:nth-child(3) .moneda-stack { animation-delay: 0.8s; }
+
+@keyframes brilloMoneda {
+    0%, 70%, 100% { filter: drop-shadow(0 4px 4px rgba(0,0,0,0.5)) brightness(1); }
+    80%           { filter: drop-shadow(0 4px 8px rgba(255, 215, 0, 0.55)) brightness(1.35); }
+}
+
+/* Cuando el saldo cambia, JS le pone esta clase un momento: un latido dorado
+   para que se note que entraron o salieron monedas. */
+#monedas-valor.saldo-cambio { animation: latidoSaldo 0.6s ease-out; }
+#bote-valor.saldo-cambio    { animation: latidoSaldo 0.6s ease-out; }
+
+@keyframes latidoSaldo {
+    0%   { transform: scale(1);    text-shadow: 0 2px 4px rgba(0,0,0,0.5); }
+    35%  { transform: scale(1.25); text-shadow: 0 0 18px var(--amarillo-maiz); }
+    100% { transform: scale(1);    text-shadow: 0 2px 4px rgba(0,0,0,0.5); }
+}
+/* El del bote está centrado con translate: hay que conservarlo al escalar. */
+#bote-valor.saldo-cambio { animation-name: latidoBote; }
+@keyframes latidoBote {
+    0%   { transform: translate(-50%, -50%) scale(1); }
+    35%  { transform: translate(-50%, -50%) scale(1.25); text-shadow: 0 0 18px var(--amarillo-maiz); }
+    100% { transform: translate(-50%, -50%) scale(1); }
+}
+
+
+/* =========================================================================
+   TURNO / ESTADO DE LA PARTIDA
+   =========================================================================
+   La carta que se acaba de cantar es la información más importante de la
+   pantalla y estaba igual que las demás del historial. Ahora la más reciente
+   entra destacada un momento.                                               */
+#historial img:first-child {
+    animation: dealCard 0.5s cubic-bezier(0.34, 1.56, 0.64, 1),
+               resaltarUltima 2.5s ease-out;
+    border-color: var(--amarillo-maiz);
+}
+@keyframes resaltarUltima {
+    0%   { box-shadow: 0 0 0 3px var(--amarillo-maiz), 0 0 25px var(--amarillo-maiz); }
+    100% { box-shadow: 0 4px 8px rgba(0,0,0,0.5); }
+}
+
+/* --- ESCRITORIO: una sola fila ------------------------------------------
+   Va aquí abajo a propósito. La media query original de escritorio pone la
+   botonera en fila, pero la regla base de esta sección se declara después en
+   el archivo y con la misma especificidad, así que la pisaba y en escritorio
+   acababa en dos columnas. Redeclararla aquí devuelve la fila. */
+@media (min-width: 1024px) {
+    .botones-grid {
+        display: flex;
+        flex-direction: row;
+        flex-wrap: wrap;
+        justify-content: center;
+        align-items: center;
+        gap: 15px;
+        width: auto;
+    }
+    .botones-grid button { width: auto; min-width: 130px; flex: 0 1 auto; }
+}

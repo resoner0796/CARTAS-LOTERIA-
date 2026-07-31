@@ -258,16 +258,18 @@
           </select>
       </div>
 
+      <!-- Orden del DOM: Cambiar · Limpiar · Lotería · Salir.
+           Es el que se usa en escritorio y en móvil acostado (una sola fila).
+           En vertical se reacomoda desde el CSS con `order`, para dejar arriba
+           los dos de uso frecuente (Limpiar y Lotería) al alcance del pulgar. -->
       <div class="botones-grid">
-          <button id="btnLimpiarCartas" onclick="limpiarFichas()">Limpiar</button>
           <button id="btnBarajear" onclick="socket.emit('barajear', salaActual)">Barajear</button>
-
           <button id="btnIniciarJuego" onclick="iniciarJuegoConVelocidad()">Iniciar</button>
           <button id="btnDetenerJuego" onclick="socket.emit('detener-juego', salaActual)">Detener</button>
 
           <button id="btnCambiarCartas" onclick="cambiarCartas()">Cambiar</button>
+          <button id="btnLimpiarCartas" onclick="limpiarFichas()">Limpiar</button>
           <button id="btnLoteria" onclick="emitirLoteria()">¡LOTERÍA!</button>
-          
           <button id="btnSalirSala" onclick="salirDeSalaEnJuego()">Salir</button>
       </div>
     </div>
