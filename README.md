@@ -93,13 +93,16 @@ python3 -m http.server 8000
 
 ## 🎮 Modos de juego
 
-| Modo | Costo por carta | Cartas del jugador | Baraja cantada |
+| Modo | Costo por tabla | Tablas para elegir | Baraja cantada |
 |---|---|---|---|
-| 🏆 Tradicional | $1 | 54 | 54 |
-| ⚫ Carta Llena | $2 | 54 | 54 |
-| 🎯 Pozo y Esquinas | $2 | 20 (baraja especial) | 54 |
+| 🏆 Tradicional | $1 | 53 | 54 |
+| ⚫ Carta Llena | $2 | 53 | 54 |
+| 🎯 Pozo y Esquinas | $2 | 20 (set especial) | 54 |
 
-Cada jugador elige hasta **4 cartas**, y ninguna puede repetirse dentro de la sala.
+Ojo con la terminología: la **tabla** es lo que elige el jugador (hay 53) y la
+**carta** es lo que se canta (la baraja es de 54). Son conjuntos distintos.
+
+Cada jugador elige hasta **4 tablas**, y ninguna puede repetirse dentro de la sala.
 El bote se reparte entre los ganadores validados por el host.
 
 ---
@@ -147,7 +150,8 @@ sesiones ni tokens firmados. Consecuencias conocidas:
 - [x] Fase 0 de contención: idempotencia de pagos, caída remota, admin fuera del cliente
 - [ ] **Autenticación JWT** y cierre de los tres huecos de arriba
 - [ ] Rate limiting y validación de entrada en el backend
-- [ ] Bugs: carta 54 faltante, ruta de cartas al reconectar en modo Pozo
+- [x] Bug: ruta de tablas al reconectar en modo Pozo
+- [x] XSS del nickname escapado en los 5 puntos de inyección
 - [ ] Registrar el service worker y arreglar `manifest.json` (PWA real)
 - [ ] Optimizar assets a WebP (~100 MB actuales)
 - [x] Ofuscación automática en el build de Vercel

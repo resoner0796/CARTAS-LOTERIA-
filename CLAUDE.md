@@ -106,13 +106,19 @@ al final que los 33 identificadores que el HTML necesita sigan existiendo en la 
 
 Definidos en el backend (`MODOS_JUEGO`), el front los recibe en el evento `info-sala`:
 
-| Modo | Costo/carta | Cartas del jugador |
+| Modo | Costo por tabla | Tablas para elegir |
 |---|---|---|
-| `tradicional` | 1 | 54 |
-| `llena` | 2 | 54 |
-| `pozo` | 2 | 20 (baraja especial) |
+| `tradicional` | 1 | 53 |
+| `llena` | 2 | 53 |
+| `pozo` | 2 | 20 (set especial) |
 
-La baraja que se canta **siempre es de 54**, sin importar el modo.
+⚠️ **No confundir los dos conjuntos**, es la trampa más fácil de este proyecto:
+- **Tabla** = lo que elige el jugador. `assets/imagenes/cartas/`, hay **53** (`01`–`53`).
+- **Carta** = lo que se canta. `assets/imagenes/barajas/`, hay **54** (`01`–`54`),
+  con una voz por cada una en `assets/audios/NN.mp3`.
+
+Que `generarCartas()` pinte 53 es **correcto**. La baraja que se canta siempre es
+de 54, sin importar el modo.
 
 ## Flujo de una partida
 
@@ -138,9 +144,6 @@ Seguridad (crítica, ver README para el detalle):
 - El SSO del Hub es base64 sin firmar → falsificable.
 
 Bugs:
-- `generarCartas()` genera 53 cartas en modo tradicional; deberían ser 54.
-- `estado-sala-restaurado` usa ruta fija en vez de `rutaCartasJugador` → cartas
-  equivocadas al reconectarse en modo Pozo.
 - El service worker nunca se registra.
 - `manifest.json` apunta a íconos que no existen en esa ruta.
 - `cartasDisponibles` (arriba de `app.js`) es código muerto.

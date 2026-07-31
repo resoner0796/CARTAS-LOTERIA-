@@ -10,6 +10,17 @@ const socket = io("https://loteria-backend-3nde.onrender.com", {
   auth: (cb) => cb({ token: localStorage.getItem("loteria_token") || null })
 });
 
+// ==================== ESCAPE DE HTML ====================
+// Nicknames, nombres de sala y correos los escribe gente, y varios de ellos se
+// pintan con innerHTML. Sin escapar, un nickname como <img src=x onerror=...>
+// ejecuta código en el navegador de TODOS los de la sala. Y como la sesión vive
+// en localStorage, ese código puede robarla.
+function escaparHtml(texto) {
+    return String(texto ?? "").replace(/[&<>"']/g, c => ({
+        "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+    })[c]);
+}
+
 // ==================== SESIÓN (TOKEN) ====================
 // El backend ya no confía en el email que le mandemos en el body: la identidad
 // sale de este token firmado. Mientras dure la fase de convivencia el servidor
@@ -751,7 +762,7 @@ socket.on('info-sala', (data) => {
 
     // Actualizar Título
     document.getElementById("tituloSalaActual").innerHTML = 
-        `Sala: ${salaActual} <br><span style="font-size:0.8rem; color:gold;">${modoJuegoActual.toUpperCase()} ($${costoCartaActual})</span>`;
+        `Sala: ${escaparHtml(salaActual)} <br><span style="font-size:0.8rem; color:gold;">${escaparHtml(modoJuegoActual).toUpperCase()} ($${costoCartaActual})</span>`;
 
     // --- LÓGICA DE RUTAS ---
     if (modoJuegoActual === 'pozo') {
@@ -780,7 +791,7 @@ socket.on('estado-sala-restaurado', (estado) => {
             const contenedor = document.createElement("div");
             contenedor.classList.add("carta-juego");
             contenedor.dataset.id = id;
-            contenedor.innerHTML = `<img src="assets/imagenes/cartas/${id}.jpg" class="carta-img seleccionada">`;
+            contenedor.innerHTML = `<img src="${rutaCartasJugador}${id}.jpg" class="carta-img seleccionada">`;
             contenedor.onclick = e => marcarFicha(e, contenedor);
             juegoCartas.appendChild(contenedor);
         });
@@ -828,7 +839,7 @@ socket.on("jugadores-actualizados", jugadores => {
       // Le damos un estilo "flex" para que se vea alineado
       return `
         <div style="display:flex; justify-content:space-between; align-items:center; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.1);">
-            <span>${crown} ${j.nickname} ${fuego}</span>
+            <span>${crown} ${escaparHtml(j.nickname)} ${fuego}</span>
             <span>${check}</span>
         </div>`;
     }).join("");
@@ -929,7 +940,7 @@ function emitirLoteria() {
 socket.on("pausa-empate", ({ primerGanador, tiempo }) => {
     loteriaMensaje.style.display = "block";
     loteriaMensaje.innerHTML = `
-        <div style="font-size:2rem; color: gold; text-shadow: 2px 2px 0 #000;">¡${primerGanador} gritó BUENAS!</div>
+        <div style="font-size:2rem; color: gold; text-shadow: 2px 2px 0 #000;">¡${escaparHtml(primerGanador)} gritó BUENAS!</div>
         <div style="font-size:1.2rem; margin-top:20px; color: white;">Esperando empates... <span id="contadorEmpate" style="font-weight:bold; font-size:1.5rem;">${tiempo}</span>s</div>
     `;
     
@@ -943,7 +954,7 @@ socket.on("pausa-empate", ({ primerGanador, tiempo }) => {
 });
 
 socket.on("notificar-otro-ganador", (otroNick) => {
-    loteriaMensaje.innerHTML += `<div style="font-size:1.5rem; color:#ff4081; font-weight:bold; margin-top:10px; animation: pulsate 0.5s infinite;">¡${otroNick} TAMBIÉN GRITÓ!</div>`;
+    loteriaMensaje.innerHTML += `<div style="font-size:1.5rem; color:#ff4081; font-weight:bold; margin-top:10px; animation: pulsate 0.5s infinite;">¡${escaparHtml(otroNick)} TAMBIÉN GRITÓ!</div>`;
     if(navigator.vibrate) navigator.vibrate([100, 100]);
 });
 
@@ -1277,8 +1288,8 @@ async function cargarUsuariosAdmin() {
         usuarios.forEach(u => {
             const tr = document.createElement("tr");
             tr.innerHTML = `
-                <td style="padding:8px; font-weight:bold;">${u.nickname}</td>
-                <td style="padding:8px; font-size:0.8rem; color:#ccc;">${u.email}</td>
+                <td style="padding:8px; font-weight:bold;">${escaparHtml(u.nickname)}</td>
+                <td style="padding:8px; font-size:0.8rem; color:#ccc;">${escaparHtml(u.email)}</td>
                 <td style="padding:8px; color:gold;">${u.monedas}</td>
                 <td style="padding:8px;">
                     <button onclick="prepararRecarga('${u.email}')" style="padding:2px 8px; font-size:0.7rem; margin:0;">➕</button>

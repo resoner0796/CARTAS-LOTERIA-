@@ -183,7 +183,13 @@ const codigo = JavaScriptObfuscator.obfuscate(fuente, {
 
     unicodeEscapeSequence: false
 }).getObfuscatedCode();
-const { reventó, faltantes } = verificarEjecutando(codigo, globales);
+// index.html puede invocar funciones definidas en sus propios bloques <script>
+// inline, que no viven en este archivo. Solo verificamos lo que la fuente define.
+const definidosAqui = globales.filter(n =>
+    new RegExp(`(?:function|var|let|const)\\s+${n}\\b|window\\.${n}\\s*=`).test(fuente)
+);
+
+const { reventó, faltantes } = verificarEjecutando(codigo, definidosAqui);
 
 if (reventó) {
     console.error(`\n❌ ABORTADO: el bundle ofuscado revienta al cargar:\n     ${reventó}`);
@@ -207,7 +213,7 @@ if (!enSeco) fs.writeFileSync(ARCHIVO, codigo);
 
 const kb = t => (Buffer.byteLength(t) / 1024).toFixed(0);
 console.log(`✅ ${kb(fuente)} KB → ${kb(codigo)} KB`);
-console.log(`   ${globales.length} identificadores que index.html necesita: verificados intactos.`);
+console.log(`   ${definidosAqui.length} de los ${globales.length} identificadores que usa index.html se definen aquí: verificados intactos.`);
 console.log(`   Funciones declaradas en la fuente: ${unicas.length}`);
 console.log(`   De esas, siguen con su nombre visible: ${expuestas.length} (las que el HTML invoca)`);
 if (expuestas.length > globales.length) {
