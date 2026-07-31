@@ -92,19 +92,31 @@ dentro de su contenedor efímero, y publica el resultado. Tu working tree no se 
 
 Configuración en `vercel.json` (`buildCommand` + `outputDirectory: "."`).
 
-**Regla crítica:** `renameGlobals` va en `false`. `index.html` invoca funciones desde
-atributos inline (`onclick="login()"`); si el ofuscador las renombra, los botones dejan
-de servir sin que salte ningún error hasta que un usuario los pica. El script verifica
-al final que los 33 identificadores que el HTML necesita sigan existiendo en la salida
-—tanto en claro como codificados en el string array— y aborta si falta alguno.
+**Sobre la ofuscación y los nombres:** `renameGlobals` va en `true`. Desde que el
+HTML dejó de llamar funciones por su nombre, casi todo se puede renombrar: de 68
+funciones solo 1 conserva su nombre. El script sigue escaneando el HTML **y** el
+propio JS por si alguien reintroduce un atributo inline, reserva esos nombres, y
+después carga el bundle en un DOM simulado para comprobar con `typeof` que
+resuelvan. Si vuelves a meter un `onclick`, esa red lo cubre — pero mejor no.
 
 ## Convenciones
 
 - **Todo en español**: variables, funciones, comentarios, eventos de socket
   (`unirse-sala`, `carta-cantada`, `jugadores-actualizados`).
-- **Sin módulos ni bundler.** `app.js` se carga con `<script>` plano; las funciones
-  son globales y se invocan desde `onclick="..."` en el HTML. Si renombras una
-  función, busca su `onclick` en `index.html`.
+- **Sin módulos ni bundler todavía.** `app.js` se carga con `<script>` plano.
+- **El HTML no llama funciones por su nombre.** Cada elemento declara *qué* hace
+  y un único escucha en el documento resuelve el clic:
+
+  ```html
+  <button data-accion="pagar" data-monedas="150">…</button>
+  ```
+
+  El *cómo* vive en la tabla `ACCIONES`, al final de `app.js`. Para añadir un
+  botón: pon su `data-accion` en el HTML y su entrada en esa tabla. **No vuelvas
+  a usar `onclick`**: ataba el marcado a que ciertas funciones fueran globales,
+  y era lo que impedía pasar a módulos. Como la delegación es sobre el
+  documento, también funciona con el HTML que se genera en caliente (tienda,
+  lista de jugadores, tabla de administración) sin enganchar nada al repintar.
 - **Navegación** = `cambiarPantalla(nombre)`, que alterna la clase `.activa` sobre
   los `div.pantalla`. Referencias en el objeto `pantallas` (arriba de `app.js`).
 - **Modales**: usa `mostrarAlerta()` / `mostrarConfirmacion()`, no `alert()` ni
@@ -165,7 +177,19 @@ usuario se escapan antes de pintarse. Detalle en el README del backend.
 nickname como `<img src=x onerror=...>` ejecuta código en el navegador de todos
 los de la sala, y la sesión vive en `localStorage`.
 
-Bugs:
+### Cosas que ya mordieron, para no repetirlas
+
+- **`info-sala` se mandaba a toda la sala.** El cliente reacciona regenerando el
+  tablero, así que cada jugador nuevo borraba a los demás sus tablas marcadas.
+  Va solo a quien entra.
+- **El guión de Socket.IO se sirve desde el backend.** Si está dormido, `io` no
+  existe y la excepción se llevaba por delante todo `app.js`. Hay una guarda.
+- **Entrar desde el Hub era una carrera.** El perfil llega por red y `window.onload`
+  decidía antes de tiempo que no había sesión. Existe `entrandoDesdeHub`.
+- **Los modales de aviso y confirmación comparten contenedor.** Hay que limpiar
+  la prueba de victoria o reaparece donde no toca.
+
+Bugs pendientes:
 - El service worker nunca se registra.
 - `manifest.json` apunta a íconos que no existen en esa ruta.
 - `cartasDisponibles` (arriba de `app.js`) es código muerto.

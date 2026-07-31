@@ -114,6 +114,17 @@ El bote se reparte entre los ganadores validados por el host.
 
 - **Salas** con link de invitación compartible (`?sala=Nombre`), soporte de Web Share
   API y `postMessage` cuando corre embebido en el Hub.
+- **Pozo acumulado** 🎰 — bote aparte que crece $1 por partida y por jugador que se
+  apunte, y que solo se lleva quien llene las 4 barajas del centro. Persiste entre
+  partidas en Firestore, atado a la sala y a quien la creó. Al salir antes de que
+  arranque la ronda se devuelve lo aportado en ella; lo acumulado se queda.
+- **Orden de tablas** — al elegir aparece el lugar que ocupará (1 a 4), y ese es el
+  orden en que se acomodan en la mesa.
+- **Prueba de victoria** — el anfitrión marca cuál tabla se llenó y la sala la ve con
+  las fichas puestas, para poder contrastarla con el historial. Importa sobre todo
+  cuando el anfitrión se valida a sí mismo.
+- **Silenciar jugadores** 🔇 — el anfitrión puede cortarle los efectos de sonido a
+  quien esté abusando del tablero de sonidos.
 - **Reconexión anti-F5**: recupera cartas, apuesta y rol de host.
 - **Validación de ganador por el host**, con pausa de 4 s para recoger empates y
   revisión visual de la tabla del reclamante.
@@ -158,6 +169,8 @@ sesiones ni tokens firmados. Consecuencias conocidas:
 - [ ] Registrar el service worker y arreglar `manifest.json` (PWA real)
 - [ ] Optimizar assets a WebP (~100 MB actuales)
 - [x] Ofuscación automática en el build de Vercel
+- [x] Quitar los `onclick` del HTML (paso previo a modularizar)
+- [ ] Partir `app.js` en módulos ES
 - [ ] Evaluar migración de Render a VPS propio
 
 ---

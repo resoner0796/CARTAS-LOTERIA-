@@ -1117,7 +1117,7 @@ socket.on("jugadores-actualizados", jugadores => {
       if (soyHost && j.email && j.email !== usuarioActual?.email) {
           const callado = silenciadosEnSala.includes(j.email);
           botonMute = `<button class="btn-mute ${callado ? 'callado' : ''}"
-                        onclick="alternarSilencio('${escaparHtml(j.email)}')"
+                        data-accion="silenciar" data-email="${escaparHtml(j.email)}"
                         title="${callado ? 'Devolverle los sonidos' : 'Silenciar sus sonidos'}"
                         >${callado ? '🔇' : '🔊'}</button>`;
       }
@@ -1529,7 +1529,7 @@ async function iniciarPagoEmbedded(cantidadMonedas) {
 
 // ==================== PRESETS DE CARTAS ====================
 
-async function guardarSetFavorito() {
+async function guardarSetFavorito(boton) {
     if(seleccionadas.length === 0) return mostrarAlerta("Selecciona cartas primero.");
     
     // 1. Guardado Local
@@ -1538,7 +1538,8 @@ async function guardarSetFavorito() {
     // 2. Guardado en Nube (BD)
     if(usuarioActual && usuarioActual.email) {
         try {
-            const btn = event.target; // Feedback visual en el botón
+            const btn = boton; // el botón llega desde el despachador de acciones
+            if (!btn) throw new Error('sin botón');
             const textoOriginal = btn.innerText;
             btn.innerText = "Guardando...";
             
@@ -1648,7 +1649,7 @@ async function cargarUsuariosAdmin() {
                 <td style="padding:8px; font-size:0.8rem; color:#ccc;">${escaparHtml(u.email)}</td>
                 <td style="padding:8px; color:gold;">${u.monedas}</td>
                 <td style="padding:8px;">
-                    <button onclick="prepararRecarga('${u.email}')" style="padding:2px 8px; font-size:0.7rem; margin:0;">➕</button>
+                    <button data-accion="preparar-recarga" data-email="${escaparHtml(u.email)}" style="padding:2px 8px; font-size:0.7rem; margin:0;">➕</button>
                 </td>
             `;
             tbody.appendChild(tr);
@@ -1783,11 +1784,11 @@ function renderizarSonidos(contenedor) {
         if (yaLoTiene) {
             btnHtml = `<button class="btn-owned">✔ Listo</button>`;
         } else {
-            btnHtml = `<button class="btn-buy" onclick="comprarItem('${item.id}', ${item.precio})">$${item.precio}</button>`;
+            btnHtml = `<button class="btn-buy" data-accion="comprar-item" data-item="${item.id}" data-precio="${item.precio}">$${item.precio}</button>`;
         }
 
         div.innerHTML = `
-            <div style="font-size: 2rem; cursor:pointer;" onclick="previewSonido('${item.file}')">${item.emoji}</div>
+            <div style="font-size: 2rem; cursor:pointer;" data-accion="oir-sonido" data-archivo="${item.file}">${item.emoji}</div>
             <span class="item-nombre">${item.nombre}</span>
             ${btnHtml}
         `;
@@ -1811,9 +1812,9 @@ function renderizarFichas(contenedor) {
         if (esLaActiva) {
             btnHtml = `<button class="btn-use btn-active">En Uso</button>`;
         } else if (yaLoTiene) {
-            btnHtml = `<button class="btn-use" onclick="usarFicha('${item.img}')">Usar</button>`;
+            btnHtml = `<button class="btn-use" data-accion="usar-ficha" data-img="${item.img}">Usar</button>`;
         } else {
-            btnHtml = `<button class="btn-buy" onclick="comprarItem('${item.id}', ${item.precio})">$${item.precio}</button>`;
+            btnHtml = `<button class="btn-buy" data-accion="comprar-item" data-item="${item.id}" data-precio="${item.precio}">$${item.precio}</button>`;
         }
 
         div.innerHTML = `
@@ -2113,12 +2114,13 @@ window.cancelarTransferencia = function() {
 }
 
 // 4. LÓGICA DE BÚSQUEDA (CORREGIDO PARA ESPACIOS)
-window.verificarDestinatario = async () => {
+window.verificarDestinatario = async (boton) => {
     const inputDest = document.getElementById("inputDestinatario");
     // .trim() quita espacios al inicio y final, pero respeta los de en medio ("La Gata")
     const nickname = inputDest.value.trim(); 
     
-    const btnBuscar = event.target; 
+    const btnBuscar = boton;
+
     const textoOriginal = btnBuscar.innerText;
 
     if (!nickname) return mostrarAlerta("Escribe un nickname", "Dato faltante");
@@ -2163,7 +2165,7 @@ window.verificarDestinatario = async () => {
 };
 
 // 5. LÓGICA DE ENVÍO (Botón "ENVIAR")
-window.realizarTransferencia = async () => {
+window.realizarTransferencia = async (boton) => {
     // Usamos el ID correcto que tienes en tu HTML: inputMontoTransferir
     const inputMonto = document.getElementById("inputMontoTransferir");
     const monto = parseInt(inputMonto.value);
@@ -2176,7 +2178,7 @@ window.realizarTransferencia = async () => {
     mostrarConfirmacion(`¿Seguro que quieres enviar $${monto} monedas a ${destinatarioConfirmado.nickname}?`, async () => {
         
         // Feedback visual en el botón de confirmar
-        const btnConfirmar = event.target || document.querySelector("#step-amount button:last-child");
+        const btnConfirmar = boton || document.querySelector("#step-amount button:last-child");
         let textoBtnOriginal = "CONFIRMAR";
         if(btnConfirmar) {
             textoBtnOriginal = btnConfirmar.innerText;
@@ -2477,4 +2479,99 @@ window.addEventListener('load', () => {
     navigator.serviceWorker.register('service-worker.js')
         .then(reg => console.log('Service worker activo:', reg.scope))
         .catch(err => console.warn('No se pudo registrar el service worker:', err));
+});
+
+
+// ======================================================
+// DESPACHADOR DE ACCIONES
+// ======================================================
+// Antes cada botón del HTML llamaba a una función global por su nombre
+// (onclick="login()"). Eso ataba el marcado a que esos nombres existieran en el
+// ámbito global, y era lo que impedía pasar el archivo a módulos: en cuanto las
+// funciones dejan de ser globales, los botones dejan de responder SIN dar ningún
+// error, hasta que alguien los pica.
+//
+// Ahora el marcado solo declara QUÉ hace cada elemento:
+//
+//     <button data-accion="login">Entrar</button>
+//     <button data-accion="pagar" data-monedas="150">...</button>
+//
+// y aquí se dice CÓMO. Un único escucha en el documento resuelve el clic, así
+// que también funciona con el HTML que se genera en caliente —la tienda, la
+// lista de jugadores, la tabla de administración— sin tener que enganchar nada
+// a mano cada vez que se repinta.
+
+const ACCIONES = {
+    // --- Acceso ---
+    'login':                  () => login(),
+    'registro':               () => registro(),
+    'cerrar-sesion':          () => cerrarSesion(),
+    'ir':                     (el) => cambiarPantalla(el.dataset.pantalla),
+
+    // --- Salas ---
+    'crear-sala':             () => crearSalaPropia(),
+    'unirse-sala':            () => unirseSalaExistente(),
+    'compartir-sala':         () => compartirSala(),
+    'salir-sala':             () => salirDeSalaEnJuego(),
+    'silenciar':              (el) => alternarSilencio(el.dataset.email),
+
+    // --- Selección de tablas ---
+    'cargar-favoritas':       () => cargarSetFavorito(),
+    'guardar-favoritas':      (el) => guardarSetFavorito(el),
+
+    // --- Mesa de juego ---
+    'limpiar-fichas':         () => limpiarFichas(),
+    'barajear':               () => socket.emit('barajear', salaActual),
+    'iniciar-juego':          () => iniciarJuegoConVelocidad(),
+    'detener-juego':          () => socket.emit('detener-juego', salaActual),
+    'cambiar-cartas':         () => cambiarCartas(),
+    'gritar-loteria':         () => emitirLoteria(),
+    'alternar-sonidos':       () => toggleMenuSonidos(),
+
+    // --- Monedero ---
+    'abrir-historial':        () => abrirHistorial(),
+    'cerrar-historial':       () => cerrarModalHistorial(),
+    'abrir-recarga':          () => abrirModalRecarga(),
+    'cerrar-tienda':          () => cerrarTienda(),
+    'volver-paquetes':        () => volverAPaquetes(),
+    'pagar':                  (el) => iniciarPagoEmbedded(Number(el.dataset.monedas)),
+
+    // --- Transferencias ---
+    'abrir-transferencia':    () => abrirModalTransferencia(),
+    'cerrar-transferencia':   () => cerrarModalTransferencia(),
+    'buscar-destinatario':    (el) => verificarDestinatario(el),
+    'cancelar-transferencia': () => cancelarTransferencia(),
+    'transferir':             (el) => realizarTransferencia(el),
+
+    // --- Tienda ---
+    'tienda-categoria':       (el) => abrirCategoriaTienda(el.dataset.categoria),
+    'cerrar-tienda-detalle':  () => cerrarModalTiendaDetalle(),
+    'comprar-item':           (el) => comprarItem(el.dataset.item, Number(el.dataset.precio)),
+    'usar-ficha':             (el) => usarFicha(el.dataset.img),
+    'oir-sonido':             (el) => previewSonido(el.dataset.archivo),
+
+    // --- Administración ---
+    'abrir-admin':            () => abrirPanelAdmin(),
+    'cargar-usuarios-admin':  () => cargarUsuariosAdmin(),
+    'recarga-admin':          () => ejecutarRecargaAdmin(),
+    'preparar-recarga':       (el) => prepararRecarga(el.dataset.email)
+};
+
+document.addEventListener('click', (evento) => {
+    // closest() para que también funcione al picar un icono o un texto dentro
+    // del botón, no solo el botón exacto.
+    const elemento = evento.target.closest('[data-accion]');
+    if (!elemento) return;
+
+    const accion = ACCIONES[elemento.dataset.accion];
+    if (!accion) {
+        console.warn(`Acción sin definir: "${elemento.dataset.accion}"`);
+        return;
+    }
+
+    try {
+        accion(elemento, evento);
+    } catch (fallo) {
+        console.error(`Falló la acción "${elemento.dataset.accion}":`, fallo);
+    }
 });

@@ -232,9 +232,16 @@ if (faltantes.length > 0) {
 
 // Cuánto se expone realmente: de todas las funciones declaradas al tope en la
 // fuente, ¿cuántas conservan su nombre en la salida?
+//
+// Se busca el nombre en contexto de DECLARACIÓN, no en cualquier parte. Muchos
+// nombres coinciden con cadenas del programa —la tabla de acciones tiene claves
+// como 'login' o 'registro'— y contarlas daba una falsa alarma: parecían
+// funciones sin ofuscar cuando solo eran texto.
 const declaradas = [...fuente.matchAll(/^\s*(?:async\s+)?function\s+([A-Za-z_$][\w$]*)/gm)].map(m => m[1]);
 const unicas = [...new Set(declaradas)];
-const expuestas = unicas.filter(n => new RegExp(`\\b${n}\\b`).test(codigo));
+const expuestas = unicas.filter(n =>
+    new RegExp(`function\\s+${n}\\b|\\b${n}\\s*=\\s*(?:async\\s*)?function|(?:var|let|const)\\s+${n}\\b`).test(codigo)
+);
 
 if (!enSeco) fs.writeFileSync(ARCHIVO, codigo);
 
