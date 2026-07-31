@@ -1172,15 +1172,14 @@ function iniciarJuegoConVelocidad() {
 
 // ==================== PANEL DE ADMINISTRADOR ====================
 
-const MI_EMAIL_ADMIN = "admin@loteria.com"; 
-
+// El email del admin ya NO vive aquí: este archivo es público y lo servía de bandeja
+// a cualquiera que abriera el sitio. Ahora el servidor manda el flag 'esAdmin' en la
+// respuesta del login, y él es quien autoriza de verdad en cada endpoint.
+// Esto solo decide si se pinta el botón.
 function verificarSiSoyAdmin() {
     const btnAdmin = document.getElementById("btnPanelAdmin");
-    if (usuarioActual && usuarioActual.email === MI_EMAIL_ADMIN) {
-        btnAdmin.style.display = "block";
-    } else {
-        btnAdmin.style.display = "none";
-    }
+    if (!btnAdmin) return;
+    btnAdmin.style.display = (usuarioActual && usuarioActual.esAdmin) ? "block" : "none";
 }
 
 function abrirPanelAdmin() {
