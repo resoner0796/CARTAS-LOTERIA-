@@ -622,15 +622,48 @@ function generarCartas() {
     img.src = `${rutaCartasJugador}${nombreArchivo}`;
     img.classList.add("carta-img");
     img.dataset.id = dataId; // Guardamos el ID limpio
-    
+
     // Al dar click, seleccionamos y ACTUALIZAMOS EL BOTÓN
     img.onclick = () => {
         seleccionarCarta(img);
-        actualizarTextoBotonApuesta(); 
+        actualizarTextoBotonApuesta();
     };
-    
-    contenedorCartas.appendChild(img);
+
+    // La tabla va envuelta para poder colgarle encima el número de orden.
+    // Un <img> no admite ::before ni ::after, por eso hace falta el contenedor.
+    const envoltura = document.createElement("div");
+    envoltura.className = "carta-seleccion";
+
+    const insignia = document.createElement("span");
+    insignia.className = "orden-carta";
+
+    envoltura.appendChild(img);
+    envoltura.appendChild(insignia);
+    contenedorCartas.appendChild(envoltura);
   } // <--- AQUÍ ESTABA EL ERROR, TENÍAS UN "});" EXTRA. YA LO QUITÉ.
+}
+
+/**
+ * Pinta sobre cada tabla elegida el lugar que ocupa (1 a 4).
+ *
+ * Ese orden es el mismo con el que se acomodan en la mesa, así que el jugador
+ * decide dónde le queda cada una. Hay que repintarlo entero en cada cambio: si
+ * sueltas la segunda, la tercera pasa a ser segunda.
+ */
+function renumerarSeleccion() {
+    document.querySelectorAll("#contenedorCartas .carta-seleccion").forEach(env => {
+        const img = env.querySelector(".carta-img");
+        const insignia = env.querySelector(".orden-carta");
+        if (!img || !insignia) return;
+        const lugar = seleccionadas.indexOf(img.dataset.id);
+        if (lugar === -1) {
+            env.classList.remove("elegida");
+            insignia.textContent = "";
+        } else {
+            env.classList.add("elegida");
+            insignia.textContent = lugar + 1;
+        }
+    });
 }
 
 function seleccionarCarta(img) {
@@ -647,6 +680,7 @@ function seleccionarCarta(img) {
       
       // ACTUALIZAR PRECIO DEL BOTÓN APOSTAR
       actualizarTextoBotonApuesta();
+      renumerarSeleccion();
       return;
   }
 
@@ -664,6 +698,7 @@ function seleccionarCarta(img) {
     
     // ACTUALIZAR PRECIO DEL BOTÓN APOSTAR
     actualizarTextoBotonApuesta();
+    renumerarSeleccion();
   }
 }
 
@@ -758,9 +793,10 @@ function cambiarCartas() {
         
         document.querySelectorAll("#contenedorCartas .carta-img").forEach(img => {
             img.classList.remove("seleccionada");
-            img.style.opacity = 1; 
+            img.style.opacity = 1;
             img.style.pointerEvents = "auto";
         });
+        renumerarSeleccion();
 
         cambiarPantalla("seleccion");
     };
@@ -1288,6 +1324,7 @@ function cargarSetFavorito() {
         setTimeout(() => {
             const img = document.querySelector(`.carta-img[data-id="${id}"]`);
             if(img) seleccionarCarta(img);
+            renumerarSeleccion();
         }, index * 50);
     });
     

@@ -1711,3 +1711,84 @@ textarea::placeholder { color: rgba(255,255,255,0.6); }
     }
     .botones-grid button { width: auto; min-width: 130px; flex: 0 1 auto; }
 }
+
+
+/* =========================================================================
+   ORDEN DE SELECCIÓN DE TABLAS
+   =========================================================================
+   El número que se ve al elegir es el lugar que ocupará en la mesa, así que
+   el jugador decide dónde le queda cada tabla. Va sobre un contenedor porque
+   un <img> no admite pseudo-elementos.                                      */
+.carta-seleccion {
+    position: relative;
+    display: inline-flex;
+    line-height: 0;
+}
+
+.carta-seleccion .carta-img { width: 100%; }
+
+.orden-carta {
+    position: absolute;
+    top: 5px;
+    left: 5px;
+    /* border-box para que el relleno y el borde NO se sumen al tamaño: sin
+       esto la insignia acababa midiendo 46 px sobre una tabla de 150 y tapaba
+       el título de la baraja. */
+    box-sizing: border-box;
+    width: 26px;
+    height: 26px;
+    min-width: 0;
+    padding: 0;
+    border-radius: 50%;
+    background: var(--amarillo-maiz);
+    color: #3e2723;
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 900;
+    font-size: 0.85rem;
+    line-height: 22px;
+    text-align: center;
+    box-shadow: 0 3px 8px rgba(0,0,0,0.6);
+    border: 2px solid rgba(0,0,0,0.35);
+    /* Oculto mientras la tabla no esté elegida */
+    opacity: 0;
+    transform: scale(0.4);
+    transition: opacity 0.15s ease, transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+    pointer-events: none;
+    z-index: 5;
+}
+
+.carta-seleccion.elegida .orden-carta { opacity: 1; transform: scale(1); }
+
+/* El contenedor toma el tamaño que antes tenía la imagen suelta */
+#contenedorCartas .carta-seleccion { width: 150px; max-width: 45%; }
+@media (min-width: 600px) and (max-width: 1023px) {
+    #contenedorCartas .carta-seleccion { width: 170px; max-width: 30%; }
+}
+@media (min-width: 1024px) {
+    #contenedorCartas .carta-seleccion { width: 240px; max-width: none; flex: 0 0 auto; }
+}
+
+
+/* =========================================================================
+   ARREGLOS DE DETALLE
+   ========================================================================= */
+
+/* --- El título de la lista de jugadores parpadeaba ----------------------
+   La lista se vuelve a construir entera en cada evento de la sala (una
+   apuesta, alguien que entra), y eso incluye su <h3>. Como TODOS los h3
+   llevan la animación de entrada con `opacity: 0`, cada reconstrucción
+   reproducía el fundido: se veía como un parpadeo cada vez que alguien
+   apostaba. Los títulos que se regeneran no deben animarse.                */
+#jugadoresLista h3,
+#jugadoresListaIngame h3 {
+    animation: none !important;
+    opacity: 1 !important;
+}
+
+/* --- Fichas del modal de validación: dejar ver la baraja ----------------
+   El host valida comparando lo que hay debajo de cada ficha. Si la ficha es
+   opaca, tapa justo lo que necesita revisar.                                */
+#modalVerificationArea .ficha {
+    opacity: 0.62;
+    mix-blend-mode: normal;
+}
