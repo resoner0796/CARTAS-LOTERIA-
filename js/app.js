@@ -4,7 +4,41 @@
 
 // URL DEL BACKEND (Render)
 const API_URL = "https://loteria-backend-3nde.onrender.com/api";
-const socket = io("https://loteria-backend-3nde.onrender.com");
+// El token va en el handshake. `auth` como función se vuelve a evaluar en cada
+// reconexión, así que en cuanto inicias sesión el socket ya viaja identificado.
+const socket = io("https://loteria-backend-3nde.onrender.com", {
+  auth: (cb) => cb({ token: localStorage.getItem("loteria_token") || null })
+});
+
+// ==================== SESIÓN (TOKEN) ====================
+// El backend ya no confía en el email que le mandemos en el body: la identidad
+// sale de este token firmado. Mientras dure la fase de convivencia el servidor
+// sigue aceptando el camino viejo, pero todo lo que sale de aquí ya va firmado.
+
+function guardarToken(token) { if (token) localStorage.setItem("loteria_token", token); }
+function obtenerToken() { return localStorage.getItem("loteria_token"); }
+
+let avisandoSesionExpirada = false;
+function sesionExpirada() {
+    if (avisandoSesionExpirada) return;      // que no se apilen alertas
+    avisandoSesionExpirada = true;
+    localStorage.removeItem("loteria_token");
+    localStorage.removeItem("loteria_usuario");
+    mostrarAlerta("Tu sesión caducó. Vuelve a iniciar sesión.", "Sesión terminada");
+    setTimeout(() => location.reload(), 2000);
+}
+
+/** fetch contra la API con el token ya puesto. La ruta va sin el prefijo. */
+async function api(ruta, opciones = {}) {
+    const cabeceras = { ...(opciones.headers || {}) };
+    const token = obtenerToken();
+    if (token) cabeceras["Authorization"] = `Bearer ${token}`;
+    if (opciones.body && !cabeceras["Content-Type"]) cabeceras["Content-Type"] = "application/json";
+
+    const res = await fetch(API_URL + ruta, { ...opciones, headers: cabeceras });
+    if (res.status === 401 && token) sesionExpirada();
+    return res;
+}
 
 // Variables Globales
 let usuarioActual = null; // {email, nickname, monedas, inventario}
@@ -73,7 +107,40 @@ const loteriaMensaje = document.getElementById("loteriaMensaje");
     const params = new URLSearchParams(window.location.search);
     const tokenSSO = params.get('sso');
     
-    if (tokenSSO) {
+    if (!tokenSSO) return;
+
+    const limpiarUrl = () => window.history.replaceState({}, document.title, window.location.pathname);
+
+    // --- FORMATO NUEVO: JWT firmado por el backend ---
+    // No lo validamos aquí, y no hace falta: no tenemos la llave y el servidor lo
+    // verifica en cada petición. Eso es justo lo que le faltaba al formato viejo,
+    // que era JSON en base64 sin firma y cualquiera podía fabricarse uno.
+    if (tokenSSO.split('.').length === 3) {
+        localStorage.setItem("loteria_token", tokenSSO);
+        api('/usuario/datos-frescos')
+            .then(r => r.json())
+            .then(d => {
+                if (!d.success) throw new Error("el servidor rechazó el token");
+                localStorage.setItem("loteria_usuario", JSON.stringify({
+                    email: d.email, nickname: d.nickname, monedas: d.monedas,
+                    esAdmin: !!d.esAdmin, inventario: d.inventario || [],
+                    fichaActiva: d.fichaActiva, cartasFavoritas: d.cartasFavoritas || []
+                }));
+                limpiarUrl();
+                window.location.reload();
+            })
+            .catch(e => {
+                console.error("SSO:", e);
+                localStorage.removeItem("loteria_token");
+                limpiarUrl();
+            });
+        return;
+    }
+
+    // --- FORMATO VIEJO: base64 sin firmar ---
+    // Se mantiene mientras el Hub se actualiza al formato nuevo. Es falsificable,
+    // así que hay que retirarlo en cuanto el Hub mande JWT.
+    {
         try {
             // 1. Decodificar el token (Base64 -> JSON)
             const jsonUsuario = atob(tokenSSO);
@@ -257,17 +324,20 @@ async function login() {
     if(!email || !pass) return mostrarAlerta("Llena todos los campos", "Faltan datos");
 
     try {
-        const res = await fetch(`${API_URL}/login`, {
+        const res = await api(`/login`, {
             method: 'POST',
-            headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({ email, password: pass })
         });
         const data = await res.json();
         
         if(data.success) {
             usuarioActual = data;
+            guardarToken(data.token);
             localStorage.setItem("loteria_usuario", JSON.stringify(data));
-            
+
+            // Reconectamos para que el handshake del socket lleve ya el token.
+            socket.disconnect().connect();
+
             // 🔥 FIX IMPORTANTE: Actualizar la variable global de la ficha AL INSTANTE
             if (data.fichaActiva) {
                 fichaActivaUrl = data.fichaActiva;
@@ -301,17 +371,18 @@ async function registro() {
     if(!nickname || !email || !pass) return mostrarAlerta("Llena todos los campos", "Registro incompleto");
 
     try {
-        const res = await fetch(`${API_URL}/registro`, {
+        const res = await api(`/registro`, {
             method: 'POST',
-            headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({ nickname, email, password: pass })
         });
         const data = await res.json();
         
         if(data.success) {
             usuarioActual = data;
+            guardarToken(data.token);
             localStorage.setItem("loteria_usuario", JSON.stringify(data));
-            
+            socket.disconnect().connect();
+
             configurarMenu();
             cargarTienda(); // <--- Cargar tienda al registrarse
             
@@ -324,6 +395,7 @@ async function registro() {
 
 function cerrarSesion() {
     localStorage.removeItem("loteria_usuario");
+    localStorage.removeItem("loteria_token");
     // Opcional: También limpiar favoritos locales si quieres seguridad total
     // localStorage.removeItem("loteria_cartas_fav"); 
     
@@ -1064,9 +1136,8 @@ async function iniciarPagoEmbedded(cantidadMonedas) {
     document.getElementById("btnVolverPaquetes").style.display = "block";
 
     try {
-        const res = await fetch(`${API_URL}/crear-orden`, {
+        const res = await api(`/crear-orden`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ 
                 cantidad: cantidadMonedas, 
                 precio: precio,
@@ -1105,9 +1176,8 @@ async function guardarSetFavorito() {
             const textoOriginal = btn.innerText;
             btn.innerText = "Guardando...";
             
-            await fetch(`${API_URL}/usuario/guardar-preferencias`, {
+            await api(`/usuario/guardar-preferencias`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ 
                     email: usuarioActual.email, 
                     cartasFavoritas: seleccionadas 
@@ -1194,7 +1264,7 @@ async function cargarUsuariosAdmin() {
     tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;">Cargando...</td></tr>';
 
     try {
-        const res = await fetch(`${API_URL}/admin/usuarios`, {
+        const res = await api(`/admin/usuarios`, {
             method: 'GET',
             headers: { 'admin-email': usuarioActual.email }
         });
@@ -1239,9 +1309,8 @@ async function ejecutarRecargaAdmin() {
 
     mostrarConfirmacion(`¿Dar ${cantidad} monedas a ${targetEmail}?`, async () => {
         try {
-            const res = await fetch(`${API_URL}/admin/recargar-manual`, {
+            const res = await api(`/admin/recargar-manual`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     adminEmail: usuarioActual.email,
                     targetEmail: targetEmail,
@@ -1420,9 +1489,8 @@ async function usarFicha(urlImagen) {
 
     // 2. GUARDAR EN BASE DE DATOS (PERSISTENCIA REAL)
     try {
-        await fetch(`${API_URL}/usuario/guardar-preferencias`, {
+        await api(`/usuario/guardar-preferencias`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ 
                 email: usuarioActual.email, // <--- Aquí también corregido
                 fichaActiva: urlImagen 
@@ -1694,9 +1762,8 @@ window.verificarDestinatario = async () => {
 
     try {
         // --- CAMBIO CLAVE: USAMOS POST Y JSON ---
-        const res = await fetch(`${API_URL}/buscar-destinatario`, {
+        const res = await api(`/buscar-destinatario`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ nickname: nickname })
         });
         
@@ -1751,9 +1818,8 @@ window.realizarTransferencia = async () => {
         }
         
         try {
-            const res = await fetch(`${API_URL}/transferir-saldo`, {
+            const res = await api(`/transferir-saldo`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     origenEmail: usuarioActual.email,
                     destinoEmail: destinatarioConfirmado.email,
@@ -1816,7 +1882,7 @@ async function cargarMovimientos() {
     try {
         if(!usuarioActual || !usuarioActual.email) return;
 
-        const res = await fetch(`${API_URL}/historial-usuario?email=${usuarioActual.email}`);
+        const res = await api(`/historial-usuario?email=${usuarioActual.email}`);
         const data = await res.json();
 
         if (data.success) {
