@@ -66,8 +66,13 @@ function globalesUsadosEnAtributos(...fuentes) {
     };
     for (const texto of fuentes) {
         if (!texto) continue;
-        for (const [, codigo] of texto.matchAll(/\son[a-z]+\s*=\s*"([^"]*)"/gi)) recolectar(codigo);
-        for (const [, codigo] of texto.matchAll(/\son[a-z]+\s*=\s*'([^']*)'/gi)) recolectar(codigo);
+        // El prefijo NO puede exigir un espacio: dentro del JS el atributo suele
+        // arrancar pegado a la comilla que abre la plantilla, como en
+        // `` `onclick="abrirJuegoPWA('${url}')"` ``. Exigir espacio dejaba fuera
+        // justo esos casos, y la verificación no lo delataba porque solo
+        // comprueba los nombres que este escáner encuentra.
+        for (const [, codigo] of texto.matchAll(/(?:^|[^A-Za-z0-9_$])on[a-z]+\s*=\s*"([^"]*)"/gim)) recolectar(codigo);
+        for (const [, codigo] of texto.matchAll(/(?:^|[^A-Za-z0-9_$])on[a-z]+\s*=\s*'([^']*)'/gim)) recolectar(codigo);
     }
     return [...nombres].sort();
 }
