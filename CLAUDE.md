@@ -5,9 +5,9 @@ Contexto para agentes trabajando en este repo. Léelo antes de tocar código.
 ## Qué es esto
 
 Frontend de un juego de **Lotería mexicana multijugador en tiempo real** con monedas
-virtuales, apuestas, tienda y pagos reales vía Stripe. Es una web app estática (sin
-framework, sin build step) que se despliega en Vercel y habla con un backend Node
-separado alojado en Render.
+virtuales, apuestas, tienda y pagos reales vía Stripe. Es una web app estática sin
+framework ni bundler, que se despliega en Vercel y habla con un backend Node separado
+alojado en Render.
 
 Forma parte de un ecosistema más grande, **Juegos en la Nube**
 (`juegosenlanube.com`), que también incluye Serpientes y Escaleras y Pirinola —
@@ -19,7 +19,6 @@ todos servidos por el **mismo** backend.
 NAVEGADOR
    │
    ├── VERCEL ─────────── este repo (HTML/CSS/JS/assets estáticos)
-   │                      loteria-online-red.vercel.app
    │                      loteria.juegosenlanube.com
    │
    └── RENDER ─────────── repo `loteria-backend` (server.js)
@@ -54,13 +53,14 @@ evento de socket o un endpoint, revisa el otro lado en `~/loteria-backend-repo/s
 ```
 index.html            Todas las pantallas en un solo archivo (SPA por clases CSS)
 css/style.css         Estilos (~1,250 líneas)
-js/app.js             Toda la lógica de cliente (~2,030 líneas)
-js/respaldojs.js      Copia legible de app.js — ver "Ofuscación" abajo
+js/app.js             Toda la lógica de cliente (~2,030 líneas), en claro
+scripts/obfuscate.js  Ofuscador que corre Vercel en el build — ver abajo
+vercel.json           buildCommand + outputDirectory
 service-worker.js     Existe pero NUNCA se registra (PWA no funciona)
 manifest.json         Íconos apuntan a rutas rotas
 assets/imagenes/      151 archivos, ~100 MB. Fondos PNG de 2–4 MB c/u
 assets/audios/        70 archivos (voz de cada carta + efectos)
-package.json          Basura heredada: describe el BACKEND, no este repo
+package.json          Scripts de build y devDependency del ofuscador
 ```
 
 ### Ofuscación: ocurre en el build de Vercel, nunca en el repo
@@ -133,8 +133,8 @@ La baraja que se canta **siempre es de 54**, sin importar el modo.
 Seguridad (crítica, ver README para el detalle):
 - El backend no autentica: confía en el email que le manden en el body. Se puede
   vaciar la cuenta de cualquiera y auto-recargarse monedas.
-- El "admin" se valida con un header de texto plano contra un email hardcodeado en
-  este `app.js` público.
+- El "admin" se valida comparando un header de texto plano contra `ADMIN_EMAIL`.
+  Ya no está hardcodeado en el cliente, pero sigue siendo autorización débil.
 - El SSO del Hub es base64 sin firmar → falsificable.
 
 Bugs:

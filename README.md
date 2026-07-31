@@ -6,15 +6,14 @@ con tarjeta vía Stripe.
 
 Parte del ecosistema **Juegos en la Nube** (`juegosenlanube.com`).
 
-🔗 **Producción:** [loteria.juegosenlanube.com](https://loteria.juegosenlanube.com) ·
-[loteria-online-red.vercel.app](https://loteria-online-red.vercel.app)
+🔗 **Producción:** [loteria.juegosenlanube.com](https://loteria.juegosenlanube.com)
 
 ---
 
 ## 🧩 Arquitectura
 
-Este repo es **solo el frontend**: HTML, CSS, JS y assets estáticos. No tiene servidor
-ni build step. Vercel lo publica tal cual.
+Este repo es **solo el frontend**: HTML, CSS, JS y assets estáticos. No tiene servidor.
+Vercel lo publica tras ofuscar el JS en el build.
 
 ```
                     NAVEGADOR DEL JUGADOR
@@ -53,8 +52,9 @@ Es un solo proceso para todo el ecosistema.
 ```
 index.html          Todas las pantallas (login, menú, sala, selección, juego, admin)
 css/style.css       Estilos
-js/app.js           Toda la lógica de cliente
-js/respaldojs.js    Copia legible de app.js (ver nota de ofuscación)
+js/app.js           Toda la lógica de cliente (en claro)
+scripts/            Ofuscador que corre Vercel en el build
+vercel.json         Configuración de build
 service-worker.js   Cacheo offline — actualmente NO se registra
 manifest.json       PWA
 assets/imagenes/    Cartas, barajas, fondos, fichas, UI
@@ -79,7 +79,7 @@ seguridad real vive en el servidor.
 
 ## 🚀 Correr local
 
-No hay dependencias ni build. Cualquier servidor estático sirve:
+Cualquier servidor estático sirve la carpeta tal cual:
 
 ```bash
 python3 -m http.server 8000
@@ -131,8 +131,9 @@ sesiones ni tokens firmados. Consecuencias conocidas:
 1. **Vaciado de cuentas** — `/api/buscar-destinatario` devuelve el email de cualquier
    nickname, y `/api/transferir-saldo` no valida que quien pide sea el dueño de la
    cuenta de origen.
-2. **Monedas infinitas** — los endpoints `/api/admin/*` se autorizan con un header de
-   texto plano comparado contra un email que está hardcodeado en este `app.js` público.
+2. **Autorización de admin débil** — los endpoints `/api/admin/*` se autorizan con un
+   header de texto plano comparado contra `ADMIN_EMAIL`. El email ya salió del cliente,
+   pero comparar un email no es autenticación.
 3. **SSO falsificable** — el token del Hub es JSON en base64 sin firma.
 
 **Plan:** migrar a JWT (login emite token firmado, el backend lo lee del header
@@ -143,12 +144,13 @@ sesiones ni tokens firmados. Consecuencias conocidas:
 ## 🗺️ Roadmap
 
 - [x] Documentar arquitectura (`CLAUDE.md`, `README.md`, `.gitignore`)
+- [x] Fase 0 de contención: idempotencia de pagos, caída remota, admin fuera del cliente
 - [ ] **Autenticación JWT** y cierre de los tres huecos de arriba
 - [ ] Rate limiting y validación de entrada en el backend
 - [ ] Bugs: carta 54 faltante, ruta de cartas al reconectar en modo Pozo
 - [ ] Registrar el service worker y arreglar `manifest.json` (PWA real)
 - [ ] Optimizar assets a WebP (~100 MB actuales)
-- [ ] Decidir el futuro de la ofuscación / meter un build step de verdad
+- [x] Ofuscación automática en el build de Vercel
 - [ ] Evaluar migración de Render a VPS propio
 
 ---
@@ -161,4 +163,4 @@ sesiones ni tokens firmados. Consecuencias conocidas:
   las partidas en curso. Migrarlo a Redis permitiría reinicios sin pérdida y más de
   una instancia.
 - Variables de entorno en Render: `nicknames` (service account de Firebase en JSON),
-  `STRIPE_SECRET_KEY`, `PORT`.
+  `STRIPE_SECRET_KEY`, `ADMIN_EMAIL`, `PORT`.
