@@ -42,15 +42,32 @@ const IGNORAR = new Set([
     'Boolean', 'Array', 'Object', 'Date', 'parseInt', 'parseFloat', 'alert'
 ]);
 
-/** Identificadores globales que index.html referencia desde atributos inline. */
-function globalesUsadosEnHtml(html) {
+/**
+ * Identificadores globales invocados desde atributos inline (onclick="...").
+ *
+ * ⚠️ Hay que mirar en DOS sitios, no solo en index.html:
+ *   1. El propio HTML.
+ *   2. El JS, porque genera HTML en caliente con plantillas que llevan sus
+ *      propios onclick dentro:  `<div onclick="abrirJuegoPWA('${url}')">`
+ *
+ * Mirar solo el HTML dejó fuera esas funciones, el ofuscador las renombró y los
+ * botones generados dinámicamente (tienda, catálogo de juegos, panel de admin)
+ * dejaron de responder en producción sin un solo error hasta que alguien los
+ * picaba. De ahí que ahora se escaneen ambas fuentes y las dos formas de comilla.
+ */
+function globalesUsadosEnAtributos(...fuentes) {
     const nombres = new Set();
-    for (const [, codigo] of html.matchAll(/\son[a-z]+\s*=\s*"([^"]*)"/gi)) {
+    const recolectar = (codigo) => {
         const sinCadenas = codigo.replace(/'[^']*'/g, "''").replace(/`[^`]*`/g, '``');
         for (const [, punto, nombre] of sinCadenas.matchAll(/(\.)?\b([A-Za-z_$][A-Za-z0-9_$]*)\b/g)) {
             if (punto || IGNORAR.has(nombre)) continue;
             nombres.add(nombre);
         }
+    };
+    for (const texto of fuentes) {
+        if (!texto) continue;
+        for (const [, codigo] of texto.matchAll(/\son[a-z]+\s*=\s*"([^"]*)"/gi)) recolectar(codigo);
+        for (const [, codigo] of texto.matchAll(/\son[a-z]+\s*=\s*'([^']*)'/gi)) recolectar(codigo);
     }
     return [...nombres].sort();
 }
@@ -135,7 +152,7 @@ if (/^const _0x/.test(fuente)) {
     process.exit(1);
 }
 
-const globales = globalesUsadosEnHtml(html);
+const globales = globalesUsadosEnAtributos(html, fuente);
 
 console.log(`🔒 Ofuscando js/app.js ${enSeco ? '(simulacro, no se escribe nada)' : '(build de Vercel)'} ...`);
 
@@ -185,8 +202,13 @@ const codigo = JavaScriptObfuscator.obfuscate(fuente, {
 }).getObfuscatedCode();
 // index.html puede invocar funciones definidas en sus propios bloques <script>
 // inline, que no viven en este archivo. Solo verificamos lo que la fuente define.
+// Solo verificamos nombres declarados al PRIMER NIVEL del archivo (sin sangría).
+// Los atributos inline llevan dentro variables locales del bucle que los genera
+// —`onclick="comprarItem('${item.id}')"`— y esas nunca existen en el ámbito
+// global, así que buscarlas ahí daría una falsa alarma. Reservarlas no estorba;
+// verificarlas sí.
 const definidosAqui = globales.filter(n =>
-    new RegExp(`(?:function|var|let|const)\\s+${n}\\b|window\\.${n}\\s*=`).test(fuente)
+    new RegExp(`^(?:async\\s+)?(?:function|var|let|const)\\s+${n}\\b|^window\\.${n}\\s*=`, 'm').test(fuente)
 );
 
 const { reventó, faltantes } = verificarEjecutando(codigo, definidosAqui);
@@ -213,7 +235,7 @@ if (!enSeco) fs.writeFileSync(ARCHIVO, codigo);
 
 const kb = t => (Buffer.byteLength(t) / 1024).toFixed(0);
 console.log(`✅ ${kb(fuente)} KB → ${kb(codigo)} KB`);
-console.log(`   ${definidosAqui.length} de los ${globales.length} identificadores que usa index.html se definen aquí: verificados intactos.`);
+console.log(`   ${definidosAqui.length} de los ${globales.length} identificadores invocados desde atributos inline se definen aquí: verificados intactos.`);
 console.log(`   Funciones declaradas en la fuente: ${unicas.length}`);
 console.log(`   De esas, siguen con su nombre visible: ${expuestas.length} (las que el HTML invoca)`);
 if (expuestas.length > globales.length) {
