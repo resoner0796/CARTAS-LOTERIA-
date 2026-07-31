@@ -1415,3 +1415,151 @@ table { max-width: 100%; }
         max-width: calc(50% - 15px);
     }
 }
+
+
+/* =========================================================================
+   AJUSTES V2 — reportados jugando en un iPhone 13 Pro Max
+   ========================================================================= */
+
+/* --- 11. MÓVIL EN HORIZONTAL: las 4 tablas en UNA fila -------------------
+   Un iPhone 13 Pro Max acostado son 926×428 px. La regla base ponía dos
+   tablas por fila (45% cada una), así que quedaban de 400 px de ancho: media
+   pantalla por tabla y el resto había que buscarlo con scroll. Acostado sobra
+   ancho y falta alto, justo al revés de lo que hacía la maqueta.
+   Aquí caben las cuatro de un vistazo, que es como se juega de verdad.      */
+@media (orientation: landscape) and (max-height: 560px) {
+    #juegoCartas {
+        flex-wrap: nowrap;
+        gap: 8px;
+        align-items: flex-start;
+    }
+    #juegoCartas .carta-juego {
+        flex: 1 1 0;
+        min-width: 0;
+        max-width: none;
+    }
+    #juegoCartas .carta-img { width: 100%; }
+
+    /* El historial ocupaba 110 px de alto fijos, un cuarto de la pantalla. */
+    .historial-container { min-height: 0; padding: 6px 10px !important; margin-bottom: 8px; }
+    #historial img { width: 42px; height: 63px; }
+
+    /* La ficha se escala con la tabla, que ahora es más angosta. */
+    .ficha { max-width: 42px; }
+}
+
+/* Pantallas acostadas más anchas (tablet): mismo criterio, con algo de aire */
+@media (orientation: landscape) and (min-height: 561px) and (max-height: 820px) and (max-width: 1365px) {
+    #juegoCartas { flex-wrap: nowrap; gap: 12px; }
+    #juegoCartas .carta-juego { flex: 1 1 0; min-width: 0; max-width: none; }
+    #juegoCartas .carta-img { width: 100%; }
+}
+
+
+/* --- 12. MODAL DE VALIDACIÓN DEL HOST -----------------------------------
+   Se veía con las tablas separadas por huecos enormes y cortadas por abajo.
+   Dos causas: la cuadrícula fijaba 2 columnas pero limitaba cada tabla a
+   160 px, así que en un modal ancho quedaban dos islas con un vacío en medio;
+   y `width: 110%` desbordaba la celda que la contenía.
+   El host necesita ver las cuatro tablas de un golpe para poder validar.    */
+#modalVerificationArea {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    justify-items: stretch;
+}
+
+#modalVerificationArea .carta-juego {
+    width: 100% !important;
+    max-width: none;
+    /* SIN aspect-ratio forzado. Estaba en 2/3 (0.667), pero las tablas reales
+       son 900×1460 (0.616) y las del modo Pozo 2328×3024 (0.770). Con
+       `overflow: hidden` eso recortaba la fila de abajo de las normales y los
+       costados de las de Pozo: el host validaba viendo una tabla incompleta,
+       que es justo lo que no puede pasar aquí. Ahora manda la imagen. */
+    position: relative !important;
+    overflow: visible;
+    margin: 0 !important;
+    align-self: start;
+}
+
+#modalVerificationArea .carta-img {
+    width: 100% !important;
+    height: auto !important;
+    object-fit: contain;
+    display: block;
+}
+
+/* En cuanto hay ancho, las cuatro en una fila */
+@media (min-width: 560px) {
+    #modalVerificationArea {
+        display: grid !important;
+        grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+        flex-wrap: nowrap;
+        gap: 10px !important;
+        overflow-x: visible;
+    }
+    #modalVerificationArea .carta-juego {
+        flex: none !important;
+        min-width: 0 !important;
+        max-width: none !important;
+        margin: 0 !important;
+    }
+}
+
+/* El contenido del modal no debe pasarse de alto: que scrollee por dentro */
+#loteriaModal .modal-content { max-height: 92vh; max-height: 92dvh; }
+
+
+/* --- 13. PANEL DE ADMINISTRACIÓN ----------------------------------------
+   Las tarjetas se estiraban a todo el ancho de la pantalla. Y el campo de
+   cantidad salía en blanco sobre blanco: el estilo de los inputs enumeraba
+   `text`, `email` y `password`, pero no `number`, así que ese se quedaba con
+   la apariencia por defecto del navegador. */
+input[type="number"],
+input[type="search"],
+input[type="tel"],
+input[type="url"],
+textarea {
+    width: 100%; padding: 14px; border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    background: rgba(0, 0, 0, 0.5);
+    color: white; font-size: 1rem; box-sizing: border-box; margin-bottom: 10px;
+    font-family: 'Montserrat', sans-serif;
+    transition: all 0.3s ease;
+}
+input[type="number"]::placeholder,
+input[type="search"]::placeholder,
+textarea::placeholder { color: rgba(255,255,255,0.6); }
+
+/* Le decimos al navegador que la interfaz es oscura, para que los controles
+   nativos (flechitas del number, autocompletado) no salgan en claro. */
+:root { color-scheme: dark; }
+
+#pantallaAdmin .sala-box { max-width: 600px; margin-left: auto; margin-right: auto; }
+
+
+/* --- 14. MODALES EN ESCRITORIO: anchos por contenido --------------------
+   Un tope único dejaba el de transferencias igual de ancho que el de validar,
+   que enseña cuatro tablas. Cada uno pide lo suyo.                          */
+#modalTransferencia .modal-content { max-width: min(95%, 460px); }
+#modalHistorial .modal-content     { max-width: min(95%, 520px); }
+#modalSistema .modal-content       { max-width: min(95%, 440px); }
+
+
+/* --- 15. TORRES DE MONEDAS DEL SALDO ------------------------------------
+   Tres pilas en vez de una, como se pidió.                                  */
+.monedas-torres {
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    gap: 2px;
+}
+.monedas-apiladas { margin-right: 0; }
+
+
+/* --- 16. LAS TABLAS CABEN EN SU CAJA ------------------------------------
+   `.carta-img` lleva `border: 3px` y `width: 100%`. Sin box-sizing, el borde
+   se SUMA al 100%, así que cada tabla se pasaba 6 px de su contenedor y su
+   proporción real salía 0.624 en vez de los 0.616 del archivo. Poco, pero es
+   lo que hacía que en el modal de validación pareciera que faltaba un trozo. */
+.carta-img { box-sizing: border-box; }
