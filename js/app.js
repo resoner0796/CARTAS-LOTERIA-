@@ -7,8 +7,7 @@
 // un solo archivo antes de ofuscarlo (ver scripts/obfuscate.js).
 
 import {
-    SERVIDOR, STRIPE_CLAVE_PUBLICA, FICHA_POR_DEFECTO,
-    catalogoSonidos, catalogoFichas
+    SERVIDOR, STRIPE_CLAVE_PUBLICA, FICHA_POR_DEFECTO, catalogoSonidos
 } from './modulos/config.js';
 import { escaparHtml, actualizarValor } from './modulos/utiles.js';
 import {
@@ -21,6 +20,16 @@ import {
     verificarDestinatario, realizarTransferencia,
     abrirHistorial, cerrarModalHistorial
 } from './modulos/monedero.js';
+import {
+    abrirModalRecarga, cerrarTienda, volverAPaquetes, iniciarPagoEmbedded,
+    actualizarSaldoUI, abrirCategoriaTienda, cerrarModalTiendaDetalle,
+    refrescarCategoria, previewSonido, usarFicha, comprarItem,
+    fichaEnUso, establecerFicha
+} from './modulos/tienda.js';
+import {
+    verificarSiSoyAdmin, abrirPanelAdmin, cargarUsuariosAdmin,
+    prepararRecarga, ejecutarRecargaAdmin
+} from './modulos/admin.js';
 // El token va en el handshake. `auth` como función se vuelve a evaluar en cada
 // reconexión, así que en cuanto inicias sesión el socket ya viaja identificado.
 //
@@ -189,7 +198,7 @@ let entrandoDesdeHub = false;
                 // esperar dos veces: la petición del perfil y la carga entera
                 // de la página otra vez.
                 usuarioActual = perfil;
-                if (perfil.fichaActiva) fichaActivaUrl = perfil.fichaActiva;
+                if (perfil.fichaActiva) establecerFicha(perfil.fichaActiva);
                 if (perfil.cartasFavoritas?.length) {
                     localStorage.setItem("loteria_cartas_fav", JSON.stringify(perfil.cartasFavoritas));
                 }
@@ -203,7 +212,7 @@ let entrandoDesdeHub = false;
 
                 try {
                     configurarMenu();
-                    cargarTienda();
+                    actualizarSaldoUI(usuarioActual);
                     sincronizarDatosForzoso();
                     if (typeof socket !== "undefined" && socket) socket.disconnect().connect();
 
@@ -328,7 +337,7 @@ window.onload = () => {
         
         // 🔥 CARGAR PREFERENCIAS DE LA NUBE 🔥
         if(usuarioActual.fichaActiva) {
-            fichaActivaUrl = usuarioActual.fichaActiva;
+            establecerFicha(usuarioActual.fichaActiva);
         }
         // Si tiene cartas favoritas en la cuenta, actualizamos el localStorage para que esté sincronizado
         if(usuarioActual.cartasFavoritas && usuarioActual.cartasFavoritas.length > 0) {
@@ -336,7 +345,7 @@ window.onload = () => {
         }
         
         configurarMenu();
-        cargarTienda();
+        actualizarSaldoUI(usuarioActual);
         sincronizarDatosForzoso(); 
         
         
@@ -352,7 +361,7 @@ window.onload = () => {
                 usuarioActual.monedas = (parseInt(usuarioActual.monedas) || 0) + parseInt(cant);
                 localStorage.setItem("loteria_usuario", JSON.stringify(usuarioActual));
                 configurarMenu();
-                cargarTienda();
+                actualizarSaldoUI(usuarioActual);
             }
             window.history.pushState({}, document.title, window.location.pathname);
         } else if (pagoEstado === 'cancelado') {
@@ -411,7 +420,7 @@ async function login() {
 
             // 🔥 FIX IMPORTANTE: Actualizar la variable global de la ficha AL INSTANTE
             if (data.fichaActiva) {
-                fichaActivaUrl = data.fichaActiva;
+                establecerFicha(data.fichaActiva);
             }
 
             // Sincronizar cartas si existen
@@ -420,7 +429,7 @@ async function login() {
             }
             
             configurarMenu();
-            cargarTienda(); 
+            actualizarSaldoUI(usuarioActual); 
             sincronizarDatosForzoso(); 
             
             const urlParams = new URLSearchParams(window.location.search);
@@ -455,7 +464,7 @@ async function registro() {
             socket.disconnect().connect();
 
             configurarMenu();
-            cargarTienda(); // <--- Cargar tienda al registrarse
+            actualizarSaldoUI(usuarioActual); // <--- Cargar tienda al registrarse
             
             cambiarPantalla("menu");
         } else {
@@ -467,7 +476,7 @@ async function registro() {
 function cerrarSesion() {
     borrarSesion();     // token y perfil, en un solo sitio (modulos/sesion.js)
     usuarioActual = null;
-    fichaActivaUrl = FICHA_POR_DEFECTO;
+    establecerFicha(FICHA_POR_DEFECTO);
     location.reload();  // recargar limpia todo lo demás
 }
 
@@ -476,7 +485,7 @@ function configurarMenu() {
         document.getElementById("menuBienvenida").textContent = `Hola, ${usuarioActual.nickname}`;
         // En el menú principal solo mostramos el número (para el monedero)
         document.getElementById("menuMonedas").textContent = usuarioActual.monedas;
-        verificarSiSoyAdmin();
+        verificarSiSoyAdmin(usuarioActual);
     }
 }
 
@@ -775,7 +784,7 @@ function marcarFicha(e, contenedor) {
   
   // CORRECCIÓN: Usamos la skin seleccionada (Bitcoin, Frijol, etc.)
   // Si no ha elegido ninguna, usará la default automáticamente.
-  ficha.src = fichaActivaUrl; 
+  ficha.src = fichaEnUso();
   
   ficha.classList.add("ficha");
   ficha.style.left = `${px}%`;
@@ -1043,11 +1052,11 @@ function emitirLoteria() {
   audioCampana.pause();
   audioBarajear.pause();
    
-  // AQUI AGREGAMOS "skin: fichaActivaUrl" PARA QUE SEPAN CUÁL USAMOS
-  const boardState = { 
+  // La skin viaja con el tablero para que los demás vean las fichas que usas.
+  const boardState = {
       cards: seleccionadas, 
       chips: {}, 
-      skin: fichaActivaUrl 
+      skin: fichaEnUso() 
   };
 
   document.querySelectorAll('#juegoCartas .carta-juego').forEach(cardContainer => {
@@ -1291,82 +1300,8 @@ if(btnApostar) btnApostar.addEventListener("click", () => {
   btnApostar.disabled = true;
 });
 
-// ==================== TIENDA / PAGOS ====================
-
-function abrirModalRecarga() {
-    const modal = document.getElementById('modalTienda');
-    if(modal) {
-        modal.classList.add('active');
-        volverAPaquetes(); 
-        if(navigator.vibrate) navigator.vibrate(50);
-    }
-}
-
-function cerrarTienda() {
-    const modal = document.getElementById('modalTienda');
-    if(modal) modal.classList.remove('active');
-    if(checkoutInstance) {
-        checkoutInstance.destroy();
-        checkoutInstance = null;
-    }
-}
-
-function volverAPaquetes() {
-    document.getElementById("seccionPaquetes").style.display = "block";
-    document.getElementById("checkout").style.display = "none";
-    document.getElementById("btnVolverPaquetes").style.display = "none";
-    document.getElementById("tituloTienda").textContent = "Tienda de Monedas";
-    if(checkoutInstance) {
-        checkoutInstance.destroy();
-        checkoutInstance = null;
-    }
-}
-
-async function iniciarPagoEmbedded(cantidadMonedas) {
-    if(!usuarioActual || !usuarioActual.email) return mostrarAlerta("Necesitas iniciar sesión.");
-
-    let precio = 0;
-    if(cantidadMonedas === 50) precio = 29.99;
-    if(cantidadMonedas === 150) precio = 79.99;
-    if(cantidadMonedas === 500) precio = 199.99;
-
-    document.getElementById("seccionPaquetes").style.display = "none";
-    const checkoutDiv = document.getElementById("checkout");
-    checkoutDiv.style.display = "block";
-    checkoutDiv.innerHTML = '<p style="text-align:center; padding:20px;">Cargando pago seguro...</p>';
-    document.getElementById("tituloTienda").textContent = "Completar Compra";
-    document.getElementById("btnVolverPaquetes").style.display = "block";
-
-    try {
-        const res = await api(`/crear-orden`, {
-            method: 'POST',
-            body: JSON.stringify({
-                cantidad: cantidadMonedas,
-                precio: precio,
-                email: usuarioActual.email,
-                // Se declara explícitamente para que Stripe devuelva AQUÍ y no al
-                // Hub si el pago se cancela. El servidor lo asume por defecto,
-                // pero conviene no depender de un valor implícito cuando de eso
-                // depende dónde acaba el jugador.
-                origen: 'loteria'
-            })
-        });
-        
-        const { clientSecret } = await res.json();
-        
-        if(!clientSecret) throw new Error("No se recibió clave de pago");
-
-        checkoutDiv.innerHTML = ""; 
-        
-        checkoutInstance = await stripePromise.initEmbeddedCheckout({ clientSecret });
-        checkoutInstance.mount('#checkout');
-
-    } catch (error) {
-        console.error(error);
-        mostrarAlerta("Error al cargar el pago. Intenta de nuevo.", "Error");
-        volverAPaquetes();
-    }
-}
+// La recarga con tarjeta y la tienda de artículos viven en
+// modulos/tienda.js. Reciben el usuario como argumento.
 
 // ==================== PRESETS DE CARTAS ====================
 
@@ -1449,287 +1384,7 @@ function iniciarJuegoConVelocidad() {
     socket.emit('iniciar-juego', { sala: salaActual, velocidad: velocidad });
 }
 
-// ==================== PANEL DE ADMINISTRADOR ====================
-
-// El email del admin ya NO vive aquí: este archivo es público y lo servía de bandeja
-// a cualquiera que abriera el sitio. Ahora el servidor manda el flag 'esAdmin' en la
-// respuesta del login, y él es quien autoriza de verdad en cada endpoint.
-// Esto solo decide si se pinta el botón.
-function verificarSiSoyAdmin() {
-    const btnAdmin = document.getElementById("btnPanelAdmin");
-    if (!btnAdmin) return;
-    btnAdmin.style.display = (usuarioActual && usuarioActual.esAdmin) ? "block" : "none";
-}
-
-function abrirPanelAdmin() {
-    cambiarPantalla("pantallaAdmin");
-    cargarUsuariosAdmin();
-}
-
-async function cargarUsuariosAdmin() {
-    const tbody = document.getElementById("tablaUsuariosAdmin");
-    if(!tbody) return;
-    
-    tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;">Cargando...</td></tr>';
-
-    try {
-        const res = await api(`/admin/usuarios`, {
-            method: 'GET',
-            headers: { 'admin-email': usuarioActual.email }
-        });
-        
-        if (!res.ok) throw new Error("Sin permiso");
-        
-        const usuarios = await res.json();
-        tbody.innerHTML = ""; 
-
-        usuarios.forEach(u => {
-            const tr = document.createElement("tr");
-            tr.innerHTML = `
-                <td style="padding:8px; font-weight:bold;">${escaparHtml(u.nickname)}</td>
-                <td style="padding:8px; font-size:0.8rem; color:#ccc;">${escaparHtml(u.email)}</td>
-                <td style="padding:8px; color:gold;">${u.monedas}</td>
-                <td style="padding:8px;">
-                    <button data-accion="preparar-recarga" data-email="${escaparHtml(u.email)}" style="padding:2px 8px; font-size:0.7rem; margin:0;">➕</button>
-                </td>
-            `;
-            tbody.appendChild(tr);
-        });
-
-    } catch (error) {
-        console.error(error);
-        mostrarAlerta("Error cargando usuarios.", "Error Admin");
-    }
-}
-
-function prepararRecarga(email) {
-    const inputEmail = document.getElementById("adminInputEmail");
-    const inputMonedas = document.getElementById("adminInputMonedas");
-    
-    if(inputEmail) inputEmail.value = email;
-    if(inputMonedas) inputMonedas.focus();
-}
-
-async function ejecutarRecargaAdmin() {
-    const targetEmail = document.getElementById("adminInputEmail").value;
-    const cantidad = document.getElementById("adminInputMonedas").value;
-
-    if (!targetEmail || !cantidad) return mostrarAlerta("Faltan datos");
-
-    mostrarConfirmacion(`¿Dar ${cantidad} monedas a ${targetEmail}?`, async () => {
-        try {
-            const res = await api(`/admin/recargar-manual`, {
-                method: 'POST',
-                body: JSON.stringify({
-                    adminEmail: usuarioActual.email,
-                    targetEmail: targetEmail,
-                    cantidad: parseInt(cantidad)
-                })
-            });
-
-            const data = await res.json();
-            if (data.success) {
-                mostrarAlerta("Recarga exitosa", "Hecho");
-                cargarUsuariosAdmin(); 
-                document.getElementById("adminInputMonedas").value = "";
-            } else {
-                mostrarAlerta("Error: " + data.error);
-            }
-        } catch (e) {
-            mostrarAlerta("Error de conexión", "Fallo");
-        }
-    });
-}
-
-// ==================== LÓGICA DE TIENDA (MEJORADA) ====================
-
-// Los catálogos de sonidos y fichas viven en modulos/config.js.
-
-// Ficha activa localmente (Persistencia)
-let fichaActivaUrl = FICHA_POR_DEFECTO;
-
-const audioPlayerTienda = new Audio();
-
-// Función auxiliar para actualizar saldo en el menú principal
-function actualizarSaldoUI() {
-    if(!usuarioActual) return;
-    const menuMonedasEl = document.getElementById('menuMonedas');
-    const saldoTiendaEl = document.getElementById('saldoTienda');
-    
-    if(menuMonedasEl) menuMonedasEl.textContent = usuarioActual.monedas;
-    if(saldoTiendaEl) saldoTiendaEl.innerHTML = `Tu saldo: <span style="color:white;">$${usuarioActual.monedas}</span>`;
-}
-
-// Recargar saldo al iniciar (Llama a esto en window.onload y login)
-function cargarTienda() {
-    actualizarSaldoUI();
-}
-
-// --- ABRIR CATEGORÍA ---
-let categoriaActual = '';
-
-function abrirCategoriaTienda(categoria) {
-    categoriaActual = categoria;
-    const modal = document.getElementById("modalTiendaDetalle");
-    const titulo = document.getElementById("tituloCategoriaTienda");
-    const grid = document.getElementById("gridTiendaItems");
-    
-    modal.classList.add("active");
-    grid.innerHTML = ""; // Limpiar
-
-    if (categoria === 'sonidos') {
-        titulo.textContent = "Efectos de Sonido 🔊";
-        renderizarSonidos(grid);
-    } else if (categoria === 'fichas') {
-        titulo.textContent = "Skins de Fichas 🟣";
-        renderizarFichas(grid);
-    }
-}
-
-function cerrarModalTiendaDetalle() {
-    document.getElementById("modalTiendaDetalle").classList.remove("active");
-}
-
-// --- RENDERIZADO DE ITEMS ---
-
-function renderizarSonidos(contenedor) {
-    if (!usuarioActual) return;
-    const inventario = usuarioActual.inventario || [];
-
-    catalogoSonidos.forEach(item => {
-        const yaLoTiene = inventario.includes(item.id) || item.precio === 0;
-        
-        const div = document.createElement('div');
-        div.className = "item-tienda-card";
-        
-        // Botón de acción
-        let btnHtml = '';
-        if (yaLoTiene) {
-            btnHtml = `<button class="btn-owned">✔ Listo</button>`;
-        } else {
-            btnHtml = `<button class="btn-buy" data-accion="comprar-item" data-item="${item.id}" data-precio="${item.precio}">$${item.precio}</button>`;
-        }
-
-        div.innerHTML = `
-            <div style="font-size: 2rem; cursor:pointer;" data-accion="oir-sonido" data-archivo="${item.file}">${item.emoji}</div>
-            <span class="item-nombre">${item.nombre}</span>
-            ${btnHtml}
-        `;
-        contenedor.appendChild(div);
-    });
-}
-
-function renderizarFichas(contenedor) {
-    if (!usuarioActual) return;
-    const inventario = usuarioActual.inventario || [];
-
-    catalogoFichas.forEach(item => {
-        // La default siempre la tiene (precio 0 o ID default)
-        const yaLoTiene = inventario.includes(item.id) || item.precio === 0;
-        const esLaActiva = (item.img === fichaActivaUrl);
-
-        const div = document.createElement('div');
-        div.className = "item-tienda-card";
-        
-        let btnHtml = '';
-        if (esLaActiva) {
-            btnHtml = `<button class="btn-use btn-active">En Uso</button>`;
-        } else if (yaLoTiene) {
-            btnHtml = `<button class="btn-use" data-accion="usar-ficha" data-img="${item.img}">Usar</button>`;
-        } else {
-            btnHtml = `<button class="btn-buy" data-accion="comprar-item" data-item="${item.id}" data-precio="${item.precio}">$${item.precio}</button>`;
-        }
-
-        div.innerHTML = `
-            <img src="${item.img}" class="preview-img-tienda">
-            <span class="item-nombre">${item.nombre}</span>
-            ${btnHtml}
-        `;
-        contenedor.appendChild(div);
-    });
-}
-
-// --- ACCIONES ---
-
-function previewSonido(ruta) {
-    audioPlayerTienda.src = ruta;
-    audioPlayerTienda.volume = 0.5;
-    audioPlayerTienda.play().catch(e => console.log("Error preview:", e));
-}
-
-// Función para ACTIVAR una ficha (Guardar en la Nube)
-async function usarFicha(urlImagen) {
-    // CORRECCIÓN: Aquí decía 'usuarioHub', debe ser 'usuarioActual'
-    if(!usuarioActual) return; 
-
-    // 1. Actualización Local (Rápida / Optimistic UI)
-    fichaActivaUrl = urlImagen;
-    usuarioActual.fichaActiva = urlImagen; // Guardamos en el objeto en memoria
-    localStorage.setItem("loteria_ficha_activa", urlImagen); // Backup local
-    localStorage.setItem("loteria_usuario", JSON.stringify(usuarioActual)); // Actualizar sesión local completa
-
-    // Refrescar modal visualmente para que aparezca el botón verde "En Uso"
-    const grid = document.getElementById("gridTiendaItems");
-    if(grid) {
-        grid.innerHTML = "";
-        renderizarFichas(grid);
-    }
-    
-    // Feedback visual inmediato
-    mostrarAlerta("¡Ficha actualizada!", "Estilo Nuevo 😎");
-
-    // 2. GUARDAR EN BASE DE DATOS (PERSISTENCIA REAL)
-    try {
-        await api(`/usuario/guardar-preferencias`, {
-            method: 'POST',
-            body: JSON.stringify({ 
-                email: usuarioActual.email, // <--- Aquí también corregido
-                fichaActiva: urlImagen 
-            })
-        });
-        console.log("Skin guardada en la nube");
-    } catch (e) {
-        console.error("No se pudo guardar en la nube", e);
-        // No mostramos alerta de error para no interrumpir, ya que localmente sí funcionó
-    }
-}
-
-// Comprar (Genérico para sonidos y fichas)
-async function comprarItem(itemId, precio) {
-    if (!usuarioActual) return;
-
-    if (usuarioActual.monedas < precio) {
-        if(confirm("¡No tienes suficientes monedas! ¿Quieres recargar?")) {
-            cerrarModalTiendaDetalle(); // Cerrar detalle para abrir recarga
-            abrirModalRecarga();
-        }
-        return;
-    }
-
-    if (precio > 0) {
-        if (!confirm(`¿Comprar por $${precio} monedas?`)) return;
-    }
-
-    // --- OPTIMISTIC UI ---
-    usuarioActual.monedas -= precio;
-    if (!usuarioActual.inventario) usuarioActual.inventario = [];
-    usuarioActual.inventario.push(itemId);
-    
-    actualizarSaldoUI();
-    
-    // Refrescar modal actual
-    const grid = document.getElementById("gridTiendaItems");
-    grid.innerHTML = "";
-    if(categoriaActual === 'sonidos') renderizarSonidos(grid);
-    if(categoriaActual === 'fichas') renderizarFichas(grid);
-
-    // --- ENVIAR AL SERVIDOR ---
-    socket.emit('comprar-item', { 
-        email: usuarioActual.email, 
-        itemId: itemId, 
-        precio: precio 
-    });
-}
+// El panel de administrador vive en modulos/admin.js.
 
 // ==================== SISTEMA DE SONIDOS EN JUEGO (SOUNDBOARD) ====================
 
@@ -1836,7 +1491,7 @@ socket.on('usuario-actualizado', (datosFrescos) => {
         // Si la BD trae una ficha activa, la forzamos en la sesión local
         if (datosFrescos.fichaActiva) {
             usuarioActual.fichaActiva = datosFrescos.fichaActiva;
-            fichaActivaUrl = datosFrescos.fichaActiva; // Actualizar variable global del juego
+            establecerFicha(datosFrescos.fichaActiva);
             localStorage.setItem("loteria_ficha_activa", datosFrescos.fichaActiva); // Persistir
         }
 
@@ -1865,7 +1520,7 @@ socket.on('usuario-actualizado', (datosFrescos) => {
         // Si el modal de detalles está abierto, refrescamos para ver el botón "En Uso"
         const grid = document.getElementById("gridTiendaItems");
         if(grid && grid.innerHTML !== "") {
-             if(categoriaActual === 'fichas') renderizarFichas(grid);
+             refrescarCategoria(usuarioActual);
         }
     }
 
@@ -1885,6 +1540,19 @@ function sincronizarDatosForzoso() {
         console.log("🔄 Pidiendo datos frescos al servidor...");
         socket.emit('solicitar-info-usuario', usuarioActual.email);
     }
+}
+
+/**
+ * Le pide al servidor que cobre un artículo. Se le pasa a la tienda para que el
+ * módulo no tenga que conocer el socket.
+ *
+ * Solo viaja el ID: el precio lo pone el servidor con su propio catálogo. Antes
+ * se mandaba también el precio y se restaba tal cual, así que uno negativo
+ * sumaba monedas en vez de cobrarlas.
+ */
+function emitirCompraItem(itemId) {
+    if (!usuarioActual) return;
+    socket.emit('comprar-item', { email: usuarioActual.email, itemId });
 }
 
 // Las transferencias y el historial de movimientos viven en
@@ -2115,7 +1783,7 @@ const ACCIONES = {
     'abrir-recarga':          () => abrirModalRecarga(),
     'cerrar-tienda':          () => cerrarTienda(),
     'volver-paquetes':        () => volverAPaquetes(),
-    'pagar':                  (el) => iniciarPagoEmbedded(Number(el.dataset.monedas)),
+    'pagar':                  (el) => iniciarPagoEmbedded(Number(el.dataset.monedas), usuarioActual, stripePromise),
 
     // --- Transferencias ---
     'abrir-transferencia':    () => abrirModalTransferencia(),
@@ -2125,16 +1793,16 @@ const ACCIONES = {
     'transferir':             (el) => realizarTransferencia(el, usuarioActual, sincronizarDatosForzoso),
 
     // --- Tienda ---
-    'tienda-categoria':       (el) => abrirCategoriaTienda(el.dataset.categoria),
+    'tienda-categoria':       (el) => abrirCategoriaTienda(el.dataset.categoria, usuarioActual),
     'cerrar-tienda-detalle':  () => cerrarModalTiendaDetalle(),
-    'comprar-item':           (el) => comprarItem(el.dataset.item, Number(el.dataset.precio)),
-    'usar-ficha':             (el) => usarFicha(el.dataset.img),
+    'comprar-item':           (el) => comprarItem(el.dataset.item, Number(el.dataset.precio), usuarioActual, emitirCompraItem),
+    'usar-ficha':             (el) => usarFicha(el.dataset.img, usuarioActual),
     'oir-sonido':             (el) => previewSonido(el.dataset.archivo),
 
     // --- Administración ---
-    'abrir-admin':            () => abrirPanelAdmin(),
-    'cargar-usuarios-admin':  () => cargarUsuariosAdmin(),
-    'recarga-admin':          () => ejecutarRecargaAdmin(),
+    'abrir-admin':            () => abrirPanelAdmin(usuarioActual),
+    'cargar-usuarios-admin':  () => cargarUsuariosAdmin(usuarioActual),
+    'recarga-admin':          () => ejecutarRecargaAdmin(usuarioActual),
     'preparar-recarga':       (el) => prepararRecarga(el.dataset.email)
 };
 

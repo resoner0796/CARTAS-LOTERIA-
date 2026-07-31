@@ -76,6 +76,8 @@ js/modulos/           Piezas ya separadas (ver "Modularización")
   ui.js                 Pantallas y los dos modales del sistema
   sesion.js             Token, helper api() y manejo del 401
   monedero.js           Transferencias entre jugadores e historial
+  tienda.js             Recarga con tarjeta (Stripe) y compra de artículos
+  admin.js              Panel de administrador
 scripts/obfuscate.js  Empaqueta y ofusca en el build de Vercel — ver abajo
 vercel.json           buildCommand + outputDirectory
 service-worker.js     Estrategias de caché (PWA)
@@ -115,7 +117,7 @@ se acaba de ofuscar. Se borra de la copia efímera, jamás del repo.
 
 **Sobre la ofuscación y los nombres:** `renameGlobals` va en `true`. Desde que el
 HTML dejó de llamar funciones por su nombre, **ya no queda ninguna función con su
-nombre visible** (de 68 declaradas, cero). El script sigue escaneando el HTML **y**
+nombre visible**. El script sigue escaneando el HTML **y**
 las fuentes JS por si alguien reintroduce un atributo inline, reserva esos nombres, y
 después carga el bundle en un DOM simulado para comprobar con `typeof` que resuelvan.
 Si vuelves a meter un `onclick`, esa red lo cubre — pero mejor no.
@@ -127,14 +129,20 @@ Si vuelves a meter un `onclick`, esa red lo cubre — pero mejor no.
 ### Modularización (en curso)
 
 `app.js` se está partiendo en `js/modulos/`, **un módulo a la vez**, verificando
-después de cada movimiento. Van cuatro:
+después de cada movimiento. Van siete:
 
 ```
-config.js ──┬──▶ sesion.js ◀──┬── ui.js
-utiles.js ──┘         ▲       │
-                      └───────┴──▶ monedero.js
-                                        ▲
-                      app.js  (punto de entrada) ──┘
+       config.js   utiles.js        (hojas: no importan nada)
+            │           │
+            └─────┬─────┘
+                  ▼
+      ui.js ──▶ sesion.js
+        │           │
+        └─────┬─────┘
+              ▼
+   monedero.js · tienda.js · admin.js
+              ▲
+          app.js   (punto de entrada)
 ```
 
 - **`config.js`** — lo que no cambia en tiempo de ejecución: direcciones, la clave
@@ -144,9 +152,14 @@ utiles.js ──┘         ▲       │
 - **`ui.js`** — navegación entre pantallas y los dos modales. Toca el DOM pero no
   sabe nada del juego ni del socket.
 - **`sesion.js`** — el token y el helper `api()`. Importa de `config` y de `ui`.
-- **`monedero.js`** — transferencias e historial. **Recibe el usuario como
-  argumento**, no lee `usuarioActual`.
+- **`monedero.js`** — transferencias e historial.
+- **`tienda.js`** — recarga con tarjeta y compra de artículos. Guarda la ficha
+  activa (`fichaEnUso()` / `establecerFicha()`), que antes era una global.
+- **`admin.js`** — panel de administración.
 - **`app.js`** — todo lo demás, por ahora.
+
+Los cuatro últimos **reciben el usuario como argumento**; ninguno lee
+`usuarioActual`.
 
 Dos reglas que ya evitaron problemas:
 
@@ -182,8 +195,9 @@ Dos ejemplos ya en el código:
   El módulo puede mutar el objeto que recibe (así el saldo baja en pantalla al
   instante), pero no sabe de dónde salió ni quién más lo mira.
 
-Pendiente de repartir: socket, sala, selección, juego, apuestas, validación, tienda
-y admin.
+Pendiente de repartir: socket, sala, selección, juego, apuestas y validación —
+o sea, el núcleo. Son las piezas que de verdad comparten `socket` y el estado de
+la partida, así que ahí probablemente ya no baste con pasar argumentos.
 
 ## Convenciones
 
@@ -209,7 +223,7 @@ y admin.
 - **Navegación** = `cambiarPantalla(nombre)`, que alterna la clase `.activa` sobre
   los `div.pantalla`. Referencias en el objeto `pantallas` (arriba de `app.js`).
 - **Modales**: usa `mostrarAlerta()` / `mostrarConfirmacion()`, no `alert()` ni
-  `confirm()` nativos. (Quedan algunos `confirm()` en `comprarItem` — deuda técnica.)
+  `confirm()` nativos. Ya no queda ninguno de los nativos en el código.
 - **Sesión**: el token JWT vive en `localStorage.loteria_token` y el perfil
   cacheado en `loteria_usuario`. Toda llamada a la API pasa por el helper `api()`,
   que añade `Authorization: Bearer`. El socket manda el token en su handshake.
@@ -284,6 +298,15 @@ los de la sala, y la sesión vive en `localStorage`.
   **lista blanca**: con lista negra, cualquier campo sensible que se añada al
   documento más adelante se filtraría solo y en silencio. Si tocas ese evento,
   pásalo por ahí.
+- **El cliente decidía cuánto costaban las cosas.** En seis sitios llegaba una
+  cifra de dinero del navegador y se usaba tal cual: `/crear-orden` cobraba el
+  `precio` del cuerpo, `comprar-item` hacía `saldo - precio`, y las cuatro
+  apuestas de Serpientes y Pirinola hacían `increment(-monto)`. En los dos
+  últimos casos un **valor negativo no cobraba: regalaba**, y la guarda de saldo
+  no lo frenaba porque ningún saldo es menor que un número negativo. Ahora el
+  servidor tiene `PAQUETES_MONEDAS`, `CATALOGO_ITEMS` y `montoApuestaValido()`.
+  **Regla: si una cifra decide dinero, sale del servidor.** Los precios del
+  frontend son solo para pintar.
 - **El historial pintaba las descripciones sin escapar.** La descripción de una
   transferencia lleva dentro el nickname del OTRO jugador (`Envío a Fulano`) y se
   metía con `innerHTML`. Hoy el registro no admite símbolos raros, pero las cuentas

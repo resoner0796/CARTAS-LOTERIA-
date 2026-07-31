@@ -23,6 +23,20 @@ export const SERVIDOR = "https://loteria-backend-3nde.onrender.com";
 export const STRIPE_CLAVE_PUBLICA =
     "pk_live_51SfOSHHRnABvTmoyGETt893p5wdCWGOmKQOiW4YCkbquy0Vp0mx97dVdfgXlhPszaZ40iXNFW4NveUq4Lilv83wd00gCQpzFmR";
 
+/**
+ * Paquetes de monedas que se compran con tarjeta.
+ *
+ * Esto es solo para PINTAR los precios. Quien decide cuánto se cobra de verdad
+ * es el servidor, que tiene su propia lista: aquí solo se manda qué paquete se
+ * quiere. Si cambias un precio, cámbialo también en PAQUETES_MONEDAS del
+ * backend o el jugador verá uno y pagará otro.
+ */
+export const paquetesMonedas = [
+    { monedas: 50,  precio: 29.99 },
+    { monedas: 150, precio: 79.99 },
+    { monedas: 500, precio: 199.99 }
+];
+
 /** Ficha que trae todo el mundo antes de comprar ninguna. */
 export const FICHA_POR_DEFECTO = 'assets/imagenes/ui/ficha.PNG';
 
