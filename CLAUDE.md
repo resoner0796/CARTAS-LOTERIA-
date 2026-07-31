@@ -287,6 +287,15 @@ los de la sala, y la sesión vive en `localStorage`.
   Va solo a quien entra.
 - **El guión de Socket.IO se sirve desde el backend.** Si está dormido, `io` no
   existe y la excepción se llevaba por delante todo `app.js`. Hay una guarda.
+- **…y esa guarda escondió que el juego arrancaba sin conexión.** Al pasar
+  `app.js` a `type="module"`, el módulo empezó a ejecutarse **antes** que el
+  `<script>` clásico de Socket.IO, que tarda porque lo sirve Render. `io` no
+  existía al crear el socket, así que se usaba el objeto no-op: sin errores en
+  consola, con la interfaz entera respondiendo… y sin salas ni partidas.
+  **Los dos scripts externos llevan `defer`**, para compartir cola con el módulo
+  y ejecutarse en el orden del documento. Si tocas esas etiquetas, no se lo
+  quites. El arnés comprueba que haya handshake justo por esto: una app que
+  pinta bien puede estar completamente desconectada.
 - **Entrar desde el Hub era una carrera.** El perfil llega por red y `window.onload`
   decidía antes de tiempo que no había sesión. Existe `entrandoDesdeHub`.
 - **Los modales de aviso y confirmación comparten contenedor.** Hay que limpiar

@@ -500,8 +500,17 @@
   <audio id="audioCorre" src="assets/audios/corre.mp3"></audio>
   <audio id="audioAplausos" src="assets/audios/aplausos.mp3"></audio>
 
-  <script src="https://js.stripe.com/v3/"></script>
-  <script src="https://loteria-backend-3nde.onrender.com/socket.io/socket.io.js"></script>
+  <!-- Los dos van con defer, y NO es opcional.
+       js/app.js es un módulo, y los módulos se ejecutan diferidos. Un <script>
+       clásico sin defer que tarde en llegar —el de Socket.IO lo sirve Render, que
+       duerme— puede acabar ejecutándose DESPUÉS del módulo. Cuando pasa, `io` no
+       existe todavía al crear el socket, el juego arranca sin conexión y no hay
+       salas ni partidas: la guarda de app.js evita el error en consola, pero la
+       app queda muerta.
+       Con defer, estos scripts y el módulo comparten la misma cola y se ejecutan
+       en el orden en que aparecen aquí. -->
+  <script defer src="https://js.stripe.com/v3/"></script>
+  <script defer src="https://loteria-backend-3nde.onrender.com/socket.io/socket.io.js"></script>
   <!-- type="module" para que el navegador resuelva los imports de js/modulos/*
        en desarrollo. En producción este archivo llega ya empaquetado por esbuild
        y ofuscado, en un solo bloque; cargarlo como módulo le sienta igual. -->
