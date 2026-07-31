@@ -10,6 +10,28 @@ const socket = io("https://loteria-backend-3nde.onrender.com", {
   auth: (cb) => cb({ token: localStorage.getItem("loteria_token") || null })
 });
 
+// ==================== POZO ACUMULADO ====================
+// Bote aparte que crece $1 por partida y por jugador que se apunte, y que solo
+// se lleva quien llene las 4 barajas del centro. Es opcional y solo existe en
+// modo Tradicional. Quien no se apunta no puede ganarlo, aunque gane la lotería.
+let pozoAcumulado = 0;
+
+function pozoDisponible() {
+    return modoJuegoActual === 'tradicional';
+}
+
+function refrescarPozoUI() {
+    const caja = document.getElementById("pozoControl");
+    if (!caja) return;
+    caja.style.display = pozoDisponible() ? "flex" : "none";
+    actualizarValor(document.getElementById("pozo-valor"), pozoAcumulado);
+}
+
+socket.on('pozo-actualizado', (monto) => {
+    pozoAcumulado = monto || 0;
+    refrescarPozoUI();
+});
+
 // ==================== SILENCIO EN LA SALA ====================
 // Quién tiene los sonidos cortados. Lo decide el anfitrión y lo manda el
 // servidor, que es quien de verdad descarta los efectos: aquí solo se pinta.
@@ -917,7 +939,12 @@ socket.on('info-sala', (data) => {
         btnApostar.innerText = "Selecciona cartas";
         btnApostar.disabled = true;
         btnApostar.style.opacity = "0.5";
-    } // <--- AQUÍ FALTABA ESTA LLAVE DE CIERRE '}'
+    }
+
+    // El pozo solo existe en Tradicional
+    const chkP = document.getElementById("chkPozo");
+    if (chkP) chkP.disabled = false;
+    refrescarPozoUI(); // <--- AQUÍ FALTABA ESTA LLAVE DE CIERRE '}'
     
     // Regenerar el grid de selección con la ruta correcta
     generarCartas(); 
@@ -1193,6 +1220,19 @@ function abrirModalValidacionHost(candidato, index, total) {
         });
     }
     
+    // La casilla del pozo solo tiene sentido si hay algo acumulado.
+    const vered = document.getElementById("pozoVeredicto");
+    const chkPozoWin = document.getElementById("chkGanoPozo");
+    if (vered) {
+        const aplica = pozoDisponible() && pozoAcumulado > 0;
+        vered.style.display = aplica ? "flex" : "none";
+        if (chkPozoWin) chkPozoWin.checked = false;
+        if (aplica) {
+            vered.querySelector("span").textContent =
+                `🎰 También se llevó el POZO de $${pozoAcumulado} (llenó las 4 del centro)`;
+        }
+    }
+
     loteriaModal.classList.add("active");
 }
 
@@ -1214,10 +1254,13 @@ function elegirTablaGanadora(tablaId) {
 
 if(btnAceptarGanador) btnAceptarGanador.onclick = () => {
     if (ganadorTempId) {
+        const chkPozoWin = document.getElementById("chkGanoPozo");
         socket.emit("veredicto-host", {
             sala: salaActual, candidatoId: ganadorTempId, esValido: true,
-            tablaGanadora: tablaGanadoraElegida
+            tablaGanadora: tablaGanadoraElegida,
+            ganoPozo: !!(chkPozoWin && chkPozoWin.checked)
         });
+        if (chkPozoWin) chkPozoWin.checked = false;
         loteriaModal.classList.remove("active"); 
     }
 };
@@ -1229,13 +1272,18 @@ if(btnRechazarGanador) btnRechazarGanador.onclick = () => {
     }
 };
 
-socket.on("ganadores-multiples", ({ ganadores, premio, prueba }) => {
+socket.on("ganadores-multiples", ({ ganadores, premio, prueba, pozoGanado, ganadorPozo }) => {
     loteriaMensaje.style.display = "none";
+    const chkP = document.getElementById("chkPozo");
+    if (chkP) { chkP.disabled = false; chkP.checked = false; }
     let msg = "";
     if (ganadores.length > 1) {
         msg = `¡EMPATE! 🤝\nGanadores: ${ganadores.join(", ")}\nSe llevan ${premio} monedas cada uno.`;
     } else {
         msg = `¡TENEMOS GANADOR! 🏆\n${ganadores[0]} se lleva ${premio} monedas.`;
+    }
+    if (pozoGanado > 0 && ganadorPozo) {
+        msg += `\n\n🎰 ¡Y SE LLEVÓ EL POZO!\n${ganadorPozo} suma ${pozoGanado} monedas más.`;
     }
     mostrarAlerta(msg, "¡RESULTADO FINAL!", prueba);
     
@@ -1270,12 +1318,21 @@ if(btnApostar) btnApostar.addEventListener("click", () => {
   // Calculamos la cantidad (por defecto 1 o el número de cartas)
   const cantidad = Math.max(1, seleccionadas.length || 1);
   
+  const chk = document.getElementById("chkPozo");
+  const conPozo = !!(chk && chk.checked && pozoDisponible());
+
   animarVueloMonedas();
-  socket.emit("apostar", { 
-      sala: salaActual, 
+  if (conPozo) animarVueloMonedas("pozo-valor");
+
+  socket.emit("apostar", {
+      sala: salaActual,
       cantidad: cantidad,
-      email: usuarioActual.email // <--- ESTA LÍNEA ES LA CLAVE
+      email: usuarioActual.email, // <--- ESTA LÍNEA ES LA CLAVE
+      conPozo: conPozo
   });
+
+  // Ya no se puede cambiar de opinión en esta ronda.
+  if (chk) chk.disabled = true;
   
   haApostadoLocal = true;
   btnApostar.disabled = true;
@@ -2242,9 +2299,9 @@ function iniciarFabDraggable() {
 // ======================================================
 
 // --- FUNCIÓN DE ANIMACIÓN DE MONEDAS ---
-function animarVueloMonedas() {
+function animarVueloMonedas(destinoId = "bote-valor") {
     const origen = document.getElementById("monedas-valor");
-    const destino = document.getElementById("bote-valor");
+    const destino = document.getElementById(destinoId);
     
     if(!origen || !destino) return;
 

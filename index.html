@@ -305,13 +305,27 @@
               </div>
               <div class="apuesta-control">
                   <div class="bote-monedas">
-                      <img src="assets/imagenes/ui/peso.png" alt="moneda">
-                      <img src="assets/imagenes/ui/peso.png" alt="moneda">
-                      <img src="assets/imagenes/ui/peso.png" alt="moneda">
+                      <img src="assets/imagenes/ui/peso.png" alt="">
+                      <img src="assets/imagenes/ui/peso.png" alt="">
+                      <img src="assets/imagenes/ui/peso.png" alt="">
                       <strong id="bote-valor">0</strong>
                   </div>
                   <span style="font-weight:600;font-size:0.8rem">Bote</span>
                   <button id="btnApostar">Apostar</button>
+              </div>
+
+              <div class="pozo-control" id="pozoControl" style="display:none;">
+                  <div class="bote-monedas pozo-monedas">
+                      <img src="assets/imagenes/ui/peso.png" alt="">
+                      <img src="assets/imagenes/ui/peso.png" alt="">
+                      <img src="assets/imagenes/ui/peso.png" alt="">
+                      <strong id="pozo-valor">0</strong>
+                  </div>
+                  <span style="font-weight:600;font-size:0.8rem">Pozo</span>
+                  <label class="pozo-apunte" id="pozoApunte">
+                      <input type="checkbox" id="chkPozo">
+                      <span>Entrar +$1</span>
+                  </label>
               </div>
             </div>
         </div>
@@ -343,6 +357,11 @@
       <div style="text-align: left; margin-top: 15px; font-weight: bold; color: var(--accent-yellow);">Tabla del Jugador:</div>
       <div id="modalVerificationArea" class="juego-cartas" style="margin-top: 10px; justify-content: center;"></div>
       
+      <label class="pozo-veredicto" id="pozoVeredicto" style="display:none;">
+        <input type="checkbox" id="chkGanoPozo">
+        <span>🎰 También se llevó el POZO (llenó las 4 del centro)</span>
+      </label>
+
       <div class="modal-buttons">
         <button id="btnRechazarGanador" style="background-color: #dc3545; color: white;">Rechazar ❌</button>
         <button id="btnAceptarGanador" style="background-color: #aed581; color: black;">Confirmar ✅</button>

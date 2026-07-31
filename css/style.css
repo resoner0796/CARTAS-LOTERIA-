@@ -1796,7 +1796,7 @@ textarea::placeholder { color: rgba(255,255,255,0.6); }
    El host valida comparando lo que hay debajo de cada ficha. Si la ficha es
    opaca, tapa justo lo que necesita revisar.                                */
 #modalVerificationArea .ficha {
-    opacity: 0.40;
+    opacity: 0.80;
     mix-blend-mode: normal;
 }
 
@@ -1863,4 +1863,85 @@ textarea::placeholder { color: rgba(255,255,255,0.6); }
 #modalCartaGanadora .prueba-tabla .ficha {
     opacity: 0.62;
     max-width: 34px;
+}
+
+
+/* =========================================================================
+   POZO ACUMULADO
+   =========================================================================
+   Vive junto al bote, con su propia pila de monedas. Se distingue en morado
+   para que no se confunda con el bote de la partida: uno se reparte cada
+   ronda y el otro se acumula hasta que alguien llene las 4 del centro.      */
+.pozo-control {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+}
+
+.pozo-monedas img { filter: drop-shadow(0 4px 4px rgba(0,0,0,0.5)) hue-rotate(250deg) saturate(1.4); }
+
+#pozo-valor {
+    color: #d580ff;
+    font-weight: 800;
+    font-size: 1.4rem;
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 13;
+    text-shadow: 0 0 8px rgba(0,0,0,0.9);
+}
+#pozo-valor.saldo-cambio { animation: latidoBote 0.6s ease-out; }
+
+/* Casilla para apuntarse a la ronda */
+.pozo-apunte {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: #d580ff;
+    cursor: pointer;
+    padding: 5px 9px;
+    border-radius: 20px;
+    border: 1px solid rgba(213, 128, 255, 0.5);
+    background: rgba(213, 128, 255, 0.12);
+    white-space: nowrap;
+    user-select: none;
+    /* La casilla en sí es chica, pero se toca toda la etiqueta: es esa la que
+       tiene que cumplir el área mínima cómoda para el pulgar. */
+    min-height: 44px;
+}
+.pozo-apunte input { width: 18px; height: 18px; margin: 0; accent-color: #b64dff; flex-shrink: 0; }
+.pozo-apunte:has(input:checked) {
+    background: rgba(213, 128, 255, 0.3);
+    border-color: #d580ff;
+    box-shadow: 0 0 12px rgba(213, 128, 255, 0.45);
+}
+.pozo-apunte:has(input:disabled) { opacity: 0.55; cursor: default; }
+
+/* Casilla del veredicto, dentro del modal de validación */
+.pozo-veredicto {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 16px;
+    padding: 12px;
+    border-radius: 12px;
+    background: rgba(213, 128, 255, 0.14);
+    border: 1px solid rgba(213, 128, 255, 0.5);
+    color: #e9c6ff;
+    font-weight: 700;
+    font-size: 0.9rem;
+    text-align: left;
+    cursor: pointer;
+    user-select: none;
+}
+.pozo-veredicto input { width: 20px; height: 20px; margin: 0; accent-color: #b64dff; flex-shrink: 0; }
+
+/* En pantallas angostas el panel de apuestas pasa a dos renglones */
+@media (max-width: 430px) {
+    #apuestasUI { flex-wrap: wrap; }
+    .pozo-control { flex-basis: 100%; flex-direction: row; justify-content: center; gap: 10px; margin-top: 6px; }
 }
