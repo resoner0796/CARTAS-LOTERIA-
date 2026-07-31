@@ -6,10 +6,11 @@
 // imports de abajo por su cuenta; en el despliegue, esbuild lo empaqueta todo en
 // un solo archivo antes de ofuscarlo (ver scripts/obfuscate.js).
 
-import {
-    SERVIDOR, STRIPE_CLAVE_PUBLICA, FICHA_POR_DEFECTO, catalogoSonidos
-} from './modulos/config.js';
+import { STRIPE_CLAVE_PUBLICA, FICHA_POR_DEFECTO } from './modulos/config.js';
 import { escaparHtml, actualizarValor } from './modulos/utiles.js';
+import { socket } from './modulos/socket.js';
+import { iniciarBotonArrastrable, animarVueloMonedas } from './modulos/animaciones.js';
+import { toggleMenuSonidos, renderizarSonidosJuego } from './modulos/efectos.js';
 import {
     cambiarPantalla, pantalla, iniciarModales,
     mostrarAlerta, mostrarConfirmacion
@@ -30,35 +31,7 @@ import {
     verificarSiSoyAdmin, abrirPanelAdmin, cargarUsuariosAdmin,
     prepararRecarga, ejecutarRecargaAdmin
 } from './modulos/admin.js';
-// El token va en el handshake. `auth` como función se vuelve a evaluar en cada
-// reconexión, así que en cuanto inicias sesión el socket ya viaja identificado.
-//
-// El guión de Socket.IO se sirve DESDE EL BACKEND. Si ese servidor está dormido
-// o caído, el guión no llega y `io` no existe. Sin esta comprobación la línea
-// reventaba, y como es de las primeras del archivo, se llevaba por delante TODO
-// lo demás: la página se quedaba congelada en el splash sin explicación. Es
-// preferible cargar la app y avisar que no hay servidor.
-const socket = (typeof io !== "undefined")
-    ? io(SERVIDOR, {
-          auth: (cb) => cb({ token: localStorage.getItem("loteria_token") || null })
-      })
-    : (function socketAusente() {
-          console.error("No se pudo cargar Socket.IO: el servidor no responde.");
-          setTimeout(() => {
-              if (typeof mostrarAlerta === "function") {
-                  mostrarAlerta(
-                      "No pudimos conectar con el servidor del juego. Revisa tu conexión y vuelve a entrar.",
-                      "Sin conexión"
-                  );
-              }
-          }, 1500);
-          // Objeto mínimo para que el resto del archivo no truene.
-          return {
-              on() {}, once() {}, emit() {},
-              disconnect() { return this; }, connect() { return this; },
-              connected: false, id: null
-          };
-      })();
+// La conexión con el servidor vive en modulos/socket.js.
 
 // ==================== POZO ACUMULADO ====================
 // Bote aparte que crece $1 por partida y por jugador que se apunte, y que solo
@@ -735,7 +708,7 @@ btnIniciar.onclick = () => {
     juegoCartas.appendChild(contenedor);
   });
   
-  renderizarSonidosJuego();
+  renderizarSonidosJuego(usuarioActual, salaActual);
 };
 
 function actualizarTextoBotonApuesta() {
@@ -1386,94 +1359,7 @@ function iniciarJuegoConVelocidad() {
 
 // El panel de administrador vive en modulos/admin.js.
 
-// ==================== SISTEMA DE SONIDOS EN JUEGO (SOUNDBOARD) ====================
-
-let spamCooldown = false; 
-
-// 1. Alternar visibilidad del menú
-function toggleMenuSonidos() {
-    const menu = document.getElementById("menuSonidosDesplegable");
-    if(menu) {
-        menu.classList.toggle("mostrar");
-        if (menu.classList.contains("mostrar")) {
-            renderizarSonidosJuego();
-        }
-    }
-}
-
-// 2. Renderizar burbujas de emojis
-function renderizarSonidosJuego() {
-    const contenedor = document.getElementById("menuSonidosDesplegable");
-    if(!contenedor) return;
-    contenedor.innerHTML = "";
-    
-    if (!usuarioActual) return;
-    
-    const inventario = usuarioActual.inventario || [];
-    
-    // Filtramos del catálogo los que el usuario TIENE (o son gratis)
-    const misSonidos = catalogoSonidos.filter(item => {
-        return inventario.includes(item.id) || item.precio === 0;
-    });
-
-    if (misSonidos.length === 0) {
-        contenedor.innerHTML = "<span style='font-size:0.7rem; color:white;'>Sin sonidos</span>";
-        return;
-    }
-
-    misSonidos.forEach(sound => {
-        const btn = document.createElement("button");
-        btn.className = "btn-emoji-sonido";
-        btn.innerHTML = sound.emoji;
-        btn.onclick = () => enviarEfectoSonido(sound.id);
-        contenedor.appendChild(btn);
-    });
-}
-
-// 3. Enviar evento al servidor (YO presiono el botón)
-function enviarEfectoSonido(soundId) {
-    if (spamCooldown) return; 
-    
-    spamCooldown = true;
-    setTimeout(() => { spamCooldown = false }, 1000);
-
-    socket.emit("enviar-efecto-sonido", { 
-        sala: salaActual, 
-        soundId: soundId,
-        emisor: usuarioActual.nickname 
-    });
-}
-
-// 4. Recibir evento del servidor (ALGUIEN presionó el botón)
-socket.on("reproducir-efecto-sonido", ({ soundId, emisor }) => {
-    const sonidoData = catalogoSonidos.find(s => s.id === soundId);
-    
-    if (sonidoData) {
-        const audio = new Audio(sonidoData.file);
-        audio.volume = 0.8; 
-        audio.play().catch(e => console.log("Error playing effect:", e));
-        
-        mostrarNotificacionFlotante(`${emisor}: ${sonidoData.emoji}`);
-    }
-});
-
-function mostrarNotificacionFlotante(texto) {
-    const notif = document.createElement("div");
-    notif.innerText = texto;
-    notif.style.position = "fixed";
-    notif.style.bottom = "90px"; 
-    notif.style.left = "20px";
-    notif.style.background = "rgba(0,0,0,0.7)";
-    notif.style.color = "gold";
-    notif.style.padding = "5px 10px";
-    notif.style.borderRadius = "10px";
-    notif.style.zIndex = "2001";
-    notif.style.fontSize = "0.9rem";
-    notif.style.animation = "flotarDesvanecer 2s forwards";
-    
-    document.body.appendChild(notif);
-    setTimeout(() => notif.remove(), 2000);
-}
+// El soundboard vive en modulos/efectos.js.
 
 // ==================== SINCRONIZACIÓN EN TIEMPO REAL (MASTER LISTENER) ====================
 
@@ -1531,7 +1417,7 @@ socket.on('usuario-actualizado', (datosFrescos) => {
     // 4. Soundboard
     const menuSonidos = document.getElementById("menuSonidosDesplegable");
     if(menuSonidos && menuSonidos.classList.contains("mostrar")) {
-        renderizarSonidosJuego();
+        renderizarSonidosJuego(usuarioActual, salaActual);
     }
 });
 
@@ -1559,160 +1445,16 @@ function emitirCompraItem(itemId) {
 // modulos/monedero.js. Reciben el usuario como argumento.
 
 // ======================================================
-// FUNCIONALIDAD: BOTÓN FLOTANTE ARRASTRABLE (DRAGGABLE)
-// ======================================================
-
-function iniciarFabDraggable() {
-    const fab = document.getElementById("fabSonidosContainer");
-    const btn = document.getElementById("btnToggleSonidos");
-    
-    if (!fab || !btn) return;
-
-    let isDragging = false;
-    let startX, startY, initialLeft, initialTop;
-    let moved = false; // Para diferenciar entre click y arrastre
-
-    // --- TOUCH EVENTS (Móvil) ---
-    btn.addEventListener('touchstart', (e) => {
-        isDragging = true;
-        moved = false;
-        startX = e.touches[0].clientX;
-        startY = e.touches[0].clientY;
-        
-        const rect = fab.getBoundingClientRect();
-        initialLeft = rect.left;
-        initialTop = rect.top;
-        
-        // Quitamos transición para que el movimiento sea instantáneo
-        fab.style.transition = 'none';
-    }, { passive: false });
-
-    document.addEventListener('touchmove', (e) => {
-        if (!isDragging) return;
-        
-        const currentX = e.touches[0].clientX;
-        const currentY = e.touches[0].clientY;
-        const deltaX = currentX - startX;
-        const deltaY = currentY - startY;
-
-        // Si se movió más de 5px, lo consideramos un arrastre, no un click
-        if (Math.abs(deltaX) > 5 || Math.abs(deltaY) > 5) moved = true;
-
-        if (moved) {
-            e.preventDefault(); // Evitar scroll de pantalla
-            fab.style.left = `${initialLeft + deltaX}px`;
-            fab.style.top = `${initialTop + deltaY}px`;
-            fab.style.bottom = 'auto'; // Desactivar bottom para usar top
-            fab.style.right = 'auto';
-        }
-    }, { passive: false });
-
-    document.addEventListener('touchend', () => {
-        isDragging = false;
-        fab.style.transition = 'transform 0.2s'; // Restaurar animación suave
-    });
-
-    // --- MOUSE EVENTS (PC) ---
-    btn.addEventListener('mousedown', (e) => {
-        isDragging = true;
-        moved = false;
-        startX = e.clientX;
-        startY = e.clientY;
-        
-        const rect = fab.getBoundingClientRect();
-        initialLeft = rect.left;
-        initialTop = rect.top;
-        fab.style.transition = 'none';
-    });
-
-    document.addEventListener('mousemove', (e) => {
-        if (!isDragging) return;
-        
-        const deltaX = e.clientX - startX;
-        const deltaY = e.clientY - startY;
-
-        if (Math.abs(deltaX) > 5 || Math.abs(deltaY) > 5) moved = true;
-
-        if (moved) {
-            e.preventDefault();
-            fab.style.left = `${initialLeft + deltaX}px`;
-            fab.style.top = `${initialTop + deltaY}px`;
-            fab.style.bottom = 'auto';
-        }
-    });
-
-    document.addEventListener('mouseup', () => {
-        isDragging = false;
-    });
-
-    // Modificar la función toggle para que NO se abra si se arrastró
-    const originalToggle = window.toggleMenuSonidos;
-    window.toggleMenuSonidos = function() {
-        if (!moved) {
-            // Solo abrimos si fue un click limpio, no un arrastre
-            const menu = document.getElementById("menuSonidosDesplegable");
-            if(menu) {
-                menu.classList.toggle("mostrar");
-                if (menu.classList.contains("mostrar")) {
-                    renderizarSonidosJuego();
-                }
-            }
-        }
-    };
-}
+// El arrastre del botón flotante vive en modulos/animaciones.js.
 
 // ======================================================
 // NUEVAS FUNCIONES 21-02-2025
 // ======================================================
 
-// --- FUNCIÓN DE ANIMACIÓN DE MONEDAS ---
-function animarVueloMonedas(destinoId = "bote-valor") {
-    const origen = document.getElementById("monedas-valor");
-    const destino = document.getElementById(destinoId);
-    
-    if(!origen || !destino) return;
-
-    // Obtener coordenadas
-    const rectOrigen = origen.getBoundingClientRect();
-    const rectDestino = destino.getBoundingClientRect();
-
-    // Lanzar 5 monedas
-    for (let i = 0; i < 5; i++) {
-        setTimeout(() => {
-            const moneda = document.createElement("img");
-            moneda.src = "assets/imagenes/ui/peso.png"; // Asegúrate que esta ruta exista
-            moneda.className = "flying-coin";
-            
-            // Posición inicial (Saldo)
-            // Agregamos un pequeño random para que no salgan todas del mismo pixel exacto
-            const randomX = (Math.random() * 20) - 10; 
-            const randomY = (Math.random() * 20) - 10;
-
-            moneda.style.left = (rectOrigen.left + 10 + randomX) + "px";
-            moneda.style.top = (rectOrigen.top + randomY) + "px";
-            
-            document.body.appendChild(moneda);
-
-            // Forzar reflow (para que el navegador detecte el cambio de posición)
-            setTimeout(() => {
-                moneda.style.left = (rectDestino.left + 10) + "px";
-                moneda.style.top = (rectDestino.top) + "px";
-                moneda.style.transform = "scale(0.5) rotate(360deg)"; // Se hacen chicas y giran
-                moneda.style.opacity = "0"; // Desaparecen al llegar
-            }, 50);
-
-            // Borrar elemento del DOM al terminar
-            setTimeout(() => {
-                moneda.remove();
-            }, 900); // 0.8s de transición + margen
-
-        }, i * 100); // Salen cada 100ms
-    }
-}
-
+// El vuelo de monedas vive en modulos/animaciones.js.
 
 // Iniciar al cargar la página
-window.addEventListener('load', iniciarFabDraggable);
+window.addEventListener('load', iniciarBotonArrastrable);
 
 // ======================================================
 // SERVICE WORKER (PWA)
@@ -1774,7 +1516,7 @@ const ACCIONES = {
     'detener-juego':          () => socket.emit('detener-juego', salaActual),
     'cambiar-cartas':         () => cambiarCartas(),
     'gritar-loteria':         () => emitirLoteria(),
-    'alternar-sonidos':       () => toggleMenuSonidos(),
+    'alternar-sonidos':       () => toggleMenuSonidos(usuarioActual, salaActual),
 
     // --- Monedero ---
     // El monedero no lee el estado del juego: se le pasa el usuario aquí.

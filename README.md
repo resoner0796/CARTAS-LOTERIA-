@@ -57,7 +57,7 @@ index.html          Todas las pantallas (login, menú, sala, selección, juego, 
 css/style.css       Estilos
 js/app.js           Punto de entrada y grueso de la lógica (en claro)
 js/modulos/         Piezas ya separadas: config, utiles, ui, sesion, monedero,
-                    tienda, admin
+                    tienda, admin, socket, efectos, animaciones
 scripts/            Empaquetado + ofuscación, corre en el build de Vercel
 vercel.json         Configuración de build
 service-worker.js   Cacheo offline
@@ -195,7 +195,7 @@ propósito.
 - [x] Ofuscación automática en el build de Vercel
 - [x] Quitar los `onclick` del HTML (paso previo a modularizar)
 - [x] Empaquetado con esbuild antes de ofuscar (habilita los módulos)
-- [ ] Partir `app.js` en módulos ES — **en curso**: 7 módulos fuera, queda el núcleo
+- [ ] Partir `app.js` en módulos ES — **en curso**: 10 módulos fuera, queda el núcleo del juego
 - [ ] Evaluar migración de Render a VPS propio
 
 ---

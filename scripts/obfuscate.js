@@ -148,7 +148,9 @@ function verificarEjecutando(codigo, nombres) {
         addEventListener() {}, removeEventListener() {},
         Audio: function () { return { play: () => Promise.resolve(), pause() {}, currentTime: 0, volume: 1 }; },
         Stripe: () => ({ initEmbeddedCheckout: async () => ({ mount() {}, destroy() {} }) }),
-        io: () => ({ on() {}, emit() {}, connected: false, id: 'x' }),
+        // Se anota si el bundle llega a pedir una conexión. Ver más abajo: sin
+        // esto, un build sin socket pasaba la verificación tan campante.
+        io: function () { ctx.__seConecto__ = true; return { on() {}, emit() {}, connected: false, id: 'x' }; },
         atob: s => Buffer.from(s, 'base64').toString('binary'),
         btoa: s => Buffer.from(s, 'binary').toString('base64'),
         URLSearchParams, Promise, JSON, Math, Date, Object, Array, String, Number, RegExp, Error
@@ -160,7 +162,7 @@ function verificarEjecutando(codigo, nombres) {
     try {
         vm.runInContext(codigo, ctx, { timeout: 20000 });
     } catch (e) {
-        return { reventó: e.message, faltantes: [] };
+        return { reventó: e.message, faltantes: [], seConecto: false };
     }
 
     const faltantes = nombres.filter(n => {
@@ -170,7 +172,7 @@ function verificarEjecutando(codigo, nombres) {
             return true;
         }
     });
-    return { reventó: null, faltantes };
+    return { reventó: null, faltantes, seConecto: !!ctx.__seConecto__ };
 }
 
 /**
@@ -270,13 +272,24 @@ const definidosAqui = globales.filter(n => fuentesLegibles.some(f =>
     new RegExp(`^(?:async\\s+)?(?:function|var|let|const)\\s+${n}\\b|^window\\.${n}\\s*=`, 'm').test(f)
 ));
 
-const { reventó, faltantes } = verificarEjecutando(codigo, definidosAqui);
+const { reventó, faltantes, seConecto } = verificarEjecutando(codigo, definidosAqui);
 
 if (reventó) {
     console.error(`\n❌ ABORTADO: el bundle ofuscado revienta al cargar:\n     ${reventó}`);
     console.error('   No se escribió nada.');
     process.exit(1);
 }
+// Un bundle que carga sin quejarse pero NUNCA pide conexión deja la app viva por
+// fuera y muerta por dentro: se ve todo, y no hay salas ni partidas. Ya pasó dos
+// veces —una por el orden de los <script>, otra porque el ofuscador reescribía la
+// global `io`— y en ninguna saltó nada. Se comprueba en cada build.
+if (!seConecto) {
+    console.error('\n❌ ABORTADO: el bundle nunca intenta conectar con el servidor.');
+    console.error('   La app arrancaría sin socket: se vería bien y el juego no funcionaría.');
+    console.error('   Revisa modulos/socket.js — la global se lee como window.io a propósito.');
+    process.exit(1);
+}
+
 if (faltantes.length > 0) {
     console.error('\n❌ ABORTADO: el ofuscador se comió identificadores que index.html necesita:');
     faltantes.forEach(n => console.error(`     - ${n}`));

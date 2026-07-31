@@ -78,6 +78,9 @@ js/modulos/           Piezas ya separadas (ver "Modularización")
   monedero.js           Transferencias entre jugadores e historial
   tienda.js             Recarga con tarjeta (Stripe) y compra de artículos
   admin.js              Panel de administrador
+  socket.js             La conexión Socket.IO, con su guarda
+  efectos.js            Soundboard en partida
+  animaciones.js        Arrastre del botón flotante y vuelo de monedas
 scripts/obfuscate.js  Empaqueta y ofusca en el build de Vercel — ver abajo
 vercel.json           buildCommand + outputDirectory
 service-worker.js     Estrategias de caché (PWA)
@@ -129,7 +132,7 @@ Si vuelves a meter un `onclick`, esa red lo cubre — pero mejor no.
 ### Modularización (en curso)
 
 `app.js` se está partiendo en `js/modulos/`, **un módulo a la vez**, verificando
-después de cada movimiento. Van siete:
+después de cada movimiento. Van diez:
 
 ```
        config.js   utiles.js        (hojas: no importan nada)
@@ -141,6 +144,8 @@ después de cada movimiento. Van siete:
         └─────┬─────┘
               ▼
    monedero.js · tienda.js · admin.js
+              ▲
+        socket.js ──▶ efectos.js ──▶ animaciones.js
               ▲
           app.js   (punto de entrada)
 ```
@@ -156,6 +161,10 @@ después de cada movimiento. Van siete:
 - **`tienda.js`** — recarga con tarjeta y compra de artículos. Guarda la ficha
   activa (`fichaEnUso()` / `establecerFicha()`), que antes era una global.
 - **`admin.js`** — panel de administración.
+- **`socket.js`** — la conexión. Es el único módulo que **se importa** en vez de
+  pasarse por argumento, porque un socket es una conexión, no estado de partida.
+- **`efectos.js`** — el soundboard.
+- **`animaciones.js`** — gestos y decoración. Puro DOM.
 - **`app.js`** — todo lo demás, por ahora.
 
 Los cuatro últimos **reciben el usuario como argumento**; ninguno lee
@@ -195,9 +204,17 @@ Dos ejemplos ya en el código:
   El módulo puede mutar el objeto que recibe (así el saldo baja en pantalla al
   instante), pero no sabe de dónde salió ni quién más lo mira.
 
-Pendiente de repartir: socket, sala, selección, juego, apuestas y validación —
-o sea, el núcleo. Son las piezas que de verdad comparten `socket` y el estado de
-la partida, así que ahí probablemente ya no baste con pasar argumentos.
+**El socket ya no es un obstáculo**: los módulos que lo necesiten lo importan.
+Lo que queda por repartir es sala, selección, juego, apuestas y validación, que
+comparten el ESTADO de la partida (`salaActual`, `seleccionadas`, `soyHost`…).
+Ahí es donde habrá que decidir de verdad cómo se comparte.
+
+⚠️ **En `socket.js` la global se lee como `window.io`, nunca como `io` a secas.**
+Escrita suelta, el ofuscador la trata como un global más del bundle y a veces la
+reescribe: medido, en 4 de cada 10 builds. Como el fallo depende del azar de cada
+despliegue, salían unos builds con socket y otros sin él, sin nada en el código
+que lo explicara. Un acceso a propiedad no se renombra nunca. **El build aborta
+si el bundle no llega a pedir conexión**, precisamente por esto.
 
 ## Convenciones
 
