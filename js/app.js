@@ -268,7 +268,7 @@ const btnModalCancelar = document.getElementById("btnModalCancelar");
 
 let onModalAceptar = null; 
 
-function mostrarAlerta(mensaje, titulo = "Aviso del Sistema", cartaGanadora = null) {
+function mostrarAlerta(mensaje, titulo = "Aviso del Sistema", prueba = null) {
     modalTitulo.textContent = titulo;
     modalMensaje.textContent = mensaje;
     btnModalCancelar.style.display = "none";

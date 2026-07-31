@@ -1945,3 +1945,8 @@ textarea::placeholder { color: rgba(255,255,255,0.6); }
     #apuestasUI { flex-wrap: wrap; }
     .pozo-control { flex-basis: 100%; flex-direction: row; justify-content: center; gap: 10px; margin-top: 6px; }
 }
+
+/* Los mensajes del sistema llevan saltos de línea (\n) para separar ideas:
+   el ganador, el premio, el pozo. Sin `pre-line` el navegador los colapsa en
+   un espacio y todo queda en un párrafo corrido. */
+#modalSistemaMensaje { white-space: pre-line; }
