@@ -1499,10 +1499,15 @@ async function iniciarPagoEmbedded(cantidadMonedas) {
     try {
         const res = await api(`/crear-orden`, {
             method: 'POST',
-            body: JSON.stringify({ 
-                cantidad: cantidadMonedas, 
+            body: JSON.stringify({
+                cantidad: cantidadMonedas,
                 precio: precio,
-                email: usuarioActual.email 
+                email: usuarioActual.email,
+                // Se declara explícitamente para que Stripe devuelva AQUÍ y no al
+                // Hub si el pago se cancela. El servidor lo asume por defecto,
+                // pero conviene no depender de un valor implícito cuando de eso
+                // depende dónde acaba el jugador.
+                origen: 'loteria'
             })
         });
         
