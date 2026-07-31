@@ -75,6 +75,7 @@ js/modulos/           Piezas ya separadas (ver "Modularización")
   utiles.js             escaparHtml() y actualizarValor()
   ui.js                 Pantallas y los dos modales del sistema
   sesion.js             Token, helper api() y manejo del 401
+  monedero.js           Transferencias entre jugadores e historial
 scripts/obfuscate.js  Empaqueta y ofusca en el build de Vercel — ver abajo
 vercel.json           buildCommand + outputDirectory
 service-worker.js     Estrategias de caché (PWA)
@@ -129,9 +130,11 @@ Si vuelves a meter un `onclick`, esa red lo cubre — pero mejor no.
 después de cada movimiento. Van cuatro:
 
 ```
-config.js ──┬──▶ sesion.js ◀── ui.js
-utiles.js   │         ▲
-            └─────────┴──── app.js  (punto de entrada)
+config.js ──┬──▶ sesion.js ◀──┬── ui.js
+utiles.js ──┘         ▲       │
+                      └───────┴──▶ monedero.js
+                                        ▲
+                      app.js  (punto de entrada) ──┘
 ```
 
 - **`config.js`** — lo que no cambia en tiempo de ejecución: direcciones, la clave
@@ -141,6 +144,8 @@ utiles.js   │         ▲
 - **`ui.js`** — navegación entre pantallas y los dos modales. Toca el DOM pero no
   sabe nada del juego ni del socket.
 - **`sesion.js`** — el token y el helper `api()`. Importa de `config` y de `ui`.
+- **`monedero.js`** — transferencias e historial. **Recibe el usuario como
+  argumento**, no lee `usuarioActual`.
 - **`app.js`** — todo lo demás, por ahora.
 
 Dos reglas que ya evitaron problemas:
@@ -156,14 +161,29 @@ Por eso los botones del modal se enganchan desde `iniciarModales()`, que llama e
 arranque.
 
 **Cuando un módulo necesite algo que vive en el estado de la partida, pásalo como
-argumento en vez de importarlo.** Ejemplo real: el modal pinta la tabla ganadora y
-necesitaba `rutaCartasJugador`, que cambia según el modo. En lugar de que `ui.js`
-conozca esa variable, la ruta viaja **dentro** del objeto `prueba`. Así el módulo
-sigue sin depender del juego. (Importa: en modo Pozo las tablas salen de otra
-carpeta, así que leer la ruta equivocada saca la tabla rota.)
+argumento en vez de importarlo.** Es la regla que hace posible avanzar sin tener que
+desatar antes el nudo de las globales (`usuarioActual` tiene 77 usos, `socket` 55).
 
-Pendiente de repartir: socket, sala, selección, juego, apuestas, validación, tienda,
-monedero y admin.
+Dos ejemplos ya en el código:
+
+- El modal pinta la tabla ganadora y necesitaba `rutaCartasJugador`, que cambia
+  según el modo. La ruta viaja **dentro** del objeto `prueba`. (Importa: en modo
+  Pozo las tablas salen de otra carpeta, así que leer la ruta equivocada saca la
+  tabla rota.)
+- `monedero.js` recibe el usuario en cada llamada. **El sitio donde se inyecta el
+  estado es la tabla `ACCIONES`**, que ya es el único punto de entrada desde la
+  interfaz:
+
+  ```js
+  'abrir-historial': () => abrirHistorial(usuarioActual),
+  'transferir':      (el) => realizarTransferencia(el, usuarioActual, sincronizarDatosForzoso),
+  ```
+
+  El módulo puede mutar el objeto que recibe (así el saldo baja en pantalla al
+  instante), pero no sabe de dónde salió ni quién más lo mira.
+
+Pendiente de repartir: socket, sala, selección, juego, apuestas, validación, tienda
+y admin.
 
 ## Convenciones
 
@@ -264,6 +284,13 @@ los de la sala, y la sesión vive en `localStorage`.
   **lista blanca**: con lista negra, cualquier campo sensible que se añada al
   documento más adelante se filtraría solo y en silencio. Si tocas ese evento,
   pásalo por ahí.
+- **El historial pintaba las descripciones sin escapar.** La descripción de una
+  transferencia lleva dentro el nickname del OTRO jugador (`Envío a Fulano`) y se
+  metía con `innerHTML`. Hoy el registro no admite símbolos raros, pero las cuentas
+  anteriores a esa validación pueden tener cualquier cosa y sus movimientos ya
+  están guardados en Firestore. Se comprobó ejecutando: con el código viejo, un
+  nickname con `<img src=x onerror=...>` **corría de verdad**. Moraleja: valida la
+  entrada, pero escapa SIEMPRE en la salida — la validación puede llegar tarde.
 - **Cachear respuestas parciales revienta la Cache API.** Los `<audio>` se piden
   por rangos y el servidor responde `206`; `cache.put()` solo admite respuestas
   completas y rechazaba con "Cache.put() encountered a network error". Como los

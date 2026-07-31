@@ -16,6 +16,11 @@ import {
     mostrarAlerta, mostrarConfirmacion
 } from './modulos/ui.js';
 import { api, guardarToken, obtenerToken, borrarSesion } from './modulos/sesion.js';
+import {
+    abrirModalTransferencia, cerrarModalTransferencia, cancelarTransferencia,
+    verificarDestinatario, realizarTransferencia,
+    abrirHistorial, cerrarModalHistorial
+} from './modulos/monedero.js';
 // El token va en el handshake. `auth` como función se vuelve a evaluar en cada
 // reconexión, así que en cuanto inicias sesión el socket ya viaja identificado.
 //
@@ -1882,253 +1887,8 @@ function sincronizarDatosForzoso() {
     }
 }
 
-// ==================== SISTEMA DE TRANSFERENCIAS (FINAL Y CORREGIDO) ====================
-
-let destinatarioConfirmado = null; // Guardamos aquí los datos del usuario encontrado
-
-// 1. ABRIR EL MODAL
-window.abrirModalTransferencia = function() {
-    const modal = document.getElementById("modalTransferencia");
-    if(modal) {
-        modal.classList.add("visible"); // Usamos la clase .visible que pusimos en el CSS
-        modal.style.opacity = "1";
-        modal.style.visibility = "visible";
-        modal.style.pointerEvents = "all";
-        
-        // Resetear formulario visualmente
-        const inputDest = document.getElementById("inputDestinatario");
-        const inputMonto = document.getElementById("inputMontoTransferir");
-        
-        if(inputDest) inputDest.value = "";
-        if(inputMonto) inputMonto.value = "";
-        
-        // Volver al Paso 1 (Buscar) y ocultar el Paso 2 (Monto)
-        const step1 = document.getElementById("step-find-user");
-        const step2 = document.getElementById("step-amount");
-        
-        if(step1) step1.style.display = "block";
-        if(step2) step2.style.display = "none";
-        
-        destinatarioConfirmado = null;
-    } else {
-        console.error("No se encontró el modal #modalTransferencia");
-    }
-}
-
-// 2. CERRAR EL MODAL
-window.cerrarModalTransferencia = function() {
-    const modal = document.getElementById("modalTransferencia");
-    if(modal) {
-        modal.classList.remove("visible");
-        modal.style.opacity = "0";
-        modal.style.visibility = "hidden";
-        modal.style.pointerEvents = "none";
-    }
-}
-
-// 3. CANCELAR (Botón Rojo dentro del modal)
-window.cancelarTransferencia = function() {
-    document.getElementById("step-find-user").style.display = "block";
-    document.getElementById("step-amount").style.display = "none";
-    destinatarioConfirmado = null;
-}
-
-// 4. LÓGICA DE BÚSQUEDA (CORREGIDO PARA ESPACIOS)
-window.verificarDestinatario = async (boton) => {
-    const inputDest = document.getElementById("inputDestinatario");
-    // .trim() quita espacios al inicio y final, pero respeta los de en medio ("La Gata")
-    const nickname = inputDest.value.trim(); 
-    
-    const btnBuscar = boton;
-
-    const textoOriginal = btnBuscar.innerText;
-
-    if (!nickname) return mostrarAlerta("Escribe un nickname", "Dato faltante");
-    if (usuarioActual && nickname === usuarioActual.nickname) return mostrarAlerta("No puedes enviarte a ti mismo", "Error");
-
-    btnBuscar.innerText = "🔍 Buscando...";
-    btnBuscar.disabled = true;
-
-    try {
-        // --- CAMBIO CLAVE: USAMOS POST Y JSON ---
-        const res = await api(`/buscar-destinatario`, {
-            method: 'POST',
-            body: JSON.stringify({ nickname: nickname })
-        });
-        
-        const data = await res.json();
-
-        if (data.success) {
-            destinatarioConfirmado = data.destinatario; 
-            
-            document.getElementById("step-find-user").style.display = "none";
-            document.getElementById("step-amount").style.display = "block";
-            
-            const msg = document.getElementById("userFoundMsg");
-            if(msg) msg.textContent = `✅ Enviar a: ${destinatarioConfirmado.nickname}`;
-            
-            const inputMonto = document.getElementById("inputMontoTransferir");
-            if(inputMonto) inputMonto.focus();
-
-        } else {
-            mostrarAlerta("❌ Jugador no encontrado. Verifica mayúsculas y espacios.", "No existe");
-            destinatarioConfirmado = null;
-        }
-
-    } catch (e) {
-        console.error(e);
-        mostrarAlerta("Error de conexión con el servidor.", "Error de Red");
-    } finally {
-        btnBuscar.innerText = textoOriginal;
-        btnBuscar.disabled = false;
-    }
-};
-
-// 5. LÓGICA DE ENVÍO (Botón "ENVIAR")
-window.realizarTransferencia = async (boton) => {
-    // Usamos el ID correcto que tienes en tu HTML: inputMontoTransferir
-    const inputMonto = document.getElementById("inputMontoTransferir");
-    const monto = parseInt(inputMonto.value);
-    
-    if(!destinatarioConfirmado) return mostrarAlerta("Error interno: Destinatario perdido. Busca de nuevo.", "Error");
-    if(!monto || monto < 2) return mostrarAlerta("La transferencia mínima es de $2 monedas", "Monto inválido");
-    if(monto > usuarioActual.monedas) return mostrarAlerta("No tienes suficientes monedas", "Saldo insuficiente");
-
-    // Confirmación final antes de enviar
-    mostrarConfirmacion(`¿Seguro que quieres enviar $${monto} monedas a ${destinatarioConfirmado.nickname}?`, async () => {
-        
-        // Feedback visual en el botón de confirmar
-        const btnConfirmar = boton || document.querySelector("#step-amount button:last-child");
-        let textoBtnOriginal = "CONFIRMAR";
-        if(btnConfirmar) {
-            textoBtnOriginal = btnConfirmar.innerText;
-            btnConfirmar.innerText = "Enviando...";
-            btnConfirmar.disabled = true;
-        }
-        
-        try {
-            const res = await api(`/transferir-saldo`, {
-                method: 'POST',
-                body: JSON.stringify({
-                    origenEmail: usuarioActual.email,
-                    destinoEmail: destinatarioConfirmado.email,
-                    cantidad: monto
-                })
-            });
-
-            const data = await res.json();
-            
-            if (data.success) {
-                // 1. Actualizar saldo local inmediatamente (Optimistic UI)
-                usuarioActual.monedas -= monto;
-                localStorage.setItem("loteria_usuario", JSON.stringify(usuarioActual));
-                
-                // 2. Actualizar etiquetas de texto en el menú
-                const menuMonedas = document.getElementById("menuMonedas");
-                if(menuMonedas) menuMonedas.textContent = usuarioActual.monedas;
-                
-                // 3. Cerrar todo
-                cerrarModalTransferencia();
-                mostrarAlerta(`🎉 ¡Enviaste $${monto} a ${destinatarioConfirmado.nickname}!`, "¡Transferencia Exitosa!");
-                
-                // 4. Sincronizar sockets para asegurar
-                if(typeof sincronizarDatosForzoso === "function") sincronizarDatosForzoso();
-
-            } else {
-                mostrarAlerta(data.error || "Falló la transferencia", "Error");
-            }
-            
-        } catch (e) {
-            console.error(e);
-            mostrarAlerta("Error de red al intentar transferir", "Fallo");
-        } finally {
-            if(btnConfirmar) {
-                btnConfirmar.innerText = textoBtnOriginal;
-                btnConfirmar.disabled = false;
-            }
-        }
-    });
-};
-
-// ==================== HISTORIAL DE MOVIMIENTOS ====================
-
-function abrirHistorial() {
-    const modal = document.getElementById("modalHistorial");
-    if(!modal) return;
-    
-    modal.classList.add("active");
-    cargarMovimientos();
-}
-
-function cerrarModalHistorial() {
-    document.getElementById("modalHistorial").classList.remove("active");
-}
-
-async function cargarMovimientos() {
-    const contenedor = document.getElementById("listaHistorial");
-    contenedor.innerHTML = '<div style="padding:20px; text-align:center;">Cargando... ⏳</div>';
-
-    try {
-        if(!usuarioActual || !usuarioActual.email) return;
-
-        const res = await api(`/historial-usuario?email=${usuarioActual.email}`);
-        const data = await res.json();
-
-        if (data.success) {
-            renderizarHistorial(data.movimientos);
-        } else {
-            contenedor.innerHTML = '<p>No se pudo cargar el historial.</p>';
-        }
-
-    } catch (e) {
-        console.error(e);
-        contenedor.innerHTML = '<p>Error de conexión.</p>';
-    }
-}
-
-function renderizarHistorial(movimientos) {
-    const contenedor = document.getElementById("listaHistorial");
-    contenedor.innerHTML = "";
-
-    if (!movimientos || movimientos.length === 0) {
-        contenedor.innerHTML = '<div style="padding:20px; color:#777;">Aún no tienes movimientos.</div>';
-        return;
-    }
-
-    movimientos.forEach(mov => {
-        // Icono y color según tipo
-        let icono = '📄';
-        if (mov.tipo === 'recarga') icono = '💳';
-        if (mov.tipo === 'compra') icono = '🛒';
-        if (mov.tipo === 'apuesta') icono = '🎲';
-        if (mov.tipo === 'victoria') icono = '🏆'; // Agregué copa para victorias
-        if (mov.tipo === 'premio') icono = '🎁';   // Agregué regalo
-        if (mov.tipo === 'transferencia') icono = mov.esIngreso ? '↙️' : '↗️';
-
-        const signo = mov.esIngreso ? '+' : '-';
-        const claseColor = mov.esIngreso ? 'hist-positivo' : 'hist-negativo';
-        
-        // CORRECCIÓN: Usamos la fecha directa del servidor (ya viene formateada)
-        // Si por alguna razón viniera vacía, ponemos "---"
-        const fechaStr = mov.fecha || "---";
-
-        const item = document.createElement("div");
-        item.className = "item-historial";
-        item.innerHTML = `
-            <div class="hist-info">
-                <div class="hist-icon">${icono}</div>
-                <div>
-                    <div class="hist-desc">${mov.descripcion}</div>
-                    <div class="hist-fecha">${fechaStr}</div>
-                </div>
-            </div>
-            <div class="hist-monto ${claseColor}">
-                ${signo}$${mov.monto}
-            </div>
-        `;
-        contenedor.appendChild(item);
-    });
-}
+// Las transferencias y el historial de movimientos viven en
+// modulos/monedero.js. Reciben el usuario como argumento.
 
 // ======================================================
 // FUNCIONALIDAD: BOTÓN FLOTANTE ARRASTRABLE (DRAGGABLE)
@@ -2349,7 +2109,8 @@ const ACCIONES = {
     'alternar-sonidos':       () => toggleMenuSonidos(),
 
     // --- Monedero ---
-    'abrir-historial':        () => abrirHistorial(),
+    // El monedero no lee el estado del juego: se le pasa el usuario aquí.
+    'abrir-historial':        () => abrirHistorial(usuarioActual),
     'cerrar-historial':       () => cerrarModalHistorial(),
     'abrir-recarga':          () => abrirModalRecarga(),
     'cerrar-tienda':          () => cerrarTienda(),
@@ -2359,9 +2120,9 @@ const ACCIONES = {
     // --- Transferencias ---
     'abrir-transferencia':    () => abrirModalTransferencia(),
     'cerrar-transferencia':   () => cerrarModalTransferencia(),
-    'buscar-destinatario':    (el) => verificarDestinatario(el),
+    'buscar-destinatario':    (el) => verificarDestinatario(el, usuarioActual),
     'cancelar-transferencia': () => cancelarTransferencia(),
-    'transferir':             (el) => realizarTransferencia(el),
+    'transferir':             (el) => realizarTransferencia(el, usuarioActual, sincronizarDatosForzoso),
 
     // --- Tienda ---
     'tienda-categoria':       (el) => abrirCategoriaTienda(el.dataset.categoria),
