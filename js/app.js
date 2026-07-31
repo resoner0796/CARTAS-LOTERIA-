@@ -2000,7 +2000,9 @@ function mostrarNotificacionFlotante(texto) {
 // ==================== SINCRONIZACIÓN EN TIEMPO REAL (MASTER LISTENER) ====================
 
 socket.on('usuario-actualizado', (datosFrescos) => {
-    console.log("📥 Datos sincronizados recibidos:", datosFrescos);
+    // Se registra solo el saldo, no el objeto entero: volcarlo completo dejaba a
+    // la vista en la consola todo lo que trajera el perfil.
+    console.log("📥 Datos sincronizados. Saldo:", datosFrescos.monedas);
 
     if (usuarioActual) {
         // 1. Actualizar datos base

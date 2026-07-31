@@ -46,15 +46,48 @@ self.addEventListener('activate', event => {
   return self.clients.claim(); // Tomar control de la página inmediatamente
 });
 
+/**
+ * Guarda una respuesta en la caché, en segundo plano y sin poder tumbar nada.
+ *
+ * Los dos `cache.put` que había antes iban sueltos, sin `.catch()`: cuando la
+ * Cache API rechazaba una respuesta, la promesa quedaba sin capturar y la
+ * consola se llenaba de "Uncaught (in promise) NetworkError". No rompía la app
+ * —la respuesta ya iba de camino al navegador— pero enterraba los errores de
+ * verdad entre ruido.
+ *
+ * Se cachea solo lo completo (200) y del propio origen ('basic'): una respuesta
+ * opaca de otro dominio no se puede leer ni validar.
+ */
+function guardarEnCache(peticion, respuesta) {
+  if (!respuesta || respuesta.status !== 200 || respuesta.type !== 'basic') return;
+
+  const copia = respuesta.clone();
+  caches.open(CACHE_NAME)
+    .then(cache => cache.put(peticion, copia))
+    .catch(fallo => console.warn('[Service Worker] No se pudo cachear', peticion.url, fallo));
+}
+
 // 3. INTERCEPTOR DE RED (FETCH): La magia del Offline
 self.addEventListener('fetch', event => {
   // A. EXCEPCIONES: No cachear llamadas al Backend (API, Socket, Login)
   // Si la URL tiene "socket.io" o "/api/", déjala pasar directo a internet.
-  if (event.request.url.includes('socket.io') || 
-      event.request.url.includes('/api/') || 
+  if (event.request.url.includes('socket.io') ||
+      event.request.url.includes('/api/') ||
       event.request.method !== 'GET') {
       return; // Salimos y dejamos que el navegador haga su petición normal
   }
+
+  // Peticiones que la Cache API RECHAZA de plano. Si no se filtran aquí,
+  // cache.put() revienta con "Cache.put() encountered a network error":
+  //
+  //  - Range: el <audio> pide trozos y el servidor responde 206 Partial
+  //    Content. La caché solo admite respuestas completas. Esto era lo que
+  //    ensuciaba la consola: los mp3 del juego se piden así.
+  //  - Esquemas que no son http/https (chrome-extension:, data:...), que
+  //    aparecen cuando alguien trae extensiones instaladas.
+  if (event.request.headers.has('range')) return;
+  const esquema = new URL(event.request.url).protocol;
+  if (esquema !== 'http:' && esquema !== 'https:') return;
 
   // B. DOS ESTRATEGIAS SEGÚN EL TIPO DE ARCHIVO
   //
@@ -77,10 +110,7 @@ self.addEventListener('fetch', event => {
     event.respondWith(
       fetch(event.request)
         .then(respuesta => {
-          if (respuesta && respuesta.status === 200 && respuesta.type === 'basic') {
-            const copia = respuesta.clone();
-            caches.open(CACHE_NAME).then(cache => cache.put(event.request, copia));
-          }
+          guardarEnCache(event.request, respuesta);
           return respuesta;
         })
         .catch(() => caches.match(event.request))   // sin internet: lo guardado
@@ -96,14 +126,7 @@ self.addEventListener('fetch', event => {
 
         return fetch(event.request).then(
           networkResponse => {
-            if(!networkResponse || networkResponse.status !== 200 || networkResponse.type !== 'basic') {
-              return networkResponse;
-            }
-            const responseToCache = networkResponse.clone();
-            caches.open(CACHE_NAME)
-              .then(cache => {
-                cache.put(event.request, responseToCache);
-              });
+            guardarEnCache(event.request, networkResponse);
 
             return networkResponse;
           }
