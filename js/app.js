@@ -252,17 +252,38 @@ function mostrarAlerta(mensaje, titulo = "Aviso del Sistema", cartaGanadora = nu
     btnModalCancelar.style.display = "none";
     btnModalAceptar.textContent = "Entendido";
 
-    // Carta con la que se cerró la tabla, si el anfitrión la marcó.
+    // La tabla que se llenó, con sus fichas encima, si el anfitrión la marcó.
+    // Es la prueba de la victoria: cualquiera puede compararla con el historial.
     const zonaCarta = document.getElementById("modalCartaGanadora");
     if (zonaCarta) {
-        if (cartaGanadora) {
-            zonaCarta.innerHTML =
-                `<p style="margin:0 0 6px; font-size:0.85rem; color:var(--text-muted);">Cerró con:</p>
-                 <img src="assets/imagenes/barajas/${escaparHtml(cartaGanadora)}.png" alt="">`;
+        zonaCarta.innerHTML = "";
+        if (prueba && prueba.tabla) {
+            const titulo = document.createElement("p");
+            titulo.className = "prueba-titulo";
+            titulo.textContent = "Tabla ganadora:";
+
+            const marco = document.createElement("div");
+            marco.className = "prueba-tabla";
+
+            const img = document.createElement("img");
+            img.src = `${rutaCartasJugador}${prueba.tabla}.jpg`;
+            img.alt = "";
+            marco.appendChild(img);
+
+            (prueba.fichas || []).forEach(pos => {
+                const ficha = document.createElement("img");
+                ficha.src = prueba.skin || "assets/imagenes/ui/ficha.PNG";
+                ficha.className = "ficha";
+                ficha.style.left = pos.left;
+                ficha.style.top = pos.top;
+                marco.appendChild(ficha);
+            });
+
+            zonaCarta.appendChild(titulo);
+            zonaCarta.appendChild(marco);
             zonaCarta.style.display = "block";
         } else {
             zonaCarta.style.display = "none";
-            zonaCarta.innerHTML = "";
         }
     }
     
@@ -1115,22 +1136,16 @@ function abrirModalValidacionHost(candidato, index, total) {
     // Historial (Cartas cantadas - Estas siempre son de la baraja normal)
     const modalHistorialFlex = document.getElementById("modalHistorialFlex");
     modalHistorialFlex.innerHTML = "";
-    cartaGanadoraElegida = null;
+    tablaGanadoraElegida = null;
+
+    const aviso = document.getElementById("avisoCartaGanadora");
+    if (aviso) aviso.textContent = "Toca la tabla que se llenó (opcional)";
 
     historialIdsGlobal.forEach(cartaId => {
          const img = document.createElement("img");
          img.src = `assets/imagenes/barajas/${cartaId}.png`;
-         img.className = "carta-historial-modal";
-         img.dataset.carta = cartaId;
-         // El anfitrión marca con cuál se cerró la tabla. Se enseña a todos al
-         // anunciar el resultado: cuando el anfitrión se valida a sí mismo, es
-         // la diferencia entre demostrarlo y pedir que le crean.
-         img.onclick = () => elegirCartaGanadora(cartaId);
          modalHistorialFlex.appendChild(img);
     });
-
-    const aviso = document.getElementById("avisoCartaGanadora");
-    if (aviso) aviso.textContent = "Toca la carta con la que cerró (opcional)";
 
     // Tabla del Jugador (AQUÍ ESTABA EL ERROR)
     modalVerificationArea.innerHTML = '';
@@ -1153,6 +1168,12 @@ function abrirModalValidacionHost(candidato, index, total) {
             cardImg.className = 'carta-img seleccionada';
             cardImg.style.pointerEvents = "none";
             cardContainer.appendChild(cardImg);
+
+            // El anfitrión marca CUÁL de las tablas se llenó. Esa es la prueba
+            // que se le enseña a la sala: la tabla completa con sus fichas.
+            cardContainer.dataset.tabla = cardId;
+            cardContainer.classList.add("tabla-validable");
+            cardContainer.onclick = () => elegirTablaGanadora(cardId);
             
             if (bs.chips && bs.chips[cardId]) {
                 bs.chips[cardId].forEach(chipPos => {
@@ -1175,19 +1196,19 @@ function abrirModalValidacionHost(candidato, index, total) {
     loteriaModal.classList.add("active");
 }
 
-// Carta con la que el reclamante cerró su tabla. La marca el anfitrión.
-let cartaGanadoraElegida = null;
+// Cuál de las tablas del reclamante fue la que se llenó. La marca el anfitrión.
+let tablaGanadoraElegida = null;
 
-function elegirCartaGanadora(cartaId) {
-    cartaGanadoraElegida = (cartaGanadoraElegida === cartaId) ? null : cartaId;
-    document.querySelectorAll("#modalHistorialFlex .carta-historial-modal").forEach(img => {
-        img.classList.toggle("elegida-ganadora", img.dataset.carta === cartaGanadoraElegida);
+function elegirTablaGanadora(tablaId) {
+    tablaGanadoraElegida = (tablaGanadoraElegida === tablaId) ? null : tablaId;
+    document.querySelectorAll("#modalVerificationArea .tabla-validable").forEach(cont => {
+        cont.classList.toggle("elegida-ganadora", cont.dataset.tabla === tablaGanadoraElegida);
     });
     const aviso = document.getElementById("avisoCartaGanadora");
     if (aviso) {
-        aviso.textContent = cartaGanadoraElegida
-            ? "Cerró con esta carta ✓"
-            : "Toca la carta con la que cerró (opcional)";
+        aviso.textContent = tablaGanadoraElegida
+            ? "Marcada la tabla ganadora ✓"
+            : "Toca la tabla que se llenó (opcional)";
     }
 }
 
@@ -1195,7 +1216,7 @@ if(btnAceptarGanador) btnAceptarGanador.onclick = () => {
     if (ganadorTempId) {
         socket.emit("veredicto-host", {
             sala: salaActual, candidatoId: ganadorTempId, esValido: true,
-            cartaGanadora: cartaGanadoraElegida
+            tablaGanadora: tablaGanadoraElegida
         });
         loteriaModal.classList.remove("active"); 
     }
@@ -1208,7 +1229,7 @@ if(btnRechazarGanador) btnRechazarGanador.onclick = () => {
     }
 };
 
-socket.on("ganadores-multiples", ({ ganadores, premio, cartaGanadora }) => {
+socket.on("ganadores-multiples", ({ ganadores, premio, prueba }) => {
     loteriaMensaje.style.display = "none";
     let msg = "";
     if (ganadores.length > 1) {
@@ -1216,7 +1237,7 @@ socket.on("ganadores-multiples", ({ ganadores, premio, cartaGanadora }) => {
     } else {
         msg = `¡TENEMOS GANADOR! 🏆\n${ganadores[0]} se lleva ${premio} monedas.`;
     }
-    mostrarAlerta(msg, "¡RESULTADO FINAL!", cartaGanadora);
+    mostrarAlerta(msg, "¡RESULTADO FINAL!", prueba);
     
     audioAplausos.currentTime = 0;
     audioAplausos.play().catch(()=>{});

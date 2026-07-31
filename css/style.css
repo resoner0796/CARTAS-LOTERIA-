@@ -1725,7 +1725,14 @@ textarea::placeholder { color: rgba(255,255,255,0.6); }
     line-height: 0;
 }
 
-.carta-seleccion .carta-img { width: 100%; }
+/* La imagen debe llenar su envoltura. Hace falta el #id para ganarle en
+   especificidad a `#contenedorCartas .carta-img { width:150px; max-width:45% }`,
+   que era la regla de cuando la tabla iba suelta: con la envoltura de por medio
+   ese 45% pasó a calcularse sobre 150 px y las tablas salían de 68 px. */
+#contenedorCartas .carta-seleccion .carta-img {
+    width: 100%;
+    max-width: none;
+}
 
 .orden-carta {
     position: absolute;
@@ -1789,7 +1796,7 @@ textarea::placeholder { color: rgba(255,255,255,0.6); }
    El host valida comparando lo que hay debajo de cada ficha. Si la ficha es
    opaca, tapa justo lo que necesita revisar.                                */
 #modalVerificationArea .ficha {
-    opacity: 0.62;
+    opacity: 0.40;
     mix-blend-mode: normal;
 }
 
@@ -1816,26 +1823,44 @@ textarea::placeholder { color: rgba(255,255,255,0.6); }
 }
 .btn-mute:active { transform: scale(0.9); }
 
-/* Historial del modal: se puede marcar con cuál cerró la tabla */
-.carta-historial-modal {
+/* Las tablas del modal de validación se pueden marcar: el anfitrión señala
+   cuál se llenó, y esa es la que ve la sala como prueba. */
+#modalVerificationArea .tabla-validable {
     cursor: pointer;
-    border-radius: 4px;
-    border: 2px solid transparent;
-    transition: transform 0.15s ease, border-color 0.15s ease;
+    border-radius: 8px;
+    outline: 3px solid transparent;
+    outline-offset: 2px;
+    transition: outline-color 0.15s ease, transform 0.15s ease;
 }
-.carta-historial-modal:hover { transform: translateY(-3px); }
-.carta-historial-modal.elegida-ganadora {
-    border-color: var(--verde-limon);
-    box-shadow: 0 0 14px var(--verde-limon);
-    transform: translateY(-3px) scale(1.05);
+#modalVerificationArea .tabla-validable:hover { transform: translateY(-3px); }
+#modalVerificationArea .tabla-validable.elegida-ganadora {
+    outline-color: var(--verde-limon);
+    box-shadow: 0 0 18px var(--verde-limon);
+    transform: translateY(-3px);
 }
 
-/* La carta ganadora en el aviso de resultado */
-#modalCartaGanadora img {
-    width: 90px;
+/* La tabla ganadora en el aviso de resultado, con sus fichas encima */
+#modalCartaGanadora .prueba-titulo {
+    margin: 0 0 8px;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+}
+#modalCartaGanadora .prueba-tabla {
+    position: relative;
+    display: inline-block;
+    width: 150px;
+    max-width: 60%;
+    line-height: 0;
+}
+#modalCartaGanadora .prueba-tabla img:first-child {
+    width: 100%;
     height: auto;
     border-radius: 8px;
     border: 2px solid var(--amarillo-maiz);
     box-shadow: 0 0 18px rgba(255, 234, 0, 0.5);
     animation: dealCard 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+#modalCartaGanadora .prueba-tabla .ficha {
+    opacity: 0.62;
+    max-width: 34px;
 }
