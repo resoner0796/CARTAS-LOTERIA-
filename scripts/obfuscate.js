@@ -16,6 +16,7 @@
  */
 
 const fs = require('fs');
+const vm = require('vm');
 const path = require('path');
 const JavaScriptObfuscator = require('javascript-obfuscator');
 
@@ -55,38 +56,75 @@ function globalesUsadosEnHtml(html) {
 }
 
 /**
- * Un nombre sobrevive de dos formas:
- *  1. Literal, si es una función declarada al tope (renameGlobals:false las respeta).
- *  2. Codificado en el string array, si se declara como `window.compartirSala = ...`
- *     (eso cuenta como acceso a propiedad y el nombre se mueve al array).
- * Para el caso 2 el ofuscador usa base64 con alfabeto propio, no el estándar.
- * Lo extraemos del propio código generado para no hardcodearlo.
+ * Ejecuta el bundle ya ofuscado en un DOM simulado y comprueba que cada nombre
+ * que index.html necesita siga resolviéndose.
+ *
+ * Buscar los nombres como texto en la salida no sirve: con rc4 y splitStrings las
+ * cadenas quedan troceadas y cifradas, así que un nombre presente y funcional
+ * puede no aparecer nunca literalmente. Ejecutarlo es la única forma confiable, y
+ * de paso detecta si el bundle revienta al cargar.
+ *
+ * Usamos `typeof <nombre>` dentro del mismo contexto en vez de mirar propiedades
+ * del objeto global, porque las declaraciones `let`/`const` del tope no cuelgan de
+ * window: viven en el ámbito léxico global, que es justo por donde los resuelve un
+ * atributo inline como onclick="...".
  */
-function nombresPresentes(codigo) {
-    const presentes = new Set();
-    for (const [, c] of codigo.matchAll(/'([^'\\]{2,120})'/g)) presentes.add(c);
-    for (const [, c] of codigo.matchAll(/"([^"\\]{2,120})"/g)) presentes.add(c);
+function verificarEjecutando(codigo, nombres) {
+    const elemento = () => new Proxy({
+        style: {}, dataset: {}, children: [], innerHTML: '', textContent: '',
+        innerText: '', value: '', disabled: false, src: '',
+        classList: { add() {}, remove() {}, toggle() {}, contains: () => false },
+        appendChild() {}, removeChild() {}, remove() {}, insertBefore() {},
+        prepend() {}, addEventListener() {}, focus() {}, scrollTo() {},
+        querySelector: () => elemento(), querySelectorAll: () => [],
+        getBoundingClientRect: () => ({ left: 0, top: 0, width: 100, height: 100 })
+    }, { get: (t, p) => (p in t ? t[p] : undefined), set: (t, p, v) => (t[p] = v, true) });
 
-    const alfabeto = (codigo.match(/'([A-Za-z0-9+/=]{65})'/) || [])[1];
-    if (!alfabeto) return presentes;
-
-    const decodificar = (entrada) => {
-        let bits = '';
-        const bytes = [];
-        for (const ch of entrada) {
-            const i = alfabeto.indexOf(ch);
-            if (i < 0 || i === 64) continue;
-            bits += i.toString(2).padStart(6, '0');
-        }
-        for (let i = 0; i + 8 <= bits.length; i += 8) bytes.push(parseInt(bits.slice(i, i + 8), 2));
-        return Buffer.from(bytes).toString('utf8');
+    const guardado = {};
+    const ctx = {
+        console: { log() {}, warn() {}, error() {} },
+        document: {
+            getElementById: () => elemento(), querySelector: () => elemento(),
+            querySelectorAll: () => [], createElement: () => elemento(),
+            body: elemento(), title: 't', addEventListener() {}
+        },
+        localStorage: {
+            getItem: k => (k in guardado ? guardado[k] : null),
+            setItem: (k, v) => { guardado[k] = String(v); },
+            removeItem: k => { delete guardado[k]; }
+        },
+        sessionStorage: { getItem: () => null, setItem() {}, removeItem() {} },
+        navigator: { vibrate() {}, share: null, clipboard: { writeText: () => Promise.resolve() } },
+        location: { search: '', pathname: '/', origin: 'https://x.test', href: 'https://x.test/' },
+        history: { replaceState() {}, pushState() {} },
+        fetch: () => Promise.resolve({ json: () => Promise.resolve({}) }),
+        setTimeout, clearTimeout, setInterval: () => 0, clearInterval,
+        addEventListener() {}, removeEventListener() {},
+        Audio: function () { return { play: () => Promise.resolve(), pause() {}, currentTime: 0, volume: 1 }; },
+        Stripe: () => ({ initEmbeddedCheckout: async () => ({ mount() {}, destroy() {} }) }),
+        io: () => ({ on() {}, emit() {}, connected: false, id: 'x' }),
+        atob: s => Buffer.from(s, 'base64').toString('binary'),
+        btoa: s => Buffer.from(s, 'binary').toString('base64'),
+        URLSearchParams, Promise, JSON, Math, Date, Object, Array, String, Number, RegExp, Error
     };
+    ctx.window = ctx;
+    ctx.self = ctx;
+    vm.createContext(ctx);
 
-    for (const valor of [...presentes]) {
-        const d = decodificar(valor);
-        if (d && /^[\x20-\x7E]+$/.test(d)) presentes.add(d);
+    try {
+        vm.runInContext(codigo, ctx, { timeout: 20000 });
+    } catch (e) {
+        return { reventó: e.message, faltantes: [] };
     }
-    return presentes;
+
+    const faltantes = nombres.filter(n => {
+        try {
+            return vm.runInContext(`typeof ${n}`, ctx, { timeout: 2000 }) === 'undefined';
+        } catch {
+            return true;
+        }
+    });
+    return { reventó: null, faltantes };
 }
 
 const fuente = fs.readFileSync(ARCHIVO, 'utf8');
@@ -97,47 +135,82 @@ if (/^const _0x/.test(fuente)) {
     process.exit(1);
 }
 
+const globales = globalesUsadosEnHtml(html);
+
 console.log(`🔒 Ofuscando js/app.js ${enSeco ? '(simulacro, no se escribe nada)' : '(build de Vercel)'} ...`);
 
 const codigo = JavaScriptObfuscator.obfuscate(fuente, {
     target: 'browser',
     compact: true,
 
-    // CRÍTICO: no tocar. Ver comentario de arriba.
-    renameGlobals: false,
+    // Renombramos TODO lo global salvo lo que index.html invoca por nombre desde
+    // sus atributos inline. Esa lista se calcula del propio HTML, así que si mañana
+    // agregas un onclick nuevo queda protegido solo.
+    renameGlobals: true,
+    reservedNames: globales.map(n => `^${n}$`),
 
-    identifierNamesGenerator: 'hexadecimal',
+    identifierNamesGenerator: 'mangled-shuffled',
     selfDefending: true,
     simplify: true,
 
+    // Cadenas: rc4 en vez de base64, partidas en trozos y con envoltorios
+    // intermedios para que no baste con decodificar el array de un jalón.
     stringArray: true,
-    stringArrayEncoding: ['base64'],
-    stringArrayThreshold: 0.75,
+    stringArrayEncoding: ['rc4'],
+    stringArrayThreshold: 1,
+    stringArrayCallsTransform: true,
+    stringArrayWrappersCount: 2,
+    stringArrayWrappersType: 'function',
+    stringArrayIndexShift: true,
+    stringArrayRotate: true,
+    stringArrayShuffle: true,
+    splitStrings: true,
+    splitStringsChunkLength: 8,
 
-    // Apagados a propósito: cuestan mucha CPU y esto es un juego en tiempo real
-    // que corre en celulares de gama baja.
-    controlFlowFlattening: false,
+    numbersToExpressions: true,
+    transformObjectKeys: true,
+
+    // Aplanado de flujo moderado: encarece mucho la lectura, pero cuesta CPU y
+    // esto es un juego en tiempo real que corre en celulares de gama baja.
+    // 0.4 es el punto donde estorba al que curiosea sin que se sienta al jugar.
+    controlFlowFlattening: true,
+    controlFlowFlatteningThreshold: 0.4,
+
+    // deadCodeInjection infla el archivo a lo bestia y debugProtection puede
+    // colgar el navegador. No compensan.
     deadCodeInjection: false,
     debugProtection: false,
 
-    splitStrings: false,
     unicodeEscapeSequence: false
 }).getObfuscatedCode();
+const { reventó, faltantes } = verificarEjecutando(codigo, globales);
 
-const globales = globalesUsadosEnHtml(html);
-const enCadenas = nombresPresentes(codigo);
-const perdidos = globales.filter(n => !new RegExp(`\\b${n}\\b`).test(codigo) && !enCadenas.has(n));
-
-if (perdidos.length > 0) {
-    console.error('\n❌ ABORTADO: el ofuscador se comió identificadores que index.html necesita:');
-    perdidos.forEach(n => console.error(`     - ${n}`));
-    console.error('\n   Revisa que renameGlobals siga en false. No se escribió nada.');
+if (reventó) {
+    console.error(`\n❌ ABORTADO: el bundle ofuscado revienta al cargar:\n     ${reventó}`);
+    console.error('   No se escribió nada.');
     process.exit(1);
 }
+if (faltantes.length > 0) {
+    console.error('\n❌ ABORTADO: el ofuscador se comió identificadores que index.html necesita:');
+    faltantes.forEach(n => console.error(`     - ${n}`));
+    console.error('\n   Revisa que estén en reservedNames. No se escribió nada.');
+    process.exit(1);
+}
+
+// Cuánto se expone realmente: de todas las funciones declaradas al tope en la
+// fuente, ¿cuántas conservan su nombre en la salida?
+const declaradas = [...fuente.matchAll(/^\s*(?:async\s+)?function\s+([A-Za-z_$][\w$]*)/gm)].map(m => m[1]);
+const unicas = [...new Set(declaradas)];
+const expuestas = unicas.filter(n => new RegExp(`\\b${n}\\b`).test(codigo));
 
 if (!enSeco) fs.writeFileSync(ARCHIVO, codigo);
 
 const kb = t => (Buffer.byteLength(t) / 1024).toFixed(0);
 console.log(`✅ ${kb(fuente)} KB → ${kb(codigo)} KB`);
-console.log(`   ${globales.length} identificadores usados desde index.html verificados intactos.`);
+console.log(`   ${globales.length} identificadores que index.html necesita: verificados intactos.`);
+console.log(`   Funciones declaradas en la fuente: ${unicas.length}`);
+console.log(`   De esas, siguen con su nombre visible: ${expuestas.length} (las que el HTML invoca)`);
+if (expuestas.length > globales.length) {
+    console.log('   ⚠️ Hay más nombres visibles de los reservados. Revisa renameGlobals.');
+}
 if (enSeco) console.log('   (simulacro: js/app.js quedó intacto)');
