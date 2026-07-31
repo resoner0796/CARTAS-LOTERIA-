@@ -7,10 +7,15 @@
 // un solo archivo antes de ofuscarlo (ver scripts/obfuscate.js).
 
 import {
-    API_URL, SERVIDOR, STRIPE_CLAVE_PUBLICA, FICHA_POR_DEFECTO,
+    SERVIDOR, STRIPE_CLAVE_PUBLICA, FICHA_POR_DEFECTO,
     catalogoSonidos, catalogoFichas
 } from './modulos/config.js';
 import { escaparHtml, actualizarValor } from './modulos/utiles.js';
+import {
+    cambiarPantalla, pantalla, iniciarModales,
+    mostrarAlerta, mostrarConfirmacion
+} from './modulos/ui.js';
+import { api, guardarToken, obtenerToken, borrarSesion } from './modulos/sesion.js';
 // El token va en el handshake. `auth` como función se vuelve a evaluar en cada
 // reconexión, así que en cuanto inicias sesión el socket ya viaja identificado.
 //
@@ -82,37 +87,7 @@ socket.on("estas-silenciado", () => {
     mostrarAlerta("El anfitrión silenció tus efectos de sonido en esta sala.", "Sin sonidos 🔇");
 });
 
-// ==================== SESIÓN (TOKEN) ====================
-// El backend ya no confía en el email que le mandemos en el body: la identidad
-// sale de este token firmado. Mientras dure la fase de convivencia el servidor
-// sigue aceptando el camino viejo, pero todo lo que sale de aquí ya va firmado.
-
-function guardarToken(token) { if (token) localStorage.setItem("loteria_token", token); }
-function obtenerToken() { return localStorage.getItem("loteria_token"); }
-
-let avisandoSesionExpirada = false;
-function sesionExpirada() {
-    if (avisandoSesionExpirada) return;      // que no se apilen alertas
-    avisandoSesionExpirada = true;
-    localStorage.removeItem("loteria_token");
-    localStorage.removeItem("loteria_usuario");
-    mostrarAlerta("Tu sesión caducó. Vuelve a iniciar sesión.", "Sesión terminada");
-    setTimeout(() => location.reload(), 2000);
-}
-
-/** fetch contra la API con el token ya puesto. La ruta va sin el prefijo. */
-async function api(ruta, opciones = {}) {
-    const cabeceras = { ...(opciones.headers || {}) };
-    const token = obtenerToken();
-    if (token) cabeceras["Authorization"] = `Bearer ${token}`;
-    if (opciones.body && !cabeceras["Content-Type"]) cabeceras["Content-Type"] = "application/json";
-
-    const res = await fetch(API_URL + ruta, { ...opciones, headers: cabeceras });
-    // Basta con que haya sesión guardada: si el servidor nos rechaza, hay que
-    // volver a entrar aunque el token ya se hubiera perdido.
-    if (res.status === 401 && (token || localStorage.getItem("loteria_usuario"))) sesionExpirada();
-    return res;
-}
+// El token, el helper api() y el manejo del 401 viven en modulos/sesion.js.
 
 // Variables Globales
 let usuarioActual = null; // {email, nickname, monedas, inventario}
@@ -131,17 +106,7 @@ let rutaCartasJugador = 'assets/imagenes/cartas/';
 
 const stripePromise = Stripe(STRIPE_CLAVE_PUBLICA);
 
-// Referencias DOM - Pantallas
-const pantallas = {
-  splash: document.getElementById("pantallaSplash"),
-  login: document.getElementById("pantallaLogin"),
-  registro: document.getElementById("pantallaRegistro"),
-  menu: document.getElementById("pantallaMenu"),
-  sala: document.getElementById("pantallaSala"),
-  seleccion: document.getElementById("pantallaSeleccion"),
-  juego: document.getElementById("pantallaJuego"),
-  pantallaAdmin: document.getElementById("pantallaAdmin")
-};
+// Las referencias a las pantallas viven en modulos/ui.js.
 
 // Referencias DOM - Elementos UI
 const contenedorCartas = document.getElementById("contenedorCartas");
@@ -296,100 +261,8 @@ let entrandoDesdeHub = false;
 })();
 // ===================================================================
 
-// ======================================================
-// SISTEMA DE MODALES PRO
-// ======================================================
-
-const modalSistema = document.getElementById("modalSistema");
-const modalTitulo = document.getElementById("modalSistemaTitulo");
-const modalMensaje = document.getElementById("modalSistemaMensaje");
-const btnModalAceptar = document.getElementById("btnModalAceptar");
-const btnModalCancelar = document.getElementById("btnModalCancelar");
-
-let onModalAceptar = null; 
-
-function mostrarAlerta(mensaje, titulo = "Aviso del Sistema", prueba = null) {
-    modalTitulo.textContent = titulo;
-    modalMensaje.textContent = mensaje;
-    btnModalCancelar.style.display = "none";
-    btnModalAceptar.textContent = "Entendido";
-
-    // La tabla que se llenó, con sus fichas encima, si el anfitrión la marcó.
-    // Es la prueba de la victoria: cualquiera puede compararla con el historial.
-    const zonaCarta = document.getElementById("modalCartaGanadora");
-    if (zonaCarta) {
-        zonaCarta.innerHTML = "";
-        if (prueba && prueba.tabla) {
-            const titulo = document.createElement("p");
-            titulo.className = "prueba-titulo";
-            titulo.textContent = "Tabla ganadora:";
-
-            const marco = document.createElement("div");
-            marco.className = "prueba-tabla";
-
-            const img = document.createElement("img");
-            img.src = `${rutaCartasJugador}${prueba.tabla}.jpg`;
-            img.alt = "";
-            marco.appendChild(img);
-
-            (prueba.fichas || []).forEach(pos => {
-                const ficha = document.createElement("img");
-                ficha.src = prueba.skin || "assets/imagenes/ui/ficha.PNG";
-                ficha.className = "ficha";
-                ficha.style.left = pos.left;
-                ficha.style.top = pos.top;
-                marco.appendChild(ficha);
-            });
-
-            zonaCarta.appendChild(titulo);
-            zonaCarta.appendChild(marco);
-            zonaCarta.style.display = "block";
-        } else {
-            zonaCarta.style.display = "none";
-        }
-    }
-    
-    onModalAceptar = () => cerrarModal();
-    
-    modalSistema.classList.add("active");
-    if(navigator.vibrate) navigator.vibrate(50);
-}
-
-function mostrarConfirmacion(mensaje, callbackAceptar) {
-    modalTitulo.textContent = "¿Estás seguro?";
-    modalMensaje.textContent = mensaje;
-
-    // Los dos modales comparten el mismo contenedor, así que hay que borrar la
-    // tabla ganadora de la vez anterior. Si no, al pedir confirmación para salir
-    // aparecía otra vez la tabla del último que ganó.
-    limpiarPruebaVictoria();
-    btnModalCancelar.style.display = "inline-block";
-    btnModalAceptar.textContent = "Sí";
-    
-    onModalAceptar = () => {
-        callbackAceptar();
-        cerrarModal();
-    };
-    
-    modalSistema.classList.add("active");
-}
-
-/** Borra la tabla ganadora del modal compartido. */
-function limpiarPruebaVictoria() {
-    const zona = document.getElementById("modalCartaGanadora");
-    if (!zona) return;
-    zona.innerHTML = "";
-    zona.style.display = "none";
-}
-
-function cerrarModal() {
-    modalSistema.classList.remove("active");
-    onModalAceptar = null;
-    limpiarPruebaVictoria();
-}
-
-if(btnModalAceptar) btnModalAceptar.onclick = () => { if (onModalAceptar) onModalAceptar(); else cerrarModal(); };
-if(btnModalCancelar) btnModalCancelar.onclick = () => cerrarModal();
+// Los modales y la navegación entre pantallas viven en modulos/ui.js.
+iniciarModales();
 
 
 // ======================================================
@@ -398,10 +271,11 @@ if(btnModalCancelar) btnModalCancelar.onclick = () => cerrarModal();
 
 /** Desvanece el splash. Vive fuera de onload porque el SSO también lo necesita. */
 function ocultarSplashGlobal(callback) {
-    if (!pantallas.splash) { if (callback) callback(); return; }
-    pantallas.splash.style.opacity = '0';
+    const splash = pantalla('splash');
+    if (!splash) { if (callback) callback(); return; }
+    splash.style.opacity = '0';
     setTimeout(() => {
-        pantallas.splash.style.display = 'none';
+        splash.style.display = 'none';
         if (callback) callback();
     }, 500); // 500ms es lo que tarda la transición CSS
 }
@@ -509,14 +383,6 @@ window.onload = () => {
     }
 };
 
-function cambiarPantalla(nombre) {
-  Object.values(pantallas).forEach(p => p.classList.remove("activa"));
-  if(pantallas[nombre]) {
-      pantallas[nombre].classList.add("activa");
-      if (nombre === "seleccion") pantallas["seleccion"].scrollTo(0, 0);
-  }
-}
-
 async function login() {
     const email = document.getElementById("loginEmail").value;
     const pass = document.getElementById("loginPass").value;
@@ -594,17 +460,10 @@ async function registro() {
 }
 
 function cerrarSesion() {
-    localStorage.removeItem("loteria_usuario");
-    localStorage.removeItem("loteria_token");
-    // Opcional: También limpiar favoritos locales si quieres seguridad total
-    // localStorage.removeItem("loteria_cartas_fav"); 
-    
+    borrarSesion();     // token y perfil, en un solo sitio (modulos/sesion.js)
     usuarioActual = null;
-    
-    // 🔥 FIX: Resetear la ficha a la default al salir
-    fichaActivaUrl = 'assets/imagenes/ui/ficha.PNG';
-    
-    location.reload(); // Recargar limpia todo lo demás
+    fichaActivaUrl = FICHA_POR_DEFECTO;
+    location.reload();  // recargar limpia todo lo demás
 }
 
 function configurarMenu() {
@@ -683,8 +542,8 @@ function unirseSalaDirecto(nombreSala, modo) {
     if(salaActual === "Oficina") { fondoSel = "fondo-seleccion-oficina.PNG"; fondoJuego = "fondo-juego-oficina.PNG"; }
     if(salaActual === "Amigos") { fondoSel = "fondo-seleccion-amigos.PNG"; fondoJuego = "fondo-juego-amigos.PNG"; }
 
-    aplicarFondo(pantallas.seleccion, basePath + fondoSel);
-    aplicarFondo(pantallas.juego, basePath + fondoJuego);
+    aplicarFondo(pantalla('seleccion'), basePath + fondoSel);
+    aplicarFondo(pantalla('juego'), basePath + fondoJuego);
 
     socket.emit("unirse-sala", { 
         nickname: usuarioActual.nickname, 
@@ -1371,7 +1230,10 @@ socket.on("ganadores-multiples", ({ ganadores, premio, prueba, pozoGanado, ganad
     if (pozoGanado > 0 && ganadorPozo) {
         msg += `\n\n🎰 ¡Y SE LLEVÓ EL POZO!\n${ganadorPozo} suma ${pozoGanado} monedas más.`;
     }
-    mostrarAlerta(msg, "¡RESULTADO FINAL!", prueba);
+    // La ruta viaja DENTRO de la prueba porque el modal vive en modulos/ui.js y
+    // no conoce el estado de la partida. Importa: en modo Pozo las tablas salen
+    // de otra carpeta, así que sin esto la tabla ganadora saldría rota.
+    mostrarAlerta(msg, "¡RESULTADO FINAL!", prueba && { ...prueba, ruta: rutaCartasJugador });
     
     audioAplausos.currentTime = 0;
     audioAplausos.play().catch(()=>{});

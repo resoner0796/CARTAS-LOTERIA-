@@ -73,6 +73,8 @@ js/app.js             Punto de entrada y grueso de la lógica (~2,000 líneas)
 js/modulos/           Piezas ya separadas (ver "Modularización")
   config.js             Direcciones, clave pública de Stripe, catálogos de tienda
   utiles.js             escaparHtml() y actualizarValor()
+  ui.js                 Pantallas y los dos modales del sistema
+  sesion.js             Token, helper api() y manejo del 401
 scripts/obfuscate.js  Empaqueta y ofusca en el build de Vercel — ver abajo
 vercel.json           buildCommand + outputDirectory
 service-worker.js     Estrategias de caché (PWA)
@@ -124,24 +126,44 @@ Si vuelves a meter un `onclick`, esa red lo cubre — pero mejor no.
 ### Modularización (en curso)
 
 `app.js` se está partiendo en `js/modulos/`, **un módulo a la vez**, verificando
-después de cada movimiento. Van dos: `config.js` y `utiles.js`, los dos sin
-dependencias (hojas del grafo), así que se pueden importar desde cualquier sitio sin
-crear ciclos.
+después de cada movimiento. Van cuatro:
 
-Qué va en cada sitio:
+```
+config.js ──┬──▶ sesion.js ◀── ui.js
+utiles.js   │         ▲
+            └─────────┴──── app.js  (punto de entrada)
+```
 
 - **`config.js`** — lo que no cambia en tiempo de ejecución: direcciones, la clave
-  pública de Stripe, los catálogos de la tienda. No toca el DOM.
+  pública de Stripe, los catálogos de la tienda. No toca el DOM ni importa nada.
 - **`utiles.js`** — funciones sueltas que usa medio archivo y no pertenecen a ninguna
-  parte concreta.
+  parte concreta. Tampoco importa nada.
+- **`ui.js`** — navegación entre pantallas y los dos modales. Toca el DOM pero no
+  sabe nada del juego ni del socket.
+- **`sesion.js`** — el token y el helper `api()`. Importa de `config` y de `ui`.
 - **`app.js`** — todo lo demás, por ahora.
+
+Dos reglas que ya evitaron problemas:
 
 ⚠️ **Nunca metas en `config.js` referencias al DOM** (`getElementById`) ni variables
 que el juego reasigne mientras corre. Lo primero depende de que la página ya esté
 parseada; lo segundo convierte un módulo de datos en estado compartido.
 
-Pendiente de repartir: sesión, socket, sala, selección, juego, apuestas, validación,
-tienda, monedero y admin.
+⚠️ **En `ui.js` las referencias al DOM se resuelven cuando hacen falta, no al
+importar.** El orden en que se evalúan los módulos no garantiza que la página esté
+parseada; un `getElementById` al tope del módulo puede devolver `null` para siempre.
+Por eso los botones del modal se enganchan desde `iniciarModales()`, que llama el
+arranque.
+
+**Cuando un módulo necesite algo que vive en el estado de la partida, pásalo como
+argumento en vez de importarlo.** Ejemplo real: el modal pinta la tabla ganadora y
+necesitaba `rutaCartasJugador`, que cambia según el modo. En lugar de que `ui.js`
+conozca esa variable, la ruta viaja **dentro** del objeto `prueba`. Así el módulo
+sigue sin depender del juego. (Importa: en modo Pozo las tablas salen de otra
+carpeta, así que leer la ruta equivocada saca la tabla rota.)
+
+Pendiente de repartir: socket, sala, selección, juego, apuestas, validación, tienda,
+monedero y admin.
 
 ## Convenciones
 
