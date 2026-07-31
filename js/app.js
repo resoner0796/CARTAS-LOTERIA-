@@ -10,6 +10,25 @@ const socket = io("https://loteria-backend-3nde.onrender.com", {
   auth: (cb) => cb({ token: localStorage.getItem("loteria_token") || null })
 });
 
+// ==================== SILENCIO EN LA SALA ====================
+// Quién tiene los sonidos cortados. Lo decide el anfitrión y lo manda el
+// servidor, que es quien de verdad descarta los efectos: aquí solo se pinta.
+let silenciadosEnSala = [];
+
+window.alternarSilencio = function(email) {
+    if (!soyHost) return;
+    const callado = silenciadosEnSala.includes(email);
+    socket.emit("silenciar-jugador", { sala: salaActual, email, silenciar: !callado });
+};
+
+socket.on("silenciados-actualizados", (lista) => {
+    silenciadosEnSala = Array.isArray(lista) ? lista : [];
+});
+
+socket.on("estas-silenciado", () => {
+    mostrarAlerta("El anfitrión silenció tus efectos de sonido en esta sala.", "Sin sonidos 🔇");
+});
+
 // ==================== FEEDBACK VISUAL DE SALDO ====================
 /**
  * Pinta un número y, si cambió respecto a lo que ya había, le da un latido
@@ -227,11 +246,25 @@ const btnModalCancelar = document.getElementById("btnModalCancelar");
 
 let onModalAceptar = null; 
 
-function mostrarAlerta(mensaje, titulo = "Aviso del Sistema") {
+function mostrarAlerta(mensaje, titulo = "Aviso del Sistema", cartaGanadora = null) {
     modalTitulo.textContent = titulo;
     modalMensaje.textContent = mensaje;
     btnModalCancelar.style.display = "none";
     btnModalAceptar.textContent = "Entendido";
+
+    // Carta con la que se cerró la tabla, si el anfitrión la marcó.
+    const zonaCarta = document.getElementById("modalCartaGanadora");
+    if (zonaCarta) {
+        if (cartaGanadora) {
+            zonaCarta.innerHTML =
+                `<p style="margin:0 0 6px; font-size:0.85rem; color:var(--text-muted);">Cerró con:</p>
+                 <img src="assets/imagenes/barajas/${escaparHtml(cartaGanadora)}.png" alt="">`;
+            zonaCarta.style.display = "block";
+        } else {
+            zonaCarta.style.display = "none";
+            zonaCarta.innerHTML = "";
+        }
+    }
     
     onModalAceptar = () => cerrarModal();
     
@@ -575,6 +608,7 @@ function salirDeSalaEnJuego() {
 }
 
 function resetearUI() {
+  silenciadosEnSala = [];
   limpiarFichas();
   seleccionadas = [];
   juegoCartas.innerHTML = "";
@@ -921,11 +955,22 @@ socket.on("jugadores-actualizados", jugadores => {
           if (j.racha > 1) fuego += `<small style="color:orange; font-weight:bold;">x${j.racha}</small>`;
       }
 
+      // Botón de silencio: solo lo ve el anfitrión, y no sobre sí mismo.
+      let botonMute = "";
+      if (soyHost && j.email && j.email !== usuarioActual?.email) {
+          const callado = silenciadosEnSala.includes(j.email);
+          botonMute = `<button class="btn-mute ${callado ? 'callado' : ''}"
+                        onclick="alternarSilencio('${escaparHtml(j.email)}')"
+                        title="${callado ? 'Devolverle los sonidos' : 'Silenciar sus sonidos'}"
+                        >${callado ? '🔇' : '🔊'}</button>`;
+      }
+      const iconoCallado = (!soyHost && silenciadosEnSala.includes(j.email)) ? ' 🔇' : '';
+
       // Le damos un estilo "flex" para que se vea alineado
       return `
         <div style="display:flex; justify-content:space-between; align-items:center; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.1);">
-            <span>${crown} ${escaparHtml(j.nickname)} ${fuego}</span>
-            <span>${check}</span>
+            <span>${crown} ${escaparHtml(j.nickname)} ${fuego}${iconoCallado}</span>
+            <span style="display:flex; align-items:center; gap:6px;">${check}${botonMute}</span>
         </div>`;
     }).join("");
     
@@ -1070,11 +1115,22 @@ function abrirModalValidacionHost(candidato, index, total) {
     // Historial (Cartas cantadas - Estas siempre son de la baraja normal)
     const modalHistorialFlex = document.getElementById("modalHistorialFlex");
     modalHistorialFlex.innerHTML = "";
+    cartaGanadoraElegida = null;
+
     historialIdsGlobal.forEach(cartaId => {
          const img = document.createElement("img");
          img.src = `assets/imagenes/barajas/${cartaId}.png`;
+         img.className = "carta-historial-modal";
+         img.dataset.carta = cartaId;
+         // El anfitrión marca con cuál se cerró la tabla. Se enseña a todos al
+         // anunciar el resultado: cuando el anfitrión se valida a sí mismo, es
+         // la diferencia entre demostrarlo y pedir que le crean.
+         img.onclick = () => elegirCartaGanadora(cartaId);
          modalHistorialFlex.appendChild(img);
     });
+
+    const aviso = document.getElementById("avisoCartaGanadora");
+    if (aviso) aviso.textContent = "Toca la carta con la que cerró (opcional)";
 
     // Tabla del Jugador (AQUÍ ESTABA EL ERROR)
     modalVerificationArea.innerHTML = '';
@@ -1119,9 +1175,28 @@ function abrirModalValidacionHost(candidato, index, total) {
     loteriaModal.classList.add("active");
 }
 
+// Carta con la que el reclamante cerró su tabla. La marca el anfitrión.
+let cartaGanadoraElegida = null;
+
+function elegirCartaGanadora(cartaId) {
+    cartaGanadoraElegida = (cartaGanadoraElegida === cartaId) ? null : cartaId;
+    document.querySelectorAll("#modalHistorialFlex .carta-historial-modal").forEach(img => {
+        img.classList.toggle("elegida-ganadora", img.dataset.carta === cartaGanadoraElegida);
+    });
+    const aviso = document.getElementById("avisoCartaGanadora");
+    if (aviso) {
+        aviso.textContent = cartaGanadoraElegida
+            ? "Cerró con esta carta ✓"
+            : "Toca la carta con la que cerró (opcional)";
+    }
+}
+
 if(btnAceptarGanador) btnAceptarGanador.onclick = () => {
     if (ganadorTempId) {
-        socket.emit("veredicto-host", { sala: salaActual, candidatoId: ganadorTempId, esValido: true });
+        socket.emit("veredicto-host", {
+            sala: salaActual, candidatoId: ganadorTempId, esValido: true,
+            cartaGanadora: cartaGanadoraElegida
+        });
         loteriaModal.classList.remove("active"); 
     }
 };
@@ -1133,7 +1208,7 @@ if(btnRechazarGanador) btnRechazarGanador.onclick = () => {
     }
 };
 
-socket.on("ganadores-multiples", ({ ganadores, premio }) => {
+socket.on("ganadores-multiples", ({ ganadores, premio, cartaGanadora }) => {
     loteriaMensaje.style.display = "none";
     let msg = "";
     if (ganadores.length > 1) {
@@ -1141,7 +1216,7 @@ socket.on("ganadores-multiples", ({ ganadores, premio }) => {
     } else {
         msg = `¡TENEMOS GANADOR! 🏆\n${ganadores[0]} se lleva ${premio} monedas.`;
     }
-    mostrarAlerta(msg, "¡RESULTADO FINAL!");
+    mostrarAlerta(msg, "¡RESULTADO FINAL!", cartaGanadora);
     
     audioAplausos.currentTime = 0;
     audioAplausos.play().catch(()=>{});
