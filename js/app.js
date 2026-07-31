@@ -2107,3 +2107,18 @@ function animarVueloMonedas() {
 
 // Iniciar al cargar la página
 window.addEventListener('load', iniciarFabDraggable);
+
+// ======================================================
+// SERVICE WORKER (PWA)
+// ======================================================
+// El archivo existía desde hace tiempo pero nunca se registraba, así que la app
+// no funcionaba sin conexión ni se comportaba como PWA instalada.
+//
+// Ahora sí se registra, después de que cargue todo, para no competir por ancho
+// de banda con las cartas y los audios durante el arranque.
+window.addEventListener('load', () => {
+    if (!('serviceWorker' in navigator)) return;
+    navigator.serviceWorker.register('service-worker.js')
+        .then(reg => console.log('Service worker activo:', reg.scope))
+        .catch(err => console.warn('No se pudo registrar el service worker:', err));
+});

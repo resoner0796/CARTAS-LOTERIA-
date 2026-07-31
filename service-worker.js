@@ -56,24 +56,49 @@ self.addEventListener('fetch', event => {
       return; // Salimos y dejamos que el navegador haga su petición normal
   }
 
-  // B. ESTRATEGIA: "Cache First" (Primero busca en casa, luego en internet)
+  // B. DOS ESTRATEGIAS SEGÚN EL TIPO DE ARCHIVO
+  //
+  // El código (HTML y JS) va "primero la red": si hay internet se sirve siempre
+  // lo último y la caché queda solo como respaldo para modo avión. Con la
+  // estrategia anterior, que era "primero la caché" para todo, el navegador se
+  // quedaba con el app.js de la primera visita y NUNCA veía un despliegue nuevo
+  // hasta que se cambiara el nombre de la caché a mano. En una app que maneja
+  // dinero, eso significa usuarios corriendo código viejo indefinidamente.
+  //
+  // Las imágenes y audios sí van "primero la caché": no cambian casi nunca y son
+  // ~100 MB, así que ahí es donde está la ganancia real de velocidad.
+  const url = new URL(event.request.url);
+  const esCodigo = event.request.mode === 'navigate' ||
+                   /\.(html|js|json)$/.test(url.pathname) ||
+                   url.pathname === '/' ||
+                   url.pathname.endsWith('/');
+
+  if (esCodigo) {
+    event.respondWith(
+      fetch(event.request)
+        .then(respuesta => {
+          if (respuesta && respuesta.status === 200 && respuesta.type === 'basic') {
+            const copia = respuesta.clone();
+            caches.open(CACHE_NAME).then(cache => cache.put(event.request, copia));
+          }
+          return respuesta;
+        })
+        .catch(() => caches.match(event.request))   // sin internet: lo guardado
+    );
+    return;
+  }
+
+  // Imágenes, audios y demás: primero la caché.
   event.respondWith(
     caches.match(event.request)
       .then(response => {
-        // Si el archivo ya está guardado, lo entregamos RÁPIDO ⚡️
-        if (response) {
-          return response;
-        }
+        if (response) return response;
 
-        // Si no está, vamos a Internet a buscarlo
         return fetch(event.request).then(
           networkResponse => {
-            // Verificamos que la respuesta sea válida
             if(!networkResponse || networkResponse.status !== 200 || networkResponse.type !== 'basic') {
               return networkResponse;
             }
-
-            // Si es válida (ej. una carta nueva '25.jpg'), la guardamos para la próxima
             const responseToCache = networkResponse.clone();
             caches.open(CACHE_NAME)
               .then(cache => {
