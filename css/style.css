@@ -184,13 +184,8 @@ h1, h2, h3 {
 }
 
 /* --- MENÚ PRINCIPAL --- */
-.menu-acciones {
-    display: grid; 
-    grid-template-columns: 1fr 1fr;
-    gap: 20px; 
-    width: 100%; max-width: 600px; 
-    margin: 20px auto; box-sizing: border-box;
-}
+/* Ojo: .menu-acciones se define más abajo, en la sección del carrusel. Aquí había
+   una versión en grid que quedaba sobrescrita y nunca llegaba a aplicarse. */
 
 .sala-box {
     background: var(--glass-bg); backdrop-filter: blur(12px);
@@ -632,8 +627,10 @@ button[onclick*="unirseSala"], #btnBarajear, #btnLimpiarCartas {
     display: flex;
     flex-direction: column;
     
-    /* --- AGREGADO PARA ESTANDARIZAR --- */
-    height: 520px; /* Altura fija para que todos sean iguales */
+    /* Altura MÍNIMA, no fija: en flex las tarjetas se igualan solas por el
+       stretch del contenedor. Con `height` fija, en pantallas bajas (un móvil
+       en horizontal) el contenido se cortaba. */
+    min-height: 520px;
     justify-content: space-between; /* Distribuye el contenido (botón siempre abajo) */
 }
 
@@ -891,8 +888,10 @@ button[onclick*="unirseSala"], #btnBarajear, #btnLimpiarCartas {
     
     /* FUENTE Y ESTILO */
     font-family: 'Montserrat', sans-serif;
-    font-weight: 900; 
-    font-size: 3.5rem; 
+    font-weight: 900;
+    /* Escala con el ancho: con `3.5rem` fijo, un saldo de 6 cifras se salía de
+       la tarjeta en pantallas chicas. */
+    font-size: clamp(1.8rem, 11vw, 3.5rem);
     white-space: nowrap; 
     
     text-shadow: 2px 2px 5px rgba(0,0,0,0.6);
@@ -901,9 +900,13 @@ button[onclick*="unirseSala"], #btnBarajear, #btnLimpiarCartas {
     pointer-events: none; 
 }
 
-/* Ajuste para pantallas pequeñas */
+/* Ajuste para pantallas pequeñas.
+   Ojo: esta regla va DESPUÉS del clamp de arriba, así que lo pisa. Tenía un
+   `2.8rem` fijo con el que un saldo de 6 cifras se salía 9 px del plástico de
+   la tarjeta a 320 px (medido). El número está centrado en `left: 42%`, y hacia
+   la izquierda solo tiene 66 px de tarjeta, así que ese es el límite real. */
 @media (max-width: 380px) {
-    #menuMonedas { font-size: 2.8rem; }
+    #menuMonedas { font-size: clamp(1.7rem, 9vw, 2.4rem); }
 }
 
 /* --- NUEVO CONTENEDOR DE BOTONES (Recargar + Transferir) --- */
@@ -1256,4 +1259,159 @@ body {
     pointer-events: none; /* Que no estorbe al click */
     transition: all 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94); /* Curva suave */
     filter: drop-shadow(0 4px 4px rgba(0,0,0,0.5));
+}
+
+/* =========================================================================
+   CORRECCIONES RESPONSIVAS
+   -------------------------------------------------------------------------
+   Cada bloque corresponde a un desborde o recorte MEDIDO en Chrome real
+   (auditoría a 320, 360, 390, 768, 844×390, 1024, 1440 y 1920 px).
+   Si tocas algo de aquí, vuelve a medir antes de dar por bueno el cambio.
+   ========================================================================= */
+
+/* --- 1. MODALES: tope real de ancho -------------------------------------
+   `.modal-content` tenía `max-width: 95%`, que en un monitor de 1920 daba un
+   modal de 1824 px de ancho para un aviso de 223 px de alto. El 95% sirve en
+   móvil; en pantallas grandes hace falta un tope absoluto.                */
+.modal-content {
+    max-width: min(95%, 560px);
+    margin-inline: auto;
+}
+
+/* El de validación de lotería enseña 4 tablas más el historial: necesita más
+   espacio que un aviso normal. */
+#loteriaModal .modal-content { max-width: min(95%, 900px); }
+#modalTienda .modal-content,
+#modalTiendaDetalle .modal-content { max-width: min(95%, 520px); }
+
+
+/* --- 2. MONEDERO A 320 px -----------------------------------------------
+   `.btn-transferir-img` se salía 33 px: el botón dorado con
+   `white-space: nowrap` a 1.1rem más la imagen de 65 px no caben en 320 px. */
+.btn-recargar-gold {
+    font-size: clamp(0.85rem, 3.6vw, 1.1rem);
+    padding: 12px clamp(10px, 4vw, 20px);
+    min-width: 0;            /* permite encogerse dentro del flex */
+}
+.btn-transferir-img { width: clamp(48px, 16vw, 65px); }
+
+
+/* --- 3. PANEL DE APUESTAS A 320 px --------------------------------------
+   `.apuesta-control` se salía 26 px y `#btnApostar` 18 px. El ancho útil
+   (90% menos padding y gap) no alcanzaba para las dos columnas.            */
+@media (max-width: 360px) {
+    #apuestasUI { width: 96%; padding: 0.75rem; gap: 0.5rem; }
+    #apuestasUI button {
+        padding: 0.7rem 0.5rem;
+        font-size: 0.8rem;
+        margin: 0.25rem 0;
+        width: 100%;
+        min-width: 0;
+    }
+    .saldo-jugador, .apuesta-control { min-width: 0; }
+    #monedas-valor { font-size: 1.5rem; }
+    .moneda-stack { width: 34px; height: 34px; margin-top: -22px; }
+}
+
+
+/* --- 4. PANTALLAS BAJAS / MÓVIL EN HORIZONTAL ---------------------------
+   `.auth-container` recortaba 18 px y `.sala-box` 24 px a 844×390. La causa
+   es el `max-height: 85vh` con `overflow-y: auto` que se puso como parche
+   para el teclado: en horizontal el 85% de 390 px son 331 px, menos que el
+   contenido. Aquí soltamos ese tope y dejamos que scrollee la pantalla.    */
+@media (max-height: 500px) {
+    .sala-box, .menu-card, .auth-container, .form-container {
+        max-height: none;
+        overflow-y: visible;
+    }
+    .menu-card { min-height: 0; }
+    .pantalla { justify-content: flex-start; padding-top: 16px; }
+    #pantallaMenu, #pantallaSeleccion, #pantallaJuego, #pantallaSala { padding-top: 16px; }
+    .splash-icon { width: 100px; height: 100px; margin-bottom: 20px; }
+    #pantallaSplash h1 { bottom: 8%; font-size: 1.1rem; }
+    #loteriaMensaje { bottom: 12px; padding: 12px; }
+    #loteriaMensaje div:first-child { font-size: 1.1rem !important; }
+}
+
+
+/* --- 5. BOTONERA DEL JUEGO EN TABLET HORIZONTAL -------------------------
+   A 1024 px justos entra la media query de escritorio, que pone la botonera
+   en fila con `min-width: 140px` por botón. Son 7 botones: 980 px más 90 px
+   de huecos = 1070 px, o sea 31 px fuera de pantalla (medido).
+   Se deja envolver en vez de forzar una sola fila.                        */
+@media (min-width: 1024px) and (max-width: 1279px) {
+    .botones-grid { flex-wrap: wrap; gap: 10px; }
+    .botones-grid button { min-width: 120px; flex: 0 1 auto; }
+}
+@media (min-width: 1280px) {
+    .botones-grid { flex-wrap: wrap; }
+}
+
+
+/* --- 6. TABLET: aprovechar el ancho -------------------------------------
+   Entre 600 y 1023 px no había ningún punto de corte, así que una iPad usaba
+   tablas del tamaño de un móvil y sobraba espacio a los lados.             */
+@media (min-width: 600px) and (max-width: 1023px) {
+    /* En la pantalla de selección hay 53 tablas: cuantas más quepan por fila,
+       menos scroll. Ahí sí conviene apretar. */
+    #contenedorCartas .carta-juego,
+    #contenedorCartas .carta-img { width: 170px; max-width: 30%; }
+
+    /* En el tablero son 4 como mucho: 2×2 se lee mejor y se aprovecha el ancho.
+       Con 3 por fila la cuarta se quedaba sola abajo. */
+    #juegoCartas .carta-juego { flex-basis: calc(50% - 10px); max-width: calc(50% - 10px); }
+
+    .menu-card { min-width: 45%; }
+
+    #historial img { width: 70px; height: 105px; }
+}
+
+
+/* --- 7. ÁREA TÁCTIL MÍNIMA ----------------------------------------------
+   Se midieron botones de 140×37 y 137×41. La recomendación de accesibilidad
+   (y el mínimo cómodo con el pulgar) son 44×44.                            */
+button { min-height: 44px; }
+.btn-recargar-verde { min-height: 44px; padding: 10px 16px; }
+.btn-emoji-sonido { min-height: 50px; }
+/* Los de la tienda viven dentro de tarjetas chicas y no son de uso frecuente */
+.btn-buy, .btn-use, .btn-owned, .btn-accion-tienda, .btn-precio { min-height: 36px; }
+
+
+/* --- 8. IMÁGENES Y TABLAS: nunca desbordar ------------------------------
+   Red de seguridad. `overflow-x: hidden` en html/body escondía los desbordes
+   en vez de evitarlos, lo que los hacía difíciles de detectar.             */
+img, video, canvas { max-width: 100%; }
+table { max-width: 100%; }
+.historial-container-modal { -webkit-overflow-scrolling: touch; }
+
+
+/* --- 9. RESPETAR "REDUCIR MOVIMIENTO" -----------------------------------
+   El juego tiene bastante animación (confeti, palpitos, cartas repartidas).
+   Quien lo pida en su sistema operativo debería poder jugar sin eso.       */
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+    /* Las animaciones de entrada dejan opacity:0; sin animación hay que
+       devolverles la visibilidad a mano o la pantalla se queda en blanco. */
+    h1, h2, h3, .historial-container, .menu-acciones,
+    .cartas-container, #juegoCartas, .sala-box,
+    #controlesJuego, .sala-botones-row,
+    #panelInferior, #jugadoresLista, #apuestasUI { opacity: 1 !important; }
+}
+
+
+/* --- 10. TABLAS EN TABLET HORIZONTAL: 2×2 en vez de 3+1 -----------------
+   A 1024 px la regla de escritorio pide `min-width: 250px` por tabla. Con 4
+   tablas son 1000 px más huecos, y en 992 px útiles solo caben 3: la cuarta
+   se quedaba sola en la fila de abajo. Una cuadrícula 2×2 aprovecha mejor
+   el espacio y se lee más equilibrada.                                     */
+@media (min-width: 1024px) and (max-width: 1365px) {
+    #juegoCartas .carta-juego {
+        flex: 0 0 calc(50% - 15px);
+        min-width: 0;
+        max-width: calc(50% - 15px);
+    }
 }
