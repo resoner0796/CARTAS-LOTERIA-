@@ -47,7 +47,9 @@ async function api(ruta, opciones = {}) {
     if (opciones.body && !cabeceras["Content-Type"]) cabeceras["Content-Type"] = "application/json";
 
     const res = await fetch(API_URL + ruta, { ...opciones, headers: cabeceras });
-    if (res.status === 401 && token) sesionExpirada();
+    // Basta con que haya sesión guardada: si el servidor nos rechaza, hay que
+    // volver a entrar aunque el token ya se hubiera perdido.
+    if (res.status === 401 && (token || localStorage.getItem("loteria_usuario"))) sesionExpirada();
     return res;
 }
 
@@ -241,8 +243,8 @@ if(btnModalCancelar) btnModalCancelar.onclick = () => cerrarModal();
 
 window.onload = () => {
     // 1. Revisar sesión guardada
-    const sesionGuardada = localStorage.getItem("loteria_usuario");
-    
+    let sesionGuardada = localStorage.getItem("loteria_usuario");
+
     // Función auxiliar para desvanecer el splash
     const ocultarSplash = (callback) => {
         if(pantallas.splash) {
@@ -253,6 +255,28 @@ window.onload = () => {
             }, 500); // 500ms es lo que tarda la transición CSS
         }
     };
+
+    // --- MIGRACIÓN A SESIONES CON TOKEN ---
+    // Las sesiones anteriores al cambio a JWT no tienen token y en localStorage
+    // no caducan nunca: se quedarían ahí para siempre. En cuanto el servidor
+    // deje de aceptar peticiones sin token, esas sesiones dejarían de funcionar
+    // sin ningún aviso, con botones que no responden.
+    // Mejor cortar por lo sano ahora y pedir el login una sola vez.
+    if (sesionGuardada && !obtenerToken()) {
+        localStorage.removeItem("loteria_usuario");
+        sesionGuardada = null;
+        usuarioActual = null;
+        setTimeout(() => {
+            ocultarSplash(() => {
+                cambiarPantalla("login");
+                mostrarAlerta(
+                    "Mejoramos la seguridad de las cuentas. Entra otra vez, es solo esta vez.",
+                    "Vuelve a iniciar sesión"
+                );
+            });
+        }, 1500);
+        return;
+    }
 
     if (sesionGuardada) {
         // === USUARIO LOGUEADO (CARGA DE DATOS) ===
