@@ -1796,7 +1796,7 @@ textarea::placeholder { color: rgba(255,255,255,0.6); }
    El host valida comparando lo que hay debajo de cada ficha. Si la ficha es
    opaca, tapa justo lo que necesita revisar.                                */
 #modalVerificationArea .ficha {
-    opacity: 0.80;
+    opacity: 0.95;
     mix-blend-mode: normal;
 }
 
@@ -1880,10 +1880,10 @@ textarea::placeholder { color: rgba(255,255,255,0.6); }
     gap: 2px;
 }
 
-.pozo-monedas img { filter: drop-shadow(0 4px 4px rgba(0,0,0,0.5)) hue-rotate(250deg) saturate(1.4); }
-
+/* Las monedas del pozo son iguales a las del bote: lo que los distingue es la
+   etiqueta de abajo, no el color. */
 #pozo-valor {
-    color: #d580ff;
+    color: var(--amarillo-maiz);
     font-weight: 800;
     font-size: 1.4rem;
     position: absolute;
@@ -1894,30 +1894,31 @@ textarea::placeholder { color: rgba(255,255,255,0.6); }
 }
 #pozo-valor.saldo-cambio { animation: latidoBote 0.6s ease-out; }
 
-/* Casilla para apuntarse a la ronda */
+/* Casilla para apuntarse */
 .pozo-apunte {
     display: flex;
     align-items: center;
-    gap: 6px;
-    font-size: 0.72rem;
+    justify-content: center;
+    gap: 5px;
+    font-size: 0.7rem;
     font-weight: 700;
-    color: #d580ff;
+    color: var(--amarillo-maiz);
     cursor: pointer;
-    padding: 5px 9px;
+    padding: 4px 8px;
     border-radius: 20px;
-    border: 1px solid rgba(213, 128, 255, 0.5);
-    background: rgba(213, 128, 255, 0.12);
+    border: 1px solid rgba(255, 234, 0, 0.45);
+    background: rgba(255, 234, 0, 0.1);
     white-space: nowrap;
     user-select: none;
     /* La casilla en sí es chica, pero se toca toda la etiqueta: es esa la que
        tiene que cumplir el área mínima cómoda para el pulgar. */
     min-height: 44px;
 }
-.pozo-apunte input { width: 18px; height: 18px; margin: 0; accent-color: #b64dff; flex-shrink: 0; }
+.pozo-apunte input { width: 17px; height: 17px; margin: 0; accent-color: var(--amarillo-maiz); flex-shrink: 0; }
 .pozo-apunte:has(input:checked) {
-    background: rgba(213, 128, 255, 0.3);
-    border-color: #d580ff;
-    box-shadow: 0 0 12px rgba(213, 128, 255, 0.45);
+    background: rgba(255, 234, 0, 0.25);
+    border-color: var(--amarillo-maiz);
+    box-shadow: 0 0 12px rgba(255, 234, 0, 0.4);
 }
 .pozo-apunte:has(input:disabled) { opacity: 0.55; cursor: default; }
 
@@ -1929,21 +1930,39 @@ textarea::placeholder { color: rgba(255,255,255,0.6); }
     margin-top: 16px;
     padding: 12px;
     border-radius: 12px;
-    background: rgba(213, 128, 255, 0.14);
-    border: 1px solid rgba(213, 128, 255, 0.5);
-    color: #e9c6ff;
+    background: rgba(255, 234, 0, 0.12);
+    border: 1px solid rgba(255, 234, 0, 0.45);
+    color: #fff6a8;
     font-weight: 700;
     font-size: 0.9rem;
     text-align: left;
     cursor: pointer;
     user-select: none;
 }
-.pozo-veredicto input { width: 20px; height: 20px; margin: 0; accent-color: #b64dff; flex-shrink: 0; }
+.pozo-veredicto input { width: 20px; height: 20px; margin: 0; accent-color: var(--amarillo-maiz); flex-shrink: 0; }
 
-/* En pantallas angostas el panel de apuestas pasa a dos renglones */
-@media (max-width: 430px) {
-    #apuestasUI { flex-wrap: wrap; }
-    .pozo-control { flex-basis: 100%; flex-direction: row; justify-content: center; gap: 10px; margin-top: 6px; }
+/* En pantallas angostas todo sigue en UNA fila: apilar el pozo abajo alargaba
+   la pantalla de juego, que es lo último que conviene cuando el tablero ya pide
+   scroll. Se aprieta el texto en vez de partir la fila. */
+@media (max-width: 480px) {
+    #apuestasUI { gap: 0.4rem; padding: 0.75rem 0.5rem; width: 96%; }
+
+    /* Sin esto las columnas no encogen: el relleno lateral del botón APOSTAR
+       les fija un ancho mínimo y a 390 px el pozo se salía 31 px. */
+    #apuestasUI > * { min-width: 0; }
+    #apuestasUI button { padding: 0.7rem 0.5rem; font-size: 0.8rem; width: 100%; min-width: 0; }
+    #monedas-valor { font-size: 1.6rem; }
+    .moneda-stack { width: 30px; height: 30px; margin-top: -20px; }
+    .monedas-torres { gap: 1px; }
+    .pozo-apunte { font-size: 0.6rem; padding: 4px 6px; gap: 3px; }
+    .pozo-apunte input { width: 15px; height: 15px; }
+    .bote-monedas { width: 46px; height: 46px; }
+    .bote-monedas img { width: 34px; height: 34px; }
+    #bote-valor, #pozo-valor { font-size: 1.15rem; }
+}
+@media (max-width: 360px) {
+    .pozo-apunte span { display: none; }   /* solo la casilla, ya se entiende */
+    .pozo-apunte { padding: 4px 8px; }
 }
 
 /* Los mensajes del sistema llevan saltos de línea (\n) para separar ideas:

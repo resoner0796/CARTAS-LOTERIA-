@@ -652,6 +652,9 @@ function salirDeSalaEnJuego() {
 
 function resetearUI() {
   silenciadosEnSala = [];
+  pozoAcumulado = 0;
+  const chkPozoSalida = document.getElementById("chkPozo");
+  if (chkPozoSalida) { chkPozoSalida.checked = false; chkPozoSalida.disabled = false; }
   limpiarFichas();
   seleccionadas = [];
   juegoCartas.innerHTML = "";
@@ -935,7 +938,7 @@ socket.on('info-sala', (data) => {
         rutaCartasJugador = 'assets/imagenes/cartas/'; 
     }
 
-    if(btnApostar) {
+    if(btnApostar && seleccionadas.length === 0) {
         btnApostar.innerText = "Selecciona cartas";
         btnApostar.disabled = true;
         btnApostar.style.opacity = "0.5";
@@ -947,8 +950,24 @@ socket.on('info-sala', (data) => {
     refrescarPozoUI(); // <--- AQUÍ FALTABA ESTA LLAVE DE CIERRE '}'
     
     // Regenerar el grid de selección con la ruta correcta
-    generarCartas(); 
+    generarCartas();
+
+    // generarCartas() reconstruye el grid desde cero, así que hay que volver a
+    // marcar lo que ya estaba elegido. Si no, la pantalla contradice al estado:
+    // el jugador tiene sus tablas apartadas en el servidor pero las ve libres.
+    restaurarSeleccionVisual();
 });
+
+/** Vuelve a marcar en el grid las tablas que ya estaban elegidas. */
+function restaurarSeleccionVisual() {
+    seleccionadas.forEach(id => {
+        const img = document.querySelector(`#contenedorCartas .carta-img[data-id="${id}"]`);
+        if (img) img.classList.add("seleccionada");
+    });
+    renumerarSeleccion();
+    actualizarTextoBotonApuesta();
+    if (btnApostar && haApostadoLocal) btnApostar.disabled = true;
+}
 
 socket.on('estado-sala-restaurado', (estado) => {
     if(estado.cartas && estado.cartas.length > 0) {
@@ -1274,8 +1293,11 @@ if(btnRechazarGanador) btnRechazarGanador.onclick = () => {
 
 socket.on("ganadores-multiples", ({ ganadores, premio, prueba, pozoGanado, ganadorPozo }) => {
     loteriaMensaje.style.display = "none";
+    // Se vuelve a habilitar pero NO se desmarca: entrar al pozo es una decisión
+    // que dura mientras estés en la sala, no una casilla que haya que picar cada
+    // partida. Se suelta al salir de la sala.
     const chkP = document.getElementById("chkPozo");
-    if (chkP) { chkP.disabled = false; chkP.checked = false; }
+    if (chkP) chkP.disabled = false;
     let msg = "";
     if (ganadores.length > 1) {
         msg = `¡EMPATE! 🤝\nGanadores: ${ganadores.join(", ")}\nSe llevan ${premio} monedas cada uno.`;
