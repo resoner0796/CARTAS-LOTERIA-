@@ -89,6 +89,19 @@ seguridad real vive en el servidor.
 
 ---
 
+## 🧪 Pruebas
+
+```bash
+npm test            # sobre la fuente
+npm run test:build  # sobre el bundle ofuscado — el que se publica
+```
+
+Abren Chrome de verdad y prueban la app entera: que arranque, que cada botón
+responda, que se conecte al servidor, que el texto de otros usuarios no ejecute
+código y que entrar desde el Hub no enseñe un login por el camino.
+
+No necesitan backend. Sí necesitan Chrome instalado (se usa el del sistema).
+
 ## 🚀 Correr local
 
 No hace falta build: `index.html` carga `app.js` como módulo ES y el navegador
@@ -191,6 +204,7 @@ propósito.
 - [x] Registrar el service worker
 - [ ] Arreglar `manifest.json` (íconos apuntan a rutas rotas)
 - [ ] Optimizar assets a WebP (~100 MB actuales)
+- [x] Pruebas automáticas en Chrome, sobre la fuente y sobre el bundle ofuscado
 - [x] Ofuscación automática en el build de Vercel
 - [x] Quitar los `onclick` del HTML (paso previo a modularizar)
 - [x] Empaquetado con esbuild antes de ofuscar (habilita los módulos)

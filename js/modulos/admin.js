@@ -42,6 +42,10 @@ export async function cargarUsuariosAdmin(usuario) {
         if (!res.ok) throw new Error("Sin permiso");
 
         const usuarios = await res.json();
+        // Si el servidor devuelve algo que no es una lista —un error con forma
+        // de objeto, por ejemplo— el forEach de abajo revienta y la tabla se
+        // queda en "Cargando..." para siempre.
+        if (!Array.isArray(usuarios)) throw new Error("respuesta inesperada del servidor");
         tbody.innerHTML = "";
 
         usuarios.forEach(u => {

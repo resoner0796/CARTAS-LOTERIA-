@@ -290,7 +290,7 @@ los de la sala, y la sesión vive en `localStorage`.
   llamada a la API daba 401 y la sesión se limpiaba sola— pero sí llegaba a
   procesar el perfil falsificado. El Hub lleva tiempo mandando solo `?tk=`, así que
   se quitó. **No lo reintroduzcas.**
-  ⚠️ Serpientes y Pirinola **todavía lo aceptan** (`params.get('sso')`).
+  Se retiró también de Serpientes y Pirinola: **ya no queda en ningún repo**.
 - **Los modales de aviso y confirmación comparten contenedor.** Hay que limpiar
   la prueba de victoria o reaparece donde no toca.
 - **El backend mandaba el documento entero del usuario al navegador.**
@@ -344,6 +344,38 @@ Rendimiento:
 Infra:
 - Render (plan free) duerme a los 15 min. Se mantiene despierto con UptimeRobot.
 - El estado de las salas vive en RAM: un reinicio de Render tumba las partidas activas.
+
+## Pruebas
+
+```bash
+npm test          # sobre la fuente — rápido, para desarrollar
+npm run test:build # sobre el bundle empaquetado y ofuscado
+```
+
+**La segunda es la que importa.** Es el código que se publica, y dos de los peores
+fallos del proyecto solo aparecían ahí: doce botones que el ofuscador renombró, y
+el juego arrancando sin socket. En la fuente todo iba bien.
+
+Abren un **Chrome de verdad** (el que ya tienes; no se descarga ninguno) y
+comprueban lo que se ve y lo que se manda por la red. No hay pruebas unitarias a
+propósito: los fallos que ha tenido este proyecto no se detectan leyendo funciones
+sueltas.
+
+| Archivo | Qué cubre |
+|---|---|
+| `humo.prueba.js` | Que arranque, que **se pique cada acción** y que haya handshake |
+| `dinero.prueba.js` | Qué manda el cliente al comprar y transferir; validaciones que deben rebotar sin salir a la red |
+| `escapado.prueba.js` | Que un nickname con HTML no ejecute código |
+| `sesion.prueba.js` | Entrar desde el Hub, con la red lenta a propósito |
+
+No hace falta backend: interponen `fetch` y el socket. Sí hace falta red para bajar
+el guión de Socket.IO, que lo sirve Render.
+
+**Si tocas el cliente, corre `npm run test:build` antes de empujar.**
+
+⚠️ **Una prueba que nunca falla no prueba nada.** Cuando añadas una, rómpela a
+propósito y comprueba que salta. Las de aquí se verificaron así: quitando el
+escapado y dejando el socket sin conexión.
 
 ## Probar local
 

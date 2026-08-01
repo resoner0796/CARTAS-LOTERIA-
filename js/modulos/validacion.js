@@ -34,6 +34,10 @@ let tablaGanadoraElegida = null;
  * reclamante se desconecte.
  */
 export function emitirLoteria() {
+    // Sin sesión no hay a quién adjudicar la victoria. No debería pasar jugando
+    // normal, pero reventaba en vez de no hacer nada.
+    if (!sesion.usuario) return;
+
     sonidos.pararTodo();      // que se oiga el grito, no la partida
 
     const boardState = {
