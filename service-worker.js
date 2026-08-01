@@ -1,4 +1,7 @@
-const CACHE_NAME = 'loteria-pro-v1';
+// Al subir este número, la caché anterior se borra entera en la próxima visita.
+// Hay que subirlo cuando algo cacheado deje de ser válido — como ahora, que las
+// hojas de estilo viejas están atrapadas en los navegadores de la gente.
+const CACHE_NAME = 'loteria-pro-v2';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
@@ -101,8 +104,14 @@ self.addEventListener('fetch', event => {
   // Las imágenes y audios sí van "primero la caché": no cambian casi nunca y
   // pesan lo que más, así que ahí está la ganancia real de velocidad.
   const url = new URL(event.request.url);
+  // ⚠️ El CSS cuenta como CÓDIGO, no como imagen. Estuvo fuera de esta lista y
+  // el resultado fue que style.css se servía desde la caché para siempre: quien
+  // ya había entrado una vez se quedaba con la hoja de estilos de aquel día y no
+  // veía NINGÚN cambio visual por más despliegues que hubiera. Costó encontrarlo
+  // porque en producción el archivo publicado sí era el nuevo — el viejo estaba
+  // en el navegador de cada persona.
   const esCodigo = event.request.mode === 'navigate' ||
-                   /\.(html|js|json)$/.test(url.pathname) ||
+                   /\.(html|js|json|css)$/.test(url.pathname) ||
                    url.pathname === '/' ||
                    url.pathname.endsWith('/');
 

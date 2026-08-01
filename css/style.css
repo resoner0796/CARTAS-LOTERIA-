@@ -401,7 +401,10 @@ button[onclick*="unirseSala"], #btnBarajear, #btnLimpiarCartas {
 .moneda-stack { width: 44px; height: 44px; margin-top: -30px; filter: drop-shadow(0 4px 4px rgba(0,0,0,0.5)); }
 .moneda-stack:first-of-type { margin-top: 0; }
 #monedas-valor { color: var(--amarillo-maiz); font-size: 2rem; font-weight: 800; margin-top: 0.5rem; text-shadow: 0 2px 4px rgba(0,0,0,0.5); }
-.bote-monedas { position: relative; width: 55px; height: 55px; display: flex; justify-content: center; align-items: center; margin-bottom: 0.5rem; }
+/* Más ancho que alto: el montón se reparte en un óvalo, no en un círculo, y así
+   parece apoyado en la mesa en vez de flotando de frente. Las medidas de aquí
+   son las que lee modulos/monedas.js para calcular hasta dónde se abre. */
+.bote-monedas { position: relative; width: 84px; height: 62px; display: flex; justify-content: center; align-items: center; margin-bottom: 0.5rem; }
 /* Las tres monedas fijas que había aquí, cada una con su transform, se fueron:
    ahora las pinta modulos/monedas.js y son tantas como dinero haya. Las reglas
    viejas seguían aplicando a las nuevas y las desparramaban por el hueco. */
@@ -1966,8 +1969,8 @@ textarea::placeholder { color: rgba(255,255,255,0.6); }
     .monedas-torres { gap: 1px; }
     .pozo-apunte { font-size: 0.6rem; padding: 4px 6px; gap: 3px; }
     .pozo-apunte input { width: 15px; height: 15px; }
-    .bote-monedas { width: 46px; height: 46px; }
-    .bote-monedas .moneda-bote { width: 22px; height: 22px; margin-left: -11px; }
+    .bote-monedas { width: 70px; height: 54px; }
+    .bote-monedas .moneda-bote { width: 21px; height: 21px; }
     #bote-valor, #pozo-valor { font-size: 1.15rem; }
 }
 @media (max-width: 360px) {
@@ -1994,22 +1997,28 @@ textarea::placeholder { color: rgba(255,255,255,0.6); }
 
 .bote-monedas .moneda-bote {
     position: absolute;
-    left: 50%;
-    width: 26px;
-    height: 26px;
-    margin-left: -13px;              /* centra sobre `left: 50%` */
-    filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.55));
-    /* Sin transición en `bottom`: al repintar la torre las monedas son otras,
-       y animar su posición las hacía saltar desde abajo cada vez. */
+    width: 24px;
+    height: 24px;
+    /* El sitio exacto de cada moneda lo calcula modulos/monedas.js con un
+       `transform`: aquí no se fija ni posición ni tamaño del montón, porque
+       depende de cuántas haya. */
+    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.6));
     pointer-events: none;
 }
 
-/* El número se aparta a la izquierda en vez de quedar encima de la torre.
-   Centrado, con una pila de 20 monedas detrás, no había sombra que lo salvara. */
+/* El número va SIEMPRE por encima del montón, cueste lo que cueste.
+   El z-index más alto que reparte monedas.js es 100, así que este queda arriba.
+
+   ⚠️ Esto ya falló una vez: con el número en z-index 13 y veinticinco monedas
+   numeradas del 1 al 25, las últimas doce quedaban por delante y el pozo se
+   volvía ilegible justo cuando más importaba. El contorno oscuro es lo que lo
+   despega del oro de las monedas. */
 #bote-valor, #pozo-valor {
-    z-index: 50;
-    left: -2px;
-    transform: translateY(-50%);
+    z-index: 200;
+    text-shadow:
+        0 0 4px #000, 0 0 4px #000,
+       -1.5px -1.5px 0 #000, 1.5px -1.5px 0 #000,
+       -1.5px  1.5px 0 #000, 1.5px  1.5px 0 #000;
 }
 
 /* Las del pozo se distinguen del bote con un tinte dorado más cálido. */

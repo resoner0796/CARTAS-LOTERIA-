@@ -10,11 +10,23 @@
 // muchas se juntan y forman una torre. Así nunca se sale del hueco ni hace falta
 // tocar el layout, que en este proyecto ya se rompió una vez.
 
-/** Alto en píxeles que puede ocupar la torre. Es lo que hay en móvil. */
-const ALTO_DISPONIBLE = 34;
+/**
+ * Radio del montón, por si no se puede medir el contenedor.
+ *
+ * Normalmente se calcula del tamaño real, para que el montón se adapte solo a
+ * móvil y a escritorio sin duplicar medidas aquí y en el CSS. Este valor solo
+ * entra cuando el contenedor está oculto y mide 0.
+ */
+const RADIO_DE_RESERVA = 22;
 
-/** Separación máxima entre monedas. Con pocas, se ven despegadas. */
-const SEPARACION_MAXIMA = 5;
+/**
+ * Ángulo áureo, en grados.
+ *
+ * Es el que usan las semillas de un girasol: colocando cada moneda a este
+ * ángulo de la anterior, nunca se alinean en filas ni dejan huecos. Repartirlas
+ * en anillos regulares deja patrones que se ven artificiales.
+ */
+const ANGULO_AUREO = 137.5;
 
 /** Ni una moneda por peso hasta el infinito: a partir de aquí, la torre se queda. */
 export const TOPE_MONEDAS_POZO = 25;
@@ -84,24 +96,43 @@ export function pintarMonedas(contenedor, cantidad, tope = TOPE_POR_DEFECTO) {
     contenedor.querySelectorAll('img.moneda-bote').forEach(m => m.remove());
     if (cuantas === 0) return;
 
-    // Cuantas más monedas, más juntas: así la torre siempre cabe en el hueco.
-    const separacion = Math.min(SEPARACION_MAXIMA, ALTO_DISPONIBLE / cuantas);
+    // El montón se abre desde el centro hacia fuera. La raíz cuadrada reparte
+    // las monedas por igual sobre el área: sin ella se amontonan todas en el
+    // borde, porque un anillo lejano tiene mucho más sitio que uno cercano.
+    //
+    // Con pocas monedas el montón queda chico y se cuentan de un vistazo; con
+    // muchas se abre hasta el borde y se solapan, que es como se ve un montón de
+    // monedas de verdad.
+    // El radio sale del tamaño REAL del contenedor, no de un número fijo: así
+    // el montón se adapta solo entre móvil y escritorio y no hay que mantener
+    // la misma medida en dos sitios. Si está oculto mide 0 y se usa la reserva.
+    const caja = contenedor.getBoundingClientRect();
+    const radioDisponible = caja.width > 0 ? (caja.width / 2) - 3 : RADIO_DE_RESERVA;
+
+    // Con pocas monedas el montón queda chico y se cuentan de un vistazo; a
+    // partir de unas cuantas se abre del todo y empiezan a solaparse.
+    const radio = Math.min(radioDisponible, 5.2 * Math.sqrt(cuantas));
 
     for (let i = 0; i < cuantas; i++) {
         const moneda = document.createElement('img');
         moneda.src = IMAGEN;
         moneda.alt = '';
         moneda.className = 'moneda-bote';
-        // La de abajo es la primera; cada siguiente sube un poco y queda por
-        // encima, que es como se apilan las de verdad.
-        moneda.style.bottom = `${i * separacion}px`;
-        moneda.style.zIndex = String(i + 1);
-        // Un ladeo mínimo y alterno para que no parezca un bloque perfecto: las
-        // monedas de verdad nunca quedan alineadas. Va por `transform` y NO por
-        // `margin-left`, que es lo que el CSS usa para centrar la torre: un
-        // estilo en línea lo pisaba y toda la pila salía corrida a un lado.
-        const ladeo = Math.min(1.5, separacion / 2);
-        moneda.style.transform = `translateX(${(i % 2 === 0 ? -ladeo : ladeo)}px)`;
+
+        const distancia = cuantas === 1 ? 0 : radio * Math.sqrt(i / (cuantas - 1));
+        const angulo = i * ANGULO_AUREO * (Math.PI / 180);
+        const x = distancia * Math.cos(angulo);
+        // Se achata en vertical: un círculo perfecto se lee como una diana;
+        // aplastado parece un montón visto en perspectiva, apoyado en la mesa.
+        const y = distancia * Math.sin(angulo) * 0.62;
+
+        // Las de fuera van detrás y las del centro delante, como se ve un montón
+        // desde arriba. Un giro distinto en cada una remata el desorden.
+        moneda.style.left = '50%';
+        moneda.style.top = '50%';
+        moneda.style.zIndex = String(Math.round(100 - distancia * 4));
+        moneda.style.transform =
+            `translate(calc(-50% + ${x.toFixed(1)}px), calc(-50% + ${y.toFixed(1)}px)) rotate(${(i * 47) % 360}deg)`;
         contenedor.appendChild(moneda);
     }
 }

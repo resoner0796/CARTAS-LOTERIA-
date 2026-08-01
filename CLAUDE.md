@@ -271,6 +271,15 @@ los de la sala, y la sesión vive en `localStorage`.
 - **`info-sala` se mandaba a toda la sala.** El cliente reacciona regenerando el
   tablero, así que cada jugador nuevo borraba a los demás sus tablas marcadas.
   Va solo a quien entra.
+- **El service worker servía el CSS desde la caché, para siempre.** `esCodigo`
+  incluía html, js y json, pero **no css**, así que `style.css` caía en la rama
+  de "primero la caché" junto a las imágenes. Quien ya hubiera entrado una vez se
+  quedaba con la hoja de estilos de aquel día y **no veía ningún cambio visual**,
+  por más despliegues que hubiera. Costó verlo porque el archivo publicado sí era
+  el nuevo: el viejo estaba en el navegador de cada persona. Si tocas esa lista,
+  el CSS va con el código.
+  ⚠️ Al cambiar algo que ya esté cacheado, **sube `CACHE_NAME`**: es lo que hace
+  que la caché anterior se borre en la siguiente visita.
 - **El guión de Socket.IO se sirve desde el backend.** Si está dormido, `io` no
   existe y la excepción se llevaba por delante todo `app.js`. Hay una guarda.
 - **…y esa guarda escondió que el juego arrancaba sin conexión.** Al pasar
