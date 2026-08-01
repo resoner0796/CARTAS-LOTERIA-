@@ -75,7 +75,7 @@ scripts/obfuscate.js  Empaqueta y ofusca en el build de Vercel — ver abajo
 vercel.json           buildCommand + outputDirectory
 service-worker.js     Estrategias de caché (PWA)
 manifest.json         Íconos apuntan a rutas rotas
-assets/imagenes/      151 archivos, ~100 MB. Fondos PNG de 2–4 MB c/u
+assets/imagenes/      ~53 MB. Ver "Assets" antes de añadir imágenes
 assets/audios/        70 archivos (voz de cada carta + efectos)
 package.json          Scripts de build; esbuild y el ofuscador como devDependencies
 ```
@@ -338,8 +338,31 @@ Bugs pendientes:
 - `cargar-usuarios-admin` y `gritar-loteria` truenan si `usuarioActual` es `null`.
   No se alcanza jugando normal —ambas exigen sesión— pero les falta la guarda.
 
+### Assets
+
+Pasaron de ~101 MB a ~53 MB. Lo que se hizo, por si añades imágenes nuevas:
+
+- **Se midió a qué tamaño se ven de verdad, en el navegador.** Sin eso se
+  redimensiona a ojo. Los datos: una tabla se ve a 393px como mucho, una baraja
+  del historial a 82px, y una ficha a 60px.
+- **Las tablas NO se redimensionaron.** A 393px con pantalla retina 3x hacen falta
+  1179px y miden 1350: ya estaban bien. Lo que sobraba era compresión —estaban
+  guardadas casi sin comprimir— y con calidad 85 pasaron de 52 a 44 MB sin tocar
+  un píxel. Son las que el anfitrión mira de cerca para validar victorias.
+- **Barajas y fichas sí sobraban, y mucho**: 1292px para verse a 82px, 1024px para
+  verse a 60px. A 400px y 256px respectivamente, quedaron en un 6% y un 11%.
+- **Los fondos pasaron de PNG a JPEG.** Son ilustraciones sin transparencia; en
+  PNG ocupaban 16 MB y en JPEG ocupan 3. Los nombres están centralizados en
+  `sala.js`, así que cambiarlos fue tocar cuatro líneas.
+- **Los fondos NO se redimensionaron.** Miden 1024×1536 y se estiran a pantalla
+  completa: en un móvil retina ya se quedan cortos. Reducirlos se vería.
+
+⚠️ **Si borras o renombras un asset, revisa `service-worker.js`.** Su lista se
+carga con `cache.addAll()`, que falla **entera** si un solo archivo no está: el
+service worker no se instalaría y nadie se enteraría. Pasó al convertir los fondos.
+
 Rendimiento:
-- ~100 MB de assets sin optimizar. Fondos PNG de 2–4 MB.
+- Los audios (1.8 MB) están bien como están.
 
 Infra:
 - Render (plan free) duerme a los 15 min. Se mantiene despierto con UptimeRobot.

@@ -8,7 +8,7 @@ const ASSETS_TO_CACHE = [
   // Imágenes de UI críticas (para que la app se vea bien offline)
   './assets/imagenes/ui/icon-192.png',
   './assets/imagenes/ui/splash.PNG',
-  './assets/imagenes/ui/fondo-seleccion.PNG',
+  './assets/imagenes/ui/fondo-seleccion.jpg',
   './assets/imagenes/ui/ficha.PNG',
   './assets/imagenes/ui/peso.png',
   // Audios esenciales
@@ -98,8 +98,8 @@ self.addEventListener('fetch', event => {
   // hasta que se cambiara el nombre de la caché a mano. En una app que maneja
   // dinero, eso significa usuarios corriendo código viejo indefinidamente.
   //
-  // Las imágenes y audios sí van "primero la caché": no cambian casi nunca y son
-  // ~100 MB, así que ahí es donde está la ganancia real de velocidad.
+  // Las imágenes y audios sí van "primero la caché": no cambian casi nunca y
+  // pesan lo que más, así que ahí está la ganancia real de velocidad.
   const url = new URL(event.request.url);
   const esCodigo = event.request.mode === 'navigate' ||
                    /\.(html|js|json)$/.test(url.pathname) ||

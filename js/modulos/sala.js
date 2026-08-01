@@ -12,13 +12,20 @@ import { mostrarAlerta, mostrarConfirmacion, cambiarPantalla, pantalla } from '.
 
 const RUTA_FONDOS = "assets/imagenes/ui/";
 
-/** Salas con decorado propio. El resto usa el fondo por defecto. */
+/**
+ * Salas con decorado propio. El resto usa el fondo por defecto.
+ *
+ * ⚠️ Aquí había una entrada para "Oficina" que apuntaba a
+ * `fondo-seleccion-oficina.PNG` y `fondo-juego-oficina.PNG`, **archivos que no
+ * existen**. La sala Oficina se quedaba sin fondo, sin ningún error visible más
+ * que el hueco. Se retiró: ahora cae en el fondo por defecto, como cualquier
+ * otra sala. Si algún día se dibujan esos fondos, se vuelve a añadir aquí.
+ */
 const FONDOS = {
-    Familia: { seleccion: "fondo-seleccion-familia.PNG", juego: "fondo-juego-familia.PNG" },
-    Oficina: { seleccion: "fondo-seleccion-oficina.PNG", juego: "fondo-juego-oficina.PNG" },
-    Amigos:  { seleccion: "fondo-seleccion-amigos.PNG",  juego: "fondo-juego-amigos.PNG" }
+    Familia: { seleccion: "fondo-seleccion-familia.jpg", juego: "fondo-juego-familia.jpg" },
+    Amigos:  { seleccion: "fondo-seleccion-amigos.jpg",  juego: "fondo-juego-amigos.jpg" }
 };
-const FONDO_POR_DEFECTO = { seleccion: "fondo-seleccion.PNG", juego: "fondo-juego.PNG" };
+const FONDO_POR_DEFECTO = { seleccion: "fondo-seleccion.jpg", juego: "fondo-juego.jpg" };
 
 /**
  * Comparte el enlace de invitación a la sala.
