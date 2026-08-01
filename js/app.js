@@ -9,6 +9,7 @@
 import { STRIPE_CLAVE_PUBLICA, FICHA_POR_DEFECTO } from './modulos/config.js';
 import { escaparHtml, actualizarValor } from './modulos/utiles.js';
 import { socket } from './modulos/socket.js';
+import { sesion, partida } from './modulos/estado.js';
 import { iniciarBotonArrastrable, animarVueloMonedas } from './modulos/animaciones.js';
 import { toggleMenuSonidos, renderizarSonidosJuego } from './modulos/efectos.js';
 import {
@@ -37,37 +38,35 @@ import {
 // Bote aparte que crece $1 por partida y por jugador que se apunte, y que solo
 // se lleva quien llene las 4 barajas del centro. Es opcional y solo existe en
 // modo Tradicional. Quien no se apunta no puede ganarlo, aunque gane la lotería.
-let pozoAcumulado = 0;
 
 function pozoDisponible() {
-    return modoJuegoActual === 'tradicional';
+    return partida.modo === 'tradicional';
 }
 
 function refrescarPozoUI() {
     const caja = document.getElementById("pozoControl");
     if (!caja) return;
     caja.style.display = pozoDisponible() ? "flex" : "none";
-    actualizarValor(document.getElementById("pozo-valor"), pozoAcumulado);
+    actualizarValor(document.getElementById("pozo-valor"), partida.pozo);
 }
 
 socket.on('pozo-actualizado', (monto) => {
-    pozoAcumulado = monto || 0;
+    partida.pozo = monto || 0;
     refrescarPozoUI();
 });
 
 // ==================== SILENCIO EN LA SALA ====================
 // Quién tiene los sonidos cortados. Lo decide el anfitrión y lo manda el
 // servidor, que es quien de verdad descarta los efectos: aquí solo se pinta.
-let silenciadosEnSala = [];
 
 window.alternarSilencio = function(email) {
-    if (!soyHost) return;
-    const callado = silenciadosEnSala.includes(email);
-    socket.emit("silenciar-jugador", { sala: salaActual, email, silenciar: !callado });
+    if (!partida.soyHost) return;
+    const callado = partida.silenciados.includes(email);
+    socket.emit("silenciar-jugador", { sala: partida.sala, email, silenciar: !callado });
 };
 
 socket.on("silenciados-actualizados", (lista) => {
-    silenciadosEnSala = Array.isArray(lista) ? lista : [];
+    partida.silenciados = Array.isArray(lista) ? lista : [];
 });
 
 socket.on("estas-silenciado", () => {
@@ -76,20 +75,7 @@ socket.on("estas-silenciado", () => {
 
 // El token, el helper api() y el manejo del 401 viven en modulos/sesion.js.
 
-// Variables Globales
-let usuarioActual = null; // {email, nickname, monedas, inventario}
-let jugadoresGlobal = {};
-let miId;
-let soyHost = false;
-let seleccionadas = [];
-let salaActual = "";
-let haApostadoLocal = false;
-let historialIdsGlobal = [];
-let checkoutInstance = null; // Variable global para Stripe
-let modoJuegoActual = 'tradicional';
-let costoCartaActual = 1;
-// Ruta por defecto para Tradicional/Llena
-let rutaCartasJugador = 'assets/imagenes/cartas/';
+// El estado compartido de la partida vive en modulos/estado.js.
 
 const stripePromise = Stripe(STRIPE_CLAVE_PUBLICA);
 
@@ -114,7 +100,6 @@ const modalLoteriaTexto = document.getElementById("modalLoteriaTexto");
 const btnAceptarGanador = document.getElementById("btnAceptarGanador");
 const btnRechazarGanador = document.getElementById("btnRechazarGanador");
 const modalVerificationArea = document.getElementById("modalVerificationArea");
-let ganadorTempId = "";
 
 // Audios
 const audioBarajear = document.getElementById("audioBarajear");
@@ -132,7 +117,6 @@ const loteriaMensaje = document.getElementById("loteriaMensaje");
 // pantalla de acceso. Con el arranque en frío de Render esa petición puede
 // tardar bastante, así que el jugador que venía del Hub se quedaba viendo un
 // login que no debía existir.
-let entrandoDesdeHub = false;
 
 (function verificarSSO() {
     const params = new URLSearchParams(window.location.search);
@@ -153,7 +137,7 @@ let entrandoDesdeHub = false;
     // verifica en cada petición. Eso es justo lo que le faltaba al formato viejo,
     // que era JSON en base64 sin firma y cualquiera podía fabricarse uno.
     if (tokenSSO.split('.').length === 3) {
-        entrandoDesdeHub = true;
+        sesion.entrandoDesdeHub = true;
         localStorage.setItem("loteria_token", tokenSSO);
         api('/usuario/datos-frescos')
             .then(r => r.json())
@@ -170,12 +154,12 @@ let entrandoDesdeHub = false;
                 // Se entra en el momento, sin recargar. Recargar significaba
                 // esperar dos veces: la petición del perfil y la carga entera
                 // de la página otra vez.
-                usuarioActual = perfil;
+                sesion.usuario = perfil;
                 if (perfil.fichaActiva) establecerFicha(perfil.fichaActiva);
                 if (perfil.cartasFavoritas?.length) {
                     localStorage.setItem("loteria_cartas_fav", JSON.stringify(perfil.cartasFavoritas));
                 }
-                entrandoDesdeHub = false;
+                sesion.entrandoDesdeHub = false;
 
                 // Primero se entra, y solo después lo accesorio. Si algo de esto
                 // fallara —el socket, una imagen, la tienda— no tiene por qué
@@ -185,7 +169,7 @@ let entrandoDesdeHub = false;
 
                 try {
                     configurarMenu();
-                    actualizarSaldoUI(usuarioActual);
+                    actualizarSaldoUI(sesion.usuario);
                     sincronizarDatosForzoso();
                     if (typeof socket !== "undefined" && socket) socket.disconnect().connect();
 
@@ -199,7 +183,7 @@ let entrandoDesdeHub = false;
                 console.error("SSO:", e);
                 localStorage.removeItem("loteria_token");
                 limpiarUrl();
-                entrandoDesdeHub = false;
+                sesion.entrandoDesdeHub = false;
                 ocultarSplashGlobal(() => {
                     cambiarPantalla("login");
                     mostrarAlerta("No pudimos validar tu sesión del Hub. Entra de nuevo.", "Sesión");
@@ -276,7 +260,7 @@ window.onload = () => {
     // Si venimos del Hub con token, el perfil todavía viene en camino. No hay
     // que decidir nada aquí: el splash se queda y el propio SSO abre el menú
     // cuando llegue la respuesta, o el login si el servidor lo rechaza.
-    if (entrandoDesdeHub) {
+    if (sesion.entrandoDesdeHub) {
         const aviso = document.querySelector('#pantallaSplash h1');
         if (aviso) aviso.textContent = 'Entrando...';
         return;
@@ -291,7 +275,7 @@ window.onload = () => {
     if (sesionGuardada && !obtenerToken()) {
         localStorage.removeItem("loteria_usuario");
         sesionGuardada = null;
-        usuarioActual = null;
+        sesion.usuario = null;
         setTimeout(() => {
             ocultarSplash(() => {
                 cambiarPantalla("login");
@@ -306,19 +290,19 @@ window.onload = () => {
 
     if (sesionGuardada) {
         // === USUARIO LOGUEADO (CARGA DE DATOS) ===
-        usuarioActual = JSON.parse(sesionGuardada);
+        sesion.usuario = JSON.parse(sesionGuardada);
         
         // 🔥 CARGAR PREFERENCIAS DE LA NUBE 🔥
-        if(usuarioActual.fichaActiva) {
-            establecerFicha(usuarioActual.fichaActiva);
+        if(sesion.usuario.fichaActiva) {
+            establecerFicha(sesion.usuario.fichaActiva);
         }
         // Si tiene cartas favoritas en la cuenta, actualizamos el localStorage para que esté sincronizado
-        if(usuarioActual.cartasFavoritas && usuarioActual.cartasFavoritas.length > 0) {
-            localStorage.setItem("loteria_cartas_fav", JSON.stringify(usuarioActual.cartasFavoritas));
+        if(sesion.usuario.cartasFavoritas && sesion.usuario.cartasFavoritas.length > 0) {
+            localStorage.setItem("loteria_cartas_fav", JSON.stringify(sesion.usuario.cartasFavoritas));
         }
         
         configurarMenu();
-        actualizarSaldoUI(usuarioActual);
+        actualizarSaldoUI(sesion.usuario);
         sincronizarDatosForzoso(); 
         
         
@@ -330,11 +314,11 @@ window.onload = () => {
         if (pagoEstado === 'exito') {
             const cant = urlParams.get('cantidad');
             mostrarAlerta(`¡Has recibido ${cant} monedas! 🎉`, "¡Pago Exitoso!");
-            if(usuarioActual) {
-                usuarioActual.monedas = (parseInt(usuarioActual.monedas) || 0) + parseInt(cant);
-                localStorage.setItem("loteria_usuario", JSON.stringify(usuarioActual));
+            if(sesion.usuario) {
+                sesion.usuario.monedas = (parseInt(sesion.usuario.monedas) || 0) + parseInt(cant);
+                localStorage.setItem("loteria_usuario", JSON.stringify(sesion.usuario));
                 configurarMenu();
-                actualizarSaldoUI(usuarioActual);
+                actualizarSaldoUI(sesion.usuario);
             }
             window.history.pushState({}, document.title, window.location.pathname);
         } else if (pagoEstado === 'cancelado') {
@@ -350,7 +334,7 @@ window.onload = () => {
         }
         
         // Reconexión socket
-        if(socket.connected) socket.emit('reconectar', { sala: salaActual, email: usuarioActual.email });
+        if(socket.connected) socket.emit('reconectar', { sala: partida.sala, email: sesion.usuario.email });
 
         // === ¡CORRECCIÓN AQUÍ! ===
         // Quitamos el splash después de 2.5 segundos para usuarios ya logueados
@@ -384,7 +368,7 @@ async function login() {
         const data = await res.json();
         
         if(data.success) {
-            usuarioActual = data;
+            sesion.usuario = data;
             guardarToken(data.token);
             localStorage.setItem("loteria_usuario", JSON.stringify(data));
 
@@ -402,7 +386,7 @@ async function login() {
             }
             
             configurarMenu();
-            actualizarSaldoUI(usuarioActual); 
+            actualizarSaldoUI(sesion.usuario); 
             sincronizarDatosForzoso(); 
             
             const urlParams = new URLSearchParams(window.location.search);
@@ -431,13 +415,13 @@ async function registro() {
         const data = await res.json();
         
         if(data.success) {
-            usuarioActual = data;
+            sesion.usuario = data;
             guardarToken(data.token);
             localStorage.setItem("loteria_usuario", JSON.stringify(data));
             socket.disconnect().connect();
 
             configurarMenu();
-            actualizarSaldoUI(usuarioActual); // <--- Cargar tienda al registrarse
+            actualizarSaldoUI(sesion.usuario); // <--- Cargar tienda al registrarse
             
             cambiarPantalla("menu");
         } else {
@@ -448,17 +432,17 @@ async function registro() {
 
 function cerrarSesion() {
     borrarSesion();     // token y perfil, en un solo sitio (modulos/sesion.js)
-    usuarioActual = null;
+    sesion.usuario = null;
     establecerFicha(FICHA_POR_DEFECTO);
     location.reload();  // recargar limpia todo lo demás
 }
 
 function configurarMenu() {
-    if(usuarioActual) {
-        document.getElementById("menuBienvenida").textContent = `Hola, ${usuarioActual.nickname}`;
+    if(sesion.usuario) {
+        document.getElementById("menuBienvenida").textContent = `Hola, ${sesion.usuario.nickname}`;
         // En el menú principal solo mostramos el número (para el monedero)
-        document.getElementById("menuMonedas").textContent = usuarioActual.monedas;
-        verificarSiSoyAdmin(usuarioActual);
+        document.getElementById("menuMonedas").textContent = sesion.usuario.monedas;
+        verificarSiSoyAdmin(sesion.usuario);
     }
 }
 
@@ -468,14 +452,14 @@ function configurarMenu() {
 // ==================== COMPARTIR SALA (FIX GLOBAL) ====================
 
 window.compartirSala = function() {
-    if (!salaActual) return mostrarAlerta("Primero debes entrar a una sala.", "Error");
+    if (!partida.sala) return mostrarAlerta("Primero debes entrar a una sala.", "Error");
 
     const urlBase = window.location.origin + window.location.pathname;
-    const linkInvitacion = `${urlBase}?sala=${encodeURIComponent(salaActual)}`;
+    const linkInvitacion = `${urlBase}?sala=${encodeURIComponent(partida.sala)}`;
     
     const datosShare = {
         title: '¡Juguemos Lotería! 🎰',
-        text: `Únete a mi sala "${salaActual}" en Juegos en la Nube. ¡Entra ya!`,
+        text: `Únete a mi sala "${partida.sala}" en Juegos en la Nube. ¡Entra ya!`,
         url: linkInvitacion
     };
 
@@ -518,28 +502,28 @@ function unirseSalaExistente() {
 }
 
 function unirseSalaDirecto(nombreSala, modo) {
-    salaActual = nombreSala;
+    partida.sala = nombreSala;
     
     // Configurar Fondos
     const basePath = "assets/imagenes/ui/";
     let fondoSel = "fondo-seleccion.PNG";
     let fondoJuego = "fondo-juego.PNG";
 
-    if(salaActual === "Familia") { fondoSel = "fondo-seleccion-familia.PNG"; fondoJuego = "fondo-juego-familia.PNG"; }
-    if(salaActual === "Oficina") { fondoSel = "fondo-seleccion-oficina.PNG"; fondoJuego = "fondo-juego-oficina.PNG"; }
-    if(salaActual === "Amigos") { fondoSel = "fondo-seleccion-amigos.PNG"; fondoJuego = "fondo-juego-amigos.PNG"; }
+    if(partida.sala === "Familia") { fondoSel = "fondo-seleccion-familia.PNG"; fondoJuego = "fondo-juego-familia.PNG"; }
+    if(partida.sala === "Oficina") { fondoSel = "fondo-seleccion-oficina.PNG"; fondoJuego = "fondo-juego-oficina.PNG"; }
+    if(partida.sala === "Amigos") { fondoSel = "fondo-seleccion-amigos.PNG"; fondoJuego = "fondo-juego-amigos.PNG"; }
 
     aplicarFondo(pantalla('seleccion'), basePath + fondoSel);
     aplicarFondo(pantalla('juego'), basePath + fondoJuego);
 
     socket.emit("unirse-sala", { 
-        nickname: usuarioActual.nickname, 
-        email: usuarioActual.email,
-        sala: salaActual,
+        nickname: sesion.usuario.nickname, 
+        email: sesion.usuario.email,
+        sala: partida.sala,
         modo: modo
     });
 
-    document.getElementById("tituloSalaActual").textContent = `Sala: ${salaActual}`;
+    document.getElementById("tituloSalaActual").textContent = `Sala: ${partida.sala}`;
     cambiarPantalla("sala");
 }
 
@@ -554,23 +538,23 @@ if(btnSalirSala) btnSalirSala.addEventListener("click", () => salirDeSalaEnJuego
 
 function salirDeSalaEnJuego() {
     mostrarConfirmacion("¿Seguro que quieres salir de la sala?", () => {
-        socket.emit("salir-sala", salaActual);
+        socket.emit("salir-sala", partida.sala);
         resetearUI();
         cambiarPantalla("menu");
     });
 }
 
 function resetearUI() {
-  silenciadosEnSala = [];
-  pozoAcumulado = 0;
+  partida.silenciados = [];
+  partida.pozo = 0;
   const chkPozoSalida = document.getElementById("chkPozo");
   if (chkPozoSalida) { chkPozoSalida.checked = false; chkPozoSalida.disabled = false; }
   limpiarFichas();
-  seleccionadas = [];
+  partida.seleccionadas = [];
   juegoCartas.innerHTML = "";
   btnIniciar.style.display = "none";
   historial.innerHTML = "";
-  haApostadoLocal = false;
+  partida.haApostado = false;
   if (btnApostar) btnApostar.disabled = false;
   window.history.pushState({}, document.title, window.location.pathname);
 }
@@ -587,7 +571,7 @@ function generarCartas() {
   let totalCartasAMostrar = 53;
   
   // Si es Pozo, son 20 cartas
-  if (modoJuegoActual === 'pozo') {
+  if (partida.modo === 'pozo') {
       totalCartasAMostrar = 20;
   }
 
@@ -598,7 +582,7 @@ function generarCartas() {
     let nombreArchivo = "";
     let dataId = "";
 
-    if (modoJuegoActual === 'pozo') {
+    if (partida.modo === 'pozo') {
         // CORRECCIÓN POZO: Usamos el número directo (1, 2, 3... 20) SIN CEROS
         nombreArchivo = `${i}.jpg`;
         dataId = String(i); 
@@ -609,7 +593,7 @@ function generarCartas() {
         dataId = numeroConCero;
     }
 
-    img.src = `${rutaCartasJugador}${nombreArchivo}`;
+    img.src = `${partida.rutaCartas}${nombreArchivo}`;
     img.classList.add("carta-img");
     img.dataset.id = dataId; // Guardamos el ID limpio
 
@@ -645,7 +629,7 @@ function renumerarSeleccion() {
         const img = env.querySelector(".carta-img");
         const insignia = env.querySelector(".orden-carta");
         if (!img || !insignia) return;
-        const lugar = seleccionadas.indexOf(img.dataset.id);
+        const lugar = partida.seleccionadas.indexOf(img.dataset.id);
         if (lugar === -1) {
             env.classList.remove("elegida");
             insignia.textContent = "";
@@ -660,13 +644,13 @@ function seleccionarCarta(img) {
   const id = img.dataset.id;
    
   // CASO 1: YA ESTABA SELECCIONADA (DESMARCAR)
-  if (seleccionadas.includes(id)) {
-      seleccionadas = seleccionadas.filter(c => c !== id);
+  if (partida.seleccionadas.includes(id)) {
+      partida.seleccionadas = partida.seleccionadas.filter(c => c !== id);
       img.classList.remove("seleccionada");
-      socket.emit("deseleccionar-carta", { carta: id, sala: salaActual });
+      socket.emit("deseleccionar-carta", { carta: id, sala: partida.sala });
       
       // Lógica del Host (Botón Iniciar)
-      if (seleccionadas.length < 2) btnIniciar.style.display = "none";
+      if (partida.seleccionadas.length < 2) btnIniciar.style.display = "none";
       
       // ACTUALIZAR PRECIO DEL BOTÓN APOSTAR
       actualizarTextoBotonApuesta();
@@ -678,13 +662,13 @@ function seleccionarCarta(img) {
   if (img.style.pointerEvents === 'none') return; 
    
   // CASO 2: SELECCIONAR NUEVA (MÁXIMO 4)
-  if (seleccionadas.length < 4) {
+  if (partida.seleccionadas.length < 4) {
     img.classList.add("seleccionada");
-    seleccionadas.push(id);
-    socket.emit("seleccionar-carta", { carta: id, sala: salaActual });
+    partida.seleccionadas.push(id);
+    socket.emit("seleccionar-carta", { carta: id, sala: partida.sala });
     
     // Lógica del Host (Botón Iniciar)
-    if (seleccionadas.length >= 2) btnIniciar.style.display = "block";
+    if (partida.seleccionadas.length >= 2) btnIniciar.style.display = "block";
     
     // ACTUALIZAR PRECIO DEL BOTÓN APOSTAR
     actualizarTextoBotonApuesta();
@@ -696,19 +680,19 @@ btnIniciar.onclick = () => {
   cambiarPantalla("juego");
   juegoCartas.innerHTML = "";
   
-  seleccionadas.forEach(id => {
+  partida.seleccionadas.forEach(id => {
     const contenedor = document.createElement("div");
     contenedor.classList.add("carta-juego");
     contenedor.dataset.id = id;
     
     // USAMOS LA RUTA DINÁMICA AQUÍ TAMBIÉN
-    contenedor.innerHTML = `<img src="${rutaCartasJugador}${id}.jpg" class="carta-img seleccionada">`;
+    contenedor.innerHTML = `<img src="${partida.rutaCartas}${id}.jpg" class="carta-img seleccionada">`;
     
     contenedor.onclick = e => marcarFicha(e, contenedor);
     juegoCartas.appendChild(contenedor);
   });
   
-  renderizarSonidosJuego(usuarioActual, salaActual);
+  renderizarSonidosJuego(sesion.usuario, partida.sala);
 };
 
 function actualizarTextoBotonApuesta() {
@@ -719,7 +703,7 @@ function actualizarTextoBotonApuesta() {
     const seleccionadasVisuales = document.querySelectorAll("#contenedorCartas .carta-img.seleccionada").length;
     
     // Calculamos el total
-    const totalPagar = seleccionadasVisuales * costoCartaActual;
+    const totalPagar = seleccionadasVisuales * partida.costoCarta;
 
     if (seleccionadasVisuales > 0) {
         btn.innerText = `Apostar $${totalPagar}`;
@@ -772,11 +756,11 @@ function limpiarFichas() {
 
 function cambiarCartas() {
     const ejecutarCambio = () => {
-        seleccionadas.forEach(id => {
-            socket.emit("deseleccionar-carta", { carta: id, sala: salaActual });
+        partida.seleccionadas.forEach(id => {
+            socket.emit("deseleccionar-carta", { carta: id, sala: partida.sala });
         });
 
-        seleccionadas = [];
+        partida.seleccionadas = [];
         limpiarFichas();
         juegoCartas.innerHTML = "";
         btnIniciar.style.display = "none";
@@ -792,9 +776,9 @@ function cambiarCartas() {
     };
 
     const btnDetener = document.getElementById("btnDetenerJuego");
-    if(btnDetener && btnDetener.style.display !== "none" && soyHost) {
+    if(btnDetener && btnDetener.style.display !== "none" && partida.soyHost) {
         mostrarConfirmacion("El juego está corriendo. ¿Pausar para cambiar cartas?", () => {
-            socket.emit("detener-juego", salaActual);
+            socket.emit("detener-juego", partida.sala);
             ejecutarCambio();
         });
     } else {
@@ -807,14 +791,14 @@ function cambiarCartas() {
 // ======================================================
 
 socket.on('connect', () => {
-  miId = socket.id;
-  if(usuarioActual && salaActual) {
-      socket.emit('reconectar', { sala: salaActual, email: usuarioActual.email });
+  partida.miId = socket.id;
+  if(sesion.usuario && partida.sala) {
+      socket.emit('reconectar', { sala: partida.sala, email: sesion.usuario.email });
   }
 });
 
 socket.on("rol-asignado", ({ host }) => {
-  soyHost = host;
+  partida.soyHost = host;
   generarCartas();
    
   const controlesHost = ["btnBarajear", "btnIniciarJuego", "btnDetenerJuego", "divVelocidad"]; 
@@ -822,7 +806,7 @@ socket.on("rol-asignado", ({ host }) => {
   controlesHost.forEach(id => {
       const el = document.getElementById(id);
       if (el) {
-          if (soyHost) {
+          if (partida.soyHost) {
               el.style.display = (id === "divVelocidad") ? "flex" : "block"; 
           } else {
               el.style.display = "none";
@@ -832,23 +816,23 @@ socket.on("rol-asignado", ({ host }) => {
 });
 
 socket.on('info-sala', (data) => {
-    modoJuegoActual = data.modo;
-    costoCartaActual = data.costo;
+    partida.modo = data.modo;
+    partida.costoCarta = data.costo;
 
     // Actualizar Título
     document.getElementById("tituloSalaActual").innerHTML = 
-        `Sala: ${escaparHtml(salaActual)} <br><span style="font-size:0.8rem; color:gold;">${escaparHtml(modoJuegoActual).toUpperCase()} ($${costoCartaActual})</span>`;
+        `Sala: ${escaparHtml(partida.sala)} <br><span style="font-size:0.8rem; color:gold;">${escaparHtml(partida.modo).toUpperCase()} ($${partida.costoCarta})</span>`;
 
     // --- LÓGICA DE RUTAS ---
-    if (modoJuegoActual === 'pozo') {
+    if (partida.modo === 'pozo') {
         // Si es Pozo, usamos la carpeta especial y solo 20 cartas
-        rutaCartasJugador = 'assets/imagenes/cartas/cuatro/'; 
+        partida.rutaCartas = 'assets/imagenes/cartas/cuatro/'; 
     } else {
         // Si es otro, usamos la carpeta normal
-        rutaCartasJugador = 'assets/imagenes/cartas/'; 
+        partida.rutaCartas = 'assets/imagenes/cartas/'; 
     }
 
-    if(btnApostar && seleccionadas.length === 0) {
+    if(btnApostar && partida.seleccionadas.length === 0) {
         btnApostar.innerText = "Selecciona cartas";
         btnApostar.disabled = true;
         btnApostar.style.opacity = "0.5";
@@ -870,24 +854,24 @@ socket.on('info-sala', (data) => {
 
 /** Vuelve a marcar en el grid las tablas que ya estaban elegidas. */
 function restaurarSeleccionVisual() {
-    seleccionadas.forEach(id => {
+    partida.seleccionadas.forEach(id => {
         const img = document.querySelector(`#contenedorCartas .carta-img[data-id="${id}"]`);
         if (img) img.classList.add("seleccionada");
     });
     renumerarSeleccion();
     actualizarTextoBotonApuesta();
-    if (btnApostar && haApostadoLocal) btnApostar.disabled = true;
+    if (btnApostar && partida.haApostado) btnApostar.disabled = true;
 }
 
 socket.on('estado-sala-restaurado', (estado) => {
     if(estado.cartas && estado.cartas.length > 0) {
-        seleccionadas = estado.cartas;
+        partida.seleccionadas = estado.cartas;
         juegoCartas.innerHTML = "";
-        seleccionadas.forEach(id => {
+        partida.seleccionadas.forEach(id => {
             const contenedor = document.createElement("div");
             contenedor.classList.add("carta-juego");
             contenedor.dataset.id = id;
-            contenedor.innerHTML = `<img src="${rutaCartasJugador}${id}.jpg" class="carta-img seleccionada">`;
+            contenedor.innerHTML = `<img src="${partida.rutaCartas}${id}.jpg" class="carta-img seleccionada">`;
             contenedor.onclick = e => marcarFicha(e, contenedor);
             juegoCartas.appendChild(contenedor);
         });
@@ -896,29 +880,29 @@ socket.on('estado-sala-restaurado', (estado) => {
         else cambiarPantalla("sala"); 
     }
     
-    haApostadoLocal = estado.apostado;
-    if(btnApostar) btnApostar.disabled = haApostadoLocal;
+    partida.haApostado = estado.apostado;
+    if(btnApostar) btnApostar.disabled = partida.haApostado;
     
     if(estado.monedas !== undefined) {
-        usuarioActual.monedas = estado.monedas;
+        sesion.usuario.monedas = estado.monedas;
         configurarMenu();
         actualizarValor(monedasEl, estado.monedas);
     }
 });
 
 socket.on("jugadores-actualizados", jugadores => {
-  jugadoresGlobal = jugadores;
+  partida.jugadores = jugadores;
    
-  const misDatos = Object.values(jugadores).find(j => j.email === usuarioActual?.email);
+  const misDatos = Object.values(jugadores).find(j => j.email === sesion.usuario?.email);
   if (misDatos) {
     actualizarValor(monedasEl, misDatos.monedas);
-    haApostadoLocal = misDatos.apostado; 
-    usuarioActual.monedas = misDatos.monedas;
-    localStorage.setItem("loteria_usuario", JSON.stringify(usuarioActual));
+    partida.haApostado = misDatos.apostado; 
+    sesion.usuario.monedas = misDatos.monedas;
+    localStorage.setItem("loteria_usuario", JSON.stringify(sesion.usuario));
     configurarMenu();
   }
    
-  if (btnApostar) btnApostar.disabled = haApostadoLocal;
+  if (btnApostar) btnApostar.disabled = partida.haApostado;
    
   const htmlLista = "<h3>Jugadores en sala:</h3>" +
     Object.values(jugadores).map(j => {
@@ -934,14 +918,14 @@ socket.on("jugadores-actualizados", jugadores => {
 
       // Botón de silencio: solo lo ve el anfitrión, y no sobre sí mismo.
       let botonMute = "";
-      if (soyHost && j.email && j.email !== usuarioActual?.email) {
-          const callado = silenciadosEnSala.includes(j.email);
+      if (partida.soyHost && j.email && j.email !== sesion.usuario?.email) {
+          const callado = partida.silenciados.includes(j.email);
           botonMute = `<button class="btn-mute ${callado ? 'callado' : ''}"
                         data-accion="silenciar" data-email="${escaparHtml(j.email)}"
                         title="${callado ? 'Devolverle los sonidos' : 'Silenciar sus sonidos'}"
                         >${callado ? '🔇' : '🔊'}</button>`;
       }
-      const iconoCallado = (!soyHost && silenciadosEnSala.includes(j.email)) ? ' 🔇' : '';
+      const iconoCallado = (!partida.soyHost && partida.silenciados.includes(j.email)) ? ' 🔇' : '';
 
       // Le damos un estilo "flex" para que se vea alineado
       return `
@@ -959,7 +943,7 @@ socket.on('bote-actualizado', (bote) => { actualizarValor(boteEl, bote); });
 
 socket.on("error-apuesta", msg => {
   mostrarAlerta(msg || "Error al apostar", "Ups");
-  haApostadoLocal = false;
+  partida.haApostado = false;
   if (btnApostar) btnApostar.disabled = false;
 });
 
@@ -976,7 +960,7 @@ socket.on("barajear", () => {
   audioBarajear.currentTime = 0;
   audioBarajear.play().catch(e => console.warn("Audio:", e));
   historial.innerHTML = "";
-  historialIdsGlobal = [];
+  partida.historialIds = [];
 });
 
 socket.on("campana", () => { audioCampana.currentTime = 0; audioCampana.play().catch(()=>{}); });
@@ -985,7 +969,7 @@ socket.on("corre", () => { audioCorre.currentTime = 0; audioCorre.play().catch((
 socket.on("partida-reiniciada", () => {
   limpiarFichas();
   historial.innerHTML = "";
-  historialIdsGlobal = [];
+  partida.historialIds = [];
 });
 
 socket.on("carta-cantada", (cartaId) => {
@@ -994,7 +978,7 @@ socket.on("carta-cantada", (cartaId) => {
   img.src = `assets/imagenes/barajas/${formattedId}.png`; 
   historial.prepend(img);
   historial.scrollLeft = 0;
-  historialIdsGlobal.unshift(formattedId);
+  partida.historialIds.unshift(formattedId);
    
   const audioVoz = new Audio(`assets/audios/${formattedId}.mp3`);
   audioVoz.play();
@@ -1002,7 +986,7 @@ socket.on("carta-cantada", (cartaId) => {
 
 socket.on("cartas-desactivadas", ids => {
   document.querySelectorAll("#contenedorCartas .carta-img").forEach(img => {
-    if (ids.includes(img.dataset.id) && !seleccionadas.includes(img.dataset.id)) {
+    if (ids.includes(img.dataset.id) && !partida.seleccionadas.includes(img.dataset.id)) {
       img.style.opacity = 0.3;
       img.style.pointerEvents = "none";
     } else {
@@ -1013,7 +997,7 @@ socket.on("cartas-desactivadas", ids => {
 });
 
 socket.on("juego-detenido", () => {
-    if (soyHost) audioCorre.pause();
+    if (partida.soyHost) audioCorre.pause();
 });
 
 // ======================================================
@@ -1027,7 +1011,7 @@ function emitirLoteria() {
    
   // La skin viaja con el tablero para que los demás vean las fichas que usas.
   const boardState = {
-      cards: seleccionadas, 
+      cards: partida.seleccionadas, 
       chips: {}, 
       skin: fichaEnUso() 
   };
@@ -1041,7 +1025,7 @@ function emitirLoteria() {
     if (cardChips.length > 0) boardState.chips[cardId] = cardChips;
   });
 
-  socket.emit("loteria", { nickname: usuarioActual.nickname, sala: salaActual, boardState });
+  socket.emit("loteria", { nickname: sesion.usuario.nickname, sala: partida.sala, boardState });
 }
 
 socket.on("pausa-empate", ({ primerGanador, tiempo }) => {
@@ -1084,7 +1068,7 @@ function procesarSiguienteValidacion(lista) {
 }
 
 function abrirModalValidacionHost(candidato, index, total) {
-    ganadorTempId = candidato.id;
+    partida.ganadorTemp = candidato.id;
     
     modalLoteriaTitulo.textContent = `Validando Ganador (${index} de ${total})`;
     modalLoteriaTexto.textContent = `${candidato.nickname} reclama victoria. Revisa su tabla.`;
@@ -1097,7 +1081,7 @@ function abrirModalValidacionHost(candidato, index, total) {
     const aviso = document.getElementById("avisoCartaGanadora");
     if (aviso) aviso.textContent = "Toca la tabla que se llenó (opcional)";
 
-    historialIdsGlobal.forEach(cartaId => {
+    partida.historialIds.forEach(cartaId => {
          const img = document.createElement("img");
          img.src = `assets/imagenes/barajas/${cartaId}.png`;
          modalHistorialFlex.appendChild(img);
@@ -1119,7 +1103,7 @@ function abrirModalValidacionHost(candidato, index, total) {
             
             // --- CORRECCIÓN 1: USAR LA RUTA DINÁMICA ---
             // Ya no usamos "assets/imagenes/cartas/...", usamos la variable
-            cardImg.src = `${rutaCartasJugador}${cardId}.jpg`;
+            cardImg.src = `${partida.rutaCartas}${cardId}.jpg`;
             
             cardImg.className = 'carta-img seleccionada';
             cardImg.style.pointerEvents = "none";
@@ -1153,12 +1137,12 @@ function abrirModalValidacionHost(candidato, index, total) {
     const vered = document.getElementById("pozoVeredicto");
     const chkPozoWin = document.getElementById("chkGanoPozo");
     if (vered) {
-        const aplica = pozoDisponible() && pozoAcumulado > 0;
+        const aplica = pozoDisponible() && partida.pozo > 0;
         vered.style.display = aplica ? "flex" : "none";
         if (chkPozoWin) chkPozoWin.checked = false;
         if (aplica) {
             vered.querySelector("span").textContent =
-                `🎰 También se llevó el POZO de $${pozoAcumulado} (llenó las 4 del centro)`;
+                `🎰 También se llevó el POZO de $${partida.pozo} (llenó las 4 del centro)`;
         }
     }
 
@@ -1182,10 +1166,10 @@ function elegirTablaGanadora(tablaId) {
 }
 
 if(btnAceptarGanador) btnAceptarGanador.onclick = () => {
-    if (ganadorTempId) {
+    if (partida.ganadorTemp) {
         const chkPozoWin = document.getElementById("chkGanoPozo");
         socket.emit("veredicto-host", {
-            sala: salaActual, candidatoId: ganadorTempId, esValido: true,
+            sala: partida.sala, candidatoId: partida.ganadorTemp, esValido: true,
             tablaGanadora: tablaGanadoraElegida,
             ganoPozo: !!(chkPozoWin && chkPozoWin.checked)
         });
@@ -1195,8 +1179,8 @@ if(btnAceptarGanador) btnAceptarGanador.onclick = () => {
 };
 
 if(btnRechazarGanador) btnRechazarGanador.onclick = () => {
-    if (ganadorTempId) {
-        socket.emit("veredicto-host", { sala: salaActual, candidatoId: ganadorTempId, esValido: false });
+    if (partida.ganadorTemp) {
+        socket.emit("veredicto-host", { sala: partida.sala, candidatoId: partida.ganadorTemp, esValido: false });
         loteriaModal.classList.remove("active");
     }
 };
@@ -1220,7 +1204,7 @@ socket.on("ganadores-multiples", ({ ganadores, premio, prueba, pozoGanado, ganad
     // La ruta viaja DENTRO de la prueba porque el modal vive en modulos/ui.js y
     // no conoce el estado de la partida. Importa: en modo Pozo las tablas salen
     // de otra carpeta, así que sin esto la tabla ganadora saldría rota.
-    mostrarAlerta(msg, "¡RESULTADO FINAL!", prueba && { ...prueba, ruta: rutaCartasJugador });
+    mostrarAlerta(msg, "¡RESULTADO FINAL!", prueba && { ...prueba, ruta: partida.rutaCartas });
     
     audioAplausos.currentTime = 0;
     audioAplausos.play().catch(()=>{});
@@ -1247,11 +1231,11 @@ socket.on("falsa-alarma-masiva", () => {
 
 // APUESTAS
 if(btnApostar) btnApostar.addEventListener("click", () => {
-  if (!salaActual) return mostrarAlerta("Únete a una sala primero.");
-  if (haApostadoLocal) return mostrarAlerta("Ya apostaste esta ronda.");
+  if (!partida.sala) return mostrarAlerta("Únete a una sala primero.");
+  if (partida.haApostado) return mostrarAlerta("Ya apostaste esta ronda.");
   
   // Calculamos la cantidad (por defecto 1 o el número de cartas)
-  const cantidad = Math.max(1, seleccionadas.length || 1);
+  const cantidad = Math.max(1, partida.seleccionadas.length || 1);
   
   const chk = document.getElementById("chkPozo");
   const conPozo = !!(chk && chk.checked && pozoDisponible());
@@ -1260,16 +1244,16 @@ if(btnApostar) btnApostar.addEventListener("click", () => {
   if (conPozo) animarVueloMonedas("pozo-valor");
 
   socket.emit("apostar", {
-      sala: salaActual,
+      sala: partida.sala,
       cantidad: cantidad,
-      email: usuarioActual.email, // <--- ESTA LÍNEA ES LA CLAVE
+      email: sesion.usuario.email, // <--- ESTA LÍNEA ES LA CLAVE
       conPozo: conPozo
   });
 
   // Ya no se puede cambiar de opinión en esta ronda.
   if (chk) chk.disabled = true;
   
-  haApostadoLocal = true;
+  partida.haApostado = true;
   btnApostar.disabled = true;
 });
 
@@ -1279,13 +1263,13 @@ if(btnApostar) btnApostar.addEventListener("click", () => {
 // ==================== PRESETS DE CARTAS ====================
 
 async function guardarSetFavorito(boton) {
-    if(seleccionadas.length === 0) return mostrarAlerta("Selecciona cartas primero.");
+    if(partida.seleccionadas.length === 0) return mostrarAlerta("Selecciona cartas primero.");
     
     // 1. Guardado Local
-    localStorage.setItem("loteria_cartas_fav", JSON.stringify(seleccionadas));
+    localStorage.setItem("loteria_cartas_fav", JSON.stringify(partida.seleccionadas));
     
     // 2. Guardado en Nube (BD)
-    if(usuarioActual && usuarioActual.email) {
+    if(sesion.usuario && sesion.usuario.email) {
         try {
             const btn = boton; // el botón llega desde el despachador de acciones
             if (!btn) throw new Error('sin botón');
@@ -1295,14 +1279,14 @@ async function guardarSetFavorito(boton) {
             await api(`/usuario/guardar-preferencias`, {
                 method: 'POST',
                 body: JSON.stringify({ 
-                    email: usuarioActual.email, 
-                    cartasFavoritas: seleccionadas 
+                    email: sesion.usuario.email, 
+                    cartasFavoritas: partida.seleccionadas 
                 })
             });
             
             // Actualizamos el objeto local
-            usuarioActual.cartasFavoritas = seleccionadas;
-            localStorage.setItem("loteria_usuario", JSON.stringify(usuarioActual));
+            sesion.usuario.cartasFavoritas = partida.seleccionadas;
+            localStorage.setItem("loteria_usuario", JSON.stringify(sesion.usuario));
             
             btn.innerText = textoOriginal;
             mostrarAlerta("¡Cartas guardadas en tu cuenta! ☁️", "Guardado");
@@ -1319,8 +1303,8 @@ function cargarSetFavorito() {
     let idsFavoritos = [];
 
     // 1. Intentar leer del usuario logueado (Nube)
-    if (usuarioActual && usuarioActual.cartasFavoritas && usuarioActual.cartasFavoritas.length > 0) {
-        idsFavoritos = usuarioActual.cartasFavoritas;
+    if (sesion.usuario && sesion.usuario.cartasFavoritas && sesion.usuario.cartasFavoritas.length > 0) {
+        idsFavoritos = sesion.usuario.cartasFavoritas;
     } 
     // 2. Si no, intentar leer del localStorage (Local)
     else {
@@ -1331,10 +1315,10 @@ function cargarSetFavorito() {
     if(idsFavoritos.length === 0) return mostrarAlerta("No tienes ningún set guardado.", "Sin datos");
     
     // Lógica de selección visual
-    seleccionadas.forEach(id => {
-        socket.emit("deseleccionar-carta", { carta: id, sala: salaActual });
+    partida.seleccionadas.forEach(id => {
+        socket.emit("deseleccionar-carta", { carta: id, sala: partida.sala });
     });
-    seleccionadas = [];
+    partida.seleccionadas = [];
     
     document.querySelectorAll("#contenedorCartas .carta-img").forEach(img => {
         img.classList.remove("seleccionada");
@@ -1354,7 +1338,7 @@ function cargarSetFavorito() {
 function iniciarJuegoConVelocidad() {
     const selector = document.getElementById("velocidadJuego");
     const velocidad = selector ? parseInt(selector.value) : 3000;
-    socket.emit('iniciar-juego', { sala: salaActual, velocidad: velocidad });
+    socket.emit('iniciar-juego', { sala: partida.sala, velocidad: velocidad });
 }
 
 // El panel de administrador vive en modulos/admin.js.
@@ -1368,27 +1352,27 @@ socket.on('usuario-actualizado', (datosFrescos) => {
     // la vista en la consola todo lo que trajera el perfil.
     console.log("📥 Datos sincronizados. Saldo:", datosFrescos.monedas);
 
-    if (usuarioActual) {
+    if (sesion.usuario) {
         // 1. Actualizar datos base
-        usuarioActual.monedas = datosFrescos.monedas;
-        usuarioActual.inventario = datosFrescos.inventario || [];
+        sesion.usuario.monedas = datosFrescos.monedas;
+        sesion.usuario.inventario = datosFrescos.inventario || [];
         
         // 2. 🔥 RESTAURAR PREFERENCIAS (FIX HUB SSO) 🔥
         // Si la BD trae una ficha activa, la forzamos en la sesión local
         if (datosFrescos.fichaActiva) {
-            usuarioActual.fichaActiva = datosFrescos.fichaActiva;
+            sesion.usuario.fichaActiva = datosFrescos.fichaActiva;
             establecerFicha(datosFrescos.fichaActiva);
             localStorage.setItem("loteria_ficha_activa", datosFrescos.fichaActiva); // Persistir
         }
 
         // Si la BD trae cartas favoritas, las guardamos en localStorage
         if (datosFrescos.cartasFavoritas && datosFrescos.cartasFavoritas.length > 0) {
-            usuarioActual.cartasFavoritas = datosFrescos.cartasFavoritas;
+            sesion.usuario.cartasFavoritas = datosFrescos.cartasFavoritas;
             localStorage.setItem("loteria_cartas_fav", JSON.stringify(datosFrescos.cartasFavoritas));
         }
 
         // Guardamos el objeto completo actualizado
-        localStorage.setItem("loteria_usuario", JSON.stringify(usuarioActual));
+        localStorage.setItem("loteria_usuario", JSON.stringify(sesion.usuario));
     }
 
     // --- ACTUALIZAR TODAS LAS ETIQUETAS DE LA UI AL MISMO TIEMPO ---
@@ -1406,7 +1390,7 @@ socket.on('usuario-actualizado', (datosFrescos) => {
         // Si el modal de detalles está abierto, refrescamos para ver el botón "En Uso"
         const grid = document.getElementById("gridTiendaItems");
         if(grid && grid.innerHTML !== "") {
-             refrescarCategoria(usuarioActual);
+             refrescarCategoria(sesion.usuario);
         }
     }
 
@@ -1417,14 +1401,14 @@ socket.on('usuario-actualizado', (datosFrescos) => {
     // 4. Soundboard
     const menuSonidos = document.getElementById("menuSonidosDesplegable");
     if(menuSonidos && menuSonidos.classList.contains("mostrar")) {
-        renderizarSonidosJuego(usuarioActual, salaActual);
+        renderizarSonidosJuego(sesion.usuario, partida.sala);
     }
 });
 
 function sincronizarDatosForzoso() {
-    if(usuarioActual && usuarioActual.email) {
+    if(sesion.usuario && sesion.usuario.email) {
         console.log("🔄 Pidiendo datos frescos al servidor...");
-        socket.emit('solicitar-info-usuario', usuarioActual.email);
+        socket.emit('solicitar-info-usuario', sesion.usuario.email);
     }
 }
 
@@ -1437,8 +1421,8 @@ function sincronizarDatosForzoso() {
  * sumaba monedas en vez de cobrarlas.
  */
 function emitirCompraItem(itemId) {
-    if (!usuarioActual) return;
-    socket.emit('comprar-item', { email: usuarioActual.email, itemId });
+    if (!sesion.usuario) return;
+    socket.emit('comprar-item', { email: sesion.usuario.email, itemId });
 }
 
 // Las transferencias y el historial de movimientos viven en
@@ -1511,40 +1495,40 @@ const ACCIONES = {
 
     // --- Mesa de juego ---
     'limpiar-fichas':         () => limpiarFichas(),
-    'barajear':               () => socket.emit('barajear', salaActual),
+    'barajear':               () => socket.emit('barajear', partida.sala),
     'iniciar-juego':          () => iniciarJuegoConVelocidad(),
-    'detener-juego':          () => socket.emit('detener-juego', salaActual),
+    'detener-juego':          () => socket.emit('detener-juego', partida.sala),
     'cambiar-cartas':         () => cambiarCartas(),
     'gritar-loteria':         () => emitirLoteria(),
-    'alternar-sonidos':       () => toggleMenuSonidos(usuarioActual, salaActual),
+    'alternar-sonidos':       () => toggleMenuSonidos(sesion.usuario, partida.sala),
 
     // --- Monedero ---
     // El monedero no lee el estado del juego: se le pasa el usuario aquí.
-    'abrir-historial':        () => abrirHistorial(usuarioActual),
+    'abrir-historial':        () => abrirHistorial(sesion.usuario),
     'cerrar-historial':       () => cerrarModalHistorial(),
     'abrir-recarga':          () => abrirModalRecarga(),
     'cerrar-tienda':          () => cerrarTienda(),
     'volver-paquetes':        () => volverAPaquetes(),
-    'pagar':                  (el) => iniciarPagoEmbedded(Number(el.dataset.monedas), usuarioActual, stripePromise),
+    'pagar':                  (el) => iniciarPagoEmbedded(Number(el.dataset.monedas), sesion.usuario, stripePromise),
 
     // --- Transferencias ---
     'abrir-transferencia':    () => abrirModalTransferencia(),
     'cerrar-transferencia':   () => cerrarModalTransferencia(),
-    'buscar-destinatario':    (el) => verificarDestinatario(el, usuarioActual),
+    'buscar-destinatario':    (el) => verificarDestinatario(el, sesion.usuario),
     'cancelar-transferencia': () => cancelarTransferencia(),
-    'transferir':             (el) => realizarTransferencia(el, usuarioActual, sincronizarDatosForzoso),
+    'transferir':             (el) => realizarTransferencia(el, sesion.usuario, sincronizarDatosForzoso),
 
     // --- Tienda ---
-    'tienda-categoria':       (el) => abrirCategoriaTienda(el.dataset.categoria, usuarioActual),
+    'tienda-categoria':       (el) => abrirCategoriaTienda(el.dataset.categoria, sesion.usuario),
     'cerrar-tienda-detalle':  () => cerrarModalTiendaDetalle(),
-    'comprar-item':           (el) => comprarItem(el.dataset.item, Number(el.dataset.precio), usuarioActual, emitirCompraItem),
-    'usar-ficha':             (el) => usarFicha(el.dataset.img, usuarioActual),
+    'comprar-item':           (el) => comprarItem(el.dataset.item, Number(el.dataset.precio), sesion.usuario, emitirCompraItem),
+    'usar-ficha':             (el) => usarFicha(el.dataset.img, sesion.usuario),
     'oir-sonido':             (el) => previewSonido(el.dataset.archivo),
 
     // --- Administración ---
-    'abrir-admin':            () => abrirPanelAdmin(usuarioActual),
-    'cargar-usuarios-admin':  () => cargarUsuariosAdmin(usuarioActual),
-    'recarga-admin':          () => ejecutarRecargaAdmin(usuarioActual),
+    'abrir-admin':            () => abrirPanelAdmin(sesion.usuario),
+    'cargar-usuarios-admin':  () => cargarUsuariosAdmin(sesion.usuario),
+    'recarga-admin':          () => ejecutarRecargaAdmin(sesion.usuario),
     'preparar-recarga':       (el) => prepararRecarga(el.dataset.email)
 };
 
