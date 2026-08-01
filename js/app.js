@@ -479,8 +479,10 @@ if(btnApostar) btnApostar.addEventListener("click", () => {
   const chk = document.getElementById("chkPozo");
   const conPozo = !!(chk && chk.checked && pozoDisponible());
 
-  animarVueloMonedas();
-  if (conPozo) animarVueloMonedas("pozo-valor");
+  // Vuelan tantas monedas como tablas se apuestan (cada una vale $1), así que
+  // apostar cuatro se ve distinto de apostar una.
+  animarVueloMonedas("boteMonedas", cantidad);
+  if (conPozo) animarVueloMonedas("pozoMonedas", 1);   // el pozo siempre cuesta $1
 
   socket.emit("apostar", {
       sala: partida.sala,

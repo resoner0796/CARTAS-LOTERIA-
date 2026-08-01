@@ -2021,3 +2021,56 @@ textarea::placeholder { color: rgba(255,255,255,0.6); }
     to   { transform: translateY(0) scale(1); opacity: 1; }
 }
 .bote-monedas .moneda-bote:last-of-type { animation: monedaEntra 0.25s ease-out; }
+
+/* =========================================================
+   EL BOTE RECIBE LAS MONEDAS
+   =========================================================
+   Al apostar salen monedas volando del saldo (animarVueloMonedas). Cuando el
+   servidor confirma, la torre crece y da este golpecito: es lo que remata el
+   gesto y hace que parezca que las monedas cayeron ahí.
+
+   Los dos efectos NO están sincronizados a propósito. El vuelo sale al picar y
+   el rebote al llegar la confirmación; si Render tarda, cada uno hace lo suyo y
+   no se rompe nada. Atarlos habría sido bonito el día bueno y raro el resto. */
+
+@keyframes reciboMonedas {
+    0%   { transform: scale(1); }
+    35%  { transform: scale(1.18) translateY(2px); }
+    60%  { transform: scale(0.96); }
+    100% { transform: scale(1); }
+}
+.bote-monedas.recibe-monedas { animation: reciboMonedas 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); }
+
+/* =========================================================
+   EL POZO, CUANDO SE PONE SERIO
+   =========================================================
+   El pozo persiste entre partidas y puede acumular bastante. Pasado cierto
+   punto deja de parecerse al bote y empieza a latir, porque es el premio gordo
+   y hasta ahora se veía casi igual.
+
+   Las clases las pone modulos/monedas.js según lo que haya dentro.            */
+
+/* A partir de 10: un aura dorada que respira. */
+@keyframes pozoLate {
+    0%, 100% { filter: drop-shadow(0 0 3px rgba(255, 200, 0, 0.55)); }
+    50%      { filter: drop-shadow(0 0 11px rgba(255, 200, 0, 0.95)); }
+}
+.pozo-monedas.pozo-crecido { animation: pozoLate 1.8s ease-in-out infinite; }
+
+/* Al tope: late más rápido y el número se pone dorado encendido. */
+.pozo-monedas.pozo-lleno { animation: pozoLate 0.9s ease-in-out infinite; }
+.pozo-monedas.pozo-lleno #pozo-valor {
+    color: #fff3b0;
+    text-shadow: 0 0 6px rgba(255, 190, 0, 0.9), 0 0 2px #000;
+}
+
+/* Respeta a quien pidió menos movimiento en su sistema: el aura se queda fija
+   en vez de latir. La información sigue estando, sin el parpadeo. */
+@media (prefers-reduced-motion: reduce) {
+    .bote-monedas.recibe-monedas { animation: none; }
+    .pozo-monedas.pozo-crecido,
+    .pozo-monedas.pozo-lleno {
+        animation: none;
+        filter: drop-shadow(0 0 8px rgba(255, 200, 0, 0.8));
+    }
+}

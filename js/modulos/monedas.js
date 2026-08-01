@@ -20,7 +20,24 @@ const SEPARACION_MAXIMA = 5;
 export const TOPE_MONEDAS_POZO = 25;
 const TOPE_POR_DEFECTO = TOPE_MONEDAS_POZO;
 
+/**
+ * A partir de aquí el pozo late.
+ *
+ * Diez es donde deja de parecer calderilla: son diez partidas con alguien
+ * apuntado, o menos si se apuntan varios. Por debajo no merece llamar la
+ * atención; por encima, es el premio gordo de la mesa.
+ */
+const POZO_LLAMATIVO = 10;
+
 const IMAGEN = 'assets/imagenes/ui/peso.png';
+
+/** Golpecito de la torre al recibir monedas. */
+function rebotar(contenedor) {
+    contenedor.classList.remove('recibe-monedas');
+    void contenedor.offsetWidth;          // reinicia la animación
+    contenedor.classList.add('recibe-monedas');
+    setTimeout(() => contenedor.classList.remove('recibe-monedas'), 420);
+}
 
 /**
  * Pinta una torre de monedas dentro de `contenedor`.
@@ -35,10 +52,32 @@ const IMAGEN = 'assets/imagenes/ui/peso.png';
 export function pintarMonedas(contenedor, cantidad, tope = TOPE_POR_DEFECTO) {
     if (!contenedor) return;
 
-    const cuantas = Math.max(0, Math.min(Math.floor(Number(cantidad) || 0), tope));
+    const valor = Math.max(0, Math.floor(Number(cantidad) || 0));
+    const cuantas = Math.min(valor, tope);
 
-    // Si no cambia el número, no se repinta: esto se llama en cada evento del
-    // socket y rehacer la torre a cada rato hace parpadear las monedas.
+    // Se recuerda el VALOR, no las monedas pintadas. Parece lo mismo y no lo es:
+    // pasado el tope la torre deja de crecer, así que un pozo de 26 y otro de 30
+    // pintan 25 monedas los dos. Comparando lo pintado, el segundo cambio se
+    // daba por "sin novedad" y nada de lo que dependa del valor real se
+    // enteraría.
+    const antes = Number(contenedor.dataset.valor || 0);
+    if (contenedor.dataset.valor === String(valor)) return;
+    contenedor.dataset.valor = String(valor);
+
+    // El pozo cambia de aspecto según lo gordo que sea. Va antes de pintar
+    // porque no depende de las monedas, sino de cuánto hay dentro.
+    if (contenedor.classList.contains('pozo-monedas')) {
+        contenedor.classList.toggle('pozo-crecido', valor >= POZO_LLAMATIVO && valor < tope);
+        contenedor.classList.toggle('pozo-lleno', valor >= tope);
+    }
+
+    // Si CRECIÓ, da un golpecito: es lo que remata el vuelo de monedas que salió
+    // del saldo al apostar. Solo al crecer — al repartirse, el bote baja a cero
+    // y ahí no hay nada que celebrar.
+    if (valor > antes) rebotar(contenedor);
+
+    // Repintar la torre solo si cambia el número de monedas: entre 26 y 30 se
+    // ven iguales y rehacerlas haría parpadear la pila sin motivo.
     if (contenedor.dataset.monedas === String(cuantas)) return;
     contenedor.dataset.monedas = String(cuantas);
 
