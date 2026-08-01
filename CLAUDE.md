@@ -69,24 +69,8 @@ un evento de socket o un endpoint, revisa el otro lado en
 ```
 index.html            Todas las pantallas en un solo archivo (SPA por clases CSS)
 css/style.css         Estilos (~1,900 líneas)
-js/app.js             Punto de entrada y grueso de la lógica (~2,000 líneas)
-js/modulos/           Piezas ya separadas (ver "Modularización")
-  config.js             Direcciones, clave pública de Stripe, catálogos de tienda
-  utiles.js             escaparHtml() y actualizarValor()
-  ui.js                 Pantallas y los dos modales del sistema
-  sesion.js             Token, helper api() y manejo del 401
-  monedero.js           Transferencias entre jugadores e historial
-  tienda.js             Recarga con tarjeta (Stripe) y compra de artículos
-  admin.js              Panel de administrador
-  socket.js             La conexión Socket.IO, con su guarda
-  efectos.js            Soundboard en partida
-  animaciones.js        Arrastre del botón flotante y vuelo de monedas
-  estado.js             Estado compartido de la partida y la sesión
-  sala.js               Crear, entrar, invitar y salir de salas
-  favoritos.js          Guardar y recuperar el set de tablas preferido
-  tablero.js            Elegir tablas, la mesa, las fichas y las cartas cantadas
-  validacion.js         Gritar lotería y el veredicto del anfitrión
-  audio.js              Sonidos del juego (no confundir con efectos.js)
+js/app.js             Punto de entrada (~700 líneas) — ver "Arquitectura del cliente"
+js/modulos/           18 módulos. La tabla de qué hace cada uno está más abajo
 scripts/obfuscate.js  Empaqueta y ofusca en el build de Vercel — ver abajo
 vercel.json           buildCommand + outputDirectory
 service-worker.js     Estrategias de caché (PWA)
@@ -135,156 +119,108 @@ Si vuelves a meter un `onclick`, esa red lo cubre — pero mejor no.
 > (`antes era onclick="login()"`) y los tomaba por código real, reservando nombres
 > que ya nadie invoca. No rompía nada, pero falseaba la cuenta final.
 
-### Modularización (en curso)
+### Arquitectura del cliente
 
-`app.js` se está partiendo en `js/modulos/`, **un módulo a la vez**, verificando
-después de cada movimiento. Van dieciséis:
+`app.js` se partió en `js/modulos/`. Se hizo **un módulo a la vez**, verificando
+después de cada movimiento; de 2.030 líneas en un archivo a **18 módulos**.
 
 ```
-       config.js   utiles.js        (hojas: no importan nada)
+       config.js   utiles.js          hojas: no importan nada
             │           │
             └─────┬─────┘
                   ▼
-      ui.js ──▶ sesion.js
-        │           │
-        └─────┬─────┘
-              ▼
-   monedero.js · tienda.js · admin.js
-              ▲
-        socket.js ──▶ efectos.js ──▶ animaciones.js
-              ▲
-          app.js   (punto de entrada)
+              ui.js ──▶ sesion.js     pantallas, modales, token, api()
+                  │         │
+                  ├─────────┤
+                  ▼         ▼
+              socket.js   estado.js   la conexión · lo que se comparte
+                  │           │
+     ┌────────────┴───────────┴────────────┐
+     ▼                                     ▼
+  tablero.js    sala.js    jugadores.js    tienda.js
+  validacion.js favoritos.js efectos.js    monedero.js
+  animaciones.js  audio.js   sso.js        admin.js
+     │
+     ▼
+  app.js   (punto de entrada)
 ```
 
-- **`config.js`** — lo que no cambia en tiempo de ejecución: direcciones, la clave
-  pública de Stripe, los catálogos de la tienda. No toca el DOM ni importa nada.
-- **`utiles.js`** — funciones sueltas que usa medio archivo y no pertenecen a ninguna
-  parte concreta. Tampoco importa nada.
-- **`ui.js`** — navegación entre pantallas y los dos modales. Toca el DOM pero no
-  sabe nada del juego ni del socket.
-- **`sesion.js`** — el token y el helper `api()`. Importa de `config` y de `ui`.
-- **`monedero.js`** — transferencias e historial.
-- **`tienda.js`** — recarga con tarjeta y compra de artículos. Guarda la ficha
-  activa (`fichaEnUso()` / `establecerFicha()`), que antes era una global.
-- **`admin.js`** — panel de administración.
-- **`socket.js`** — la conexión. Es el único módulo que **se importa** en vez de
-  pasarse por argumento, porque un socket es una conexión, no estado de partida.
-- **`efectos.js`** — el soundboard.
-- **`animaciones.js`** — gestos y decoración. Puro DOM.
-- **`estado.js`** — lo que comparten varios módulos mientras se juega.
-- **`sala.js`** — crear, entrar, invitar y salir.
-- **`favoritos.js`** — el set de tablas preferido.
-- **`tablero.js`** — el juego en sí: elegir tablas, la mesa, las fichas.
-- **`validacion.js`** — gritar lotería y el veredicto del anfitrión.
-- **`audio.js`** — los sonidos que dispara el juego. **No confundir con
-  `efectos.js`**: aquellos los dispara la gente y viajan por el socket.
-- **`app.js`** — arranque, sesión, y los eventos de socket que no son de nadie
-  en concreto (sala, jugadores, bote).
+**Qué hay en cada uno**
 
-**Cada módulo escucha sus propios eventos de socket.** `carta-cantada` lo atiende
-`tablero.js`, `pausa-empate` lo atiende `validacion.js`. Antes estaban los treinta
-juntos en app.js y había que leerlos todos para saber quién tocaba qué.
+| Módulo | De qué se ocupa |
+|---|---|
+| `config.js` | Direcciones, clave pública de Stripe, catálogos. No toca el DOM |
+| `utiles.js` | `escaparHtml()` y `actualizarValor()` |
+| `ui.js` | Pantallas y los dos modales del sistema |
+| `sesion.js` | Token, helper `api()` y manejo del 401 |
+| `socket.js` | La conexión Socket.IO, con su guarda |
+| `estado.js` | Lo que comparten varios módulos: `sesion` y `partida` |
+| `sso.js` | Entrar desde el Hub con `?tk=` |
+| `sala.js` | Crear, entrar, invitar y salir |
+| `jugadores.js` | La lista de la sala y el silencio del anfitrión |
+| `tablero.js` | Elegir tablas, la mesa, las fichas, las cartas cantadas |
+| `validacion.js` | Gritar lotería y el veredicto del anfitrión |
+| `favoritos.js` | El set de tablas preferido |
+| `tienda.js` | Recarga con tarjeta y compra de artículos |
+| `monedero.js` | Transferencias e historial |
+| `admin.js` | Panel de administración |
+| `efectos.js` | Soundboard: sonidos que dispara **la gente** |
+| `audio.js` | Sonidos que dispara **el juego** |
+| `animaciones.js` | Gestos y decoración. Puro DOM |
+| `app.js` | Arranque, login/registro, y los eventos de socket de la partida |
 
-Los cuatro últimos **reciben el usuario como argumento**; ninguno lee
-`usuarioActual`.
+### Las cinco reglas del cliente
 
-Dos reglas que ya evitaron problemas:
+Cada una salió de un fallo real. Si las rompes, vuelven.
 
-⚠️ **Nunca metas en `config.js` referencias al DOM** (`getElementById`) ni variables
-que el juego reasigne mientras corre. Lo primero depende de que la página ya esté
-parseada; lo segundo convierte un módulo de datos en estado compartido.
+**1. Cada módulo escucha sus propios eventos de socket.**
+`carta-cantada` lo atiende `tablero.js`; `pausa-empate`, `validacion.js`. Antes
+estaban los treinta juntos y había que leerlos todos para saber quién tocaba qué.
 
-⚠️ **En `ui.js` las referencias al DOM se resuelven cuando hacen falta, no al
-importar.** El orden en que se evalúan los módulos no garantiza que la página esté
-parseada; un `getElementById` al tope del módulo puede devolver `null` para siempre.
-Por eso los botones del modal se enganchan desde `iniciarModales()`, que llama el
-arranque.
+**2. El estado compartido son OBJETOS, no variables sueltas.**
+Si se exportara `let sala = ""`, cada módulo se llevaría una copia al importar y
+no vería los cambios de los demás. Con un objeto, todos miran el mismo sitio.
+⚠️ En `estado.js` va **solo** lo que comparten varios módulos: es el sitio fácil
+donde acaba amontonándose todo si nadie lo cuida.
 
-**Cuando un módulo necesite algo que vive en el estado de la partida, pásalo como
-argumento en vez de importarlo.** Es la regla que hace posible avanzar sin tener que
-desatar antes el nudo de las globales (`usuarioActual` tiene 77 usos, `socket` 55).
+**3. Lo que no es estado compartido se pasa como argumento.**
+El modal necesitaba `rutaCartas`, que cambia según el modo: la ruta viaja
+**dentro** del objeto `prueba`. `monedero.js`, `tienda.js` y `admin.js` reciben el
+usuario. El sitio donde se inyecta es la tabla `ACCIONES`:
 
-Dos ejemplos ya en el código:
+```js
+'abrir-historial': () => abrirHistorial(sesion.usuario),
+'transferir':      (el) => realizarTransferencia(el, sesion.usuario, sincronizarDatosForzoso),
+```
 
-- El modal pinta la tabla ganadora y necesitaba `rutaCartasJugador`, que cambia
-  según el modo. La ruta viaja **dentro** del objeto `prueba`. (Importa: en modo
-  Pozo las tablas salen de otra carpeta, así que leer la ruta equivocada saca la
-  tabla rota.)
-- `monedero.js` recibe el usuario en cada llamada. **El sitio donde se inyecta el
-  estado es la tabla `ACCIONES`**, que ya es el único punto de entrada desde la
-  interfaz:
+**4. Pasa funciones como argumento para no crear ciclos.**
+`favoritos.js` necesita seleccionar tablas y `sala.js` limpiar el tablero, pero
+ninguno importa de `tablero.js`: las reciben. Al revés serían dependencias en
+círculo.
 
-  ```js
-  'abrir-historial': () => abrirHistorial(usuarioActual),
-  'transferir':      (el) => realizarTransferencia(el, usuarioActual, sincronizarDatosForzoso),
-  ```
+**5. Las referencias al DOM se resuelven cuando hacen falta, no al importar.**
+El orden en que se evalúan los módulos no garantiza que la página esté parseada;
+un `getElementById` al tope puede devolver `null` para siempre. Por eso hay
+funciones `iniciarModales()`, `iniciarValidacion()`, `iniciarJugadores()` que
+llama el arranque.
 
-  El módulo puede mutar el objeto que recibe (así el saldo baja en pantalla al
-  instante), pero no sabe de dónde salió ni quién más lo mira.
+### Qué se quedó en app.js, y por qué
 
-**Cómo se comparte el estado** (`estado.js`): son OBJETOS exportados, no
-variables sueltas. Si se exportara `let sala = ""`, cada módulo se llevaría una
-copia del valor al importar y no vería los cambios de los demás; con un objeto,
-todos miran el mismo sitio. Se eligió esto antes que getters por variable o un
-store con eventos: para el tamaño de este juego tiene menos piezas móviles, y no
-hace falta reaccionar a los cambios porque quien pinta ya se entera por los
-eventos del socket.
+Las ~700 líneas que quedan **no son "lo que no dio tiempo"**: son lo que le toca
+al punto de entrada.
 
-⚠️ En `estado.js` va **solo** lo que comparten varios módulos. Si algo lo usa un
-único archivo, déjalo ahí: ese objeto es el sitio fácil donde acaba amontonándose
-todo si nadie lo cuida.
+- **El arranque** (`window.onload`) y el orden en que ocurre todo.
+- **Login y registro**, que están entrelazados con la decisión de qué pantalla
+  mostrar. Sacarlos a un módulo dejaría a los dos llamándose todo el rato.
+- **Los eventos de socket de la partida** (`info-sala`, `rol-asignado`,
+  `bote-actualizado`, `usuario-actualizado`): reparten datos a varios módulos a
+  la vez, así que no pertenecen a ninguno.
+- **La tabla `ACCIONES`**, que es donde el marcado se une con el código.
+- **El pozo** (`pozoDisponible`, `refrescarPozoUI`): veinte líneas que se leen
+  mejor donde están que en un archivo propio.
 
-**Para evitar ciclos, pasa funciones como argumento.** `favoritos.js` necesita
-seleccionar tablas y `sala.js` necesita limpiar el tablero, pero ninguno importa
-del juego: las reciben. Al revés habría dependencias en círculo.
-
-Queda por repartir el núcleo que sigue en `app.js`: el tablero (generar tablas,
-elegir, marcar fichas), los escuchas del socket y la validación de ganadores.
-
-⚠️ **En `socket.js` la global se lee como `window.io`, nunca como `io` a secas.**
-Escrita suelta, el ofuscador la trata como un global más del bundle y a veces la
-reescribe: medido, en 4 de cada 10 builds. Como el fallo depende del azar de cada
-despliegue, salían unos builds con socket y otros sin él, sin nada en el código
-que lo explicara. Un acceso a propiedad no se renombra nunca. **El build aborta
-si el bundle no llega a pedir conexión**, precisamente por esto.
-
-## Convenciones
-
-- **Todo en español**: variables, funciones, comentarios, eventos de socket
-  (`unirse-sala`, `carta-cantada`, `jugadores-actualizados`).
-- **Módulos ES.** `index.html` carga `app.js` con `<script type="module">`. En
-  desarrollo el navegador resuelve los `import` solo, sin build; en producción llega
-  todo empaquetado en un archivo. Al ser módulo, nada de lo que declares es global:
-  si algo tiene que estar en `window`, ponlo ahí explícitamente.
-- **El HTML no llama funciones por su nombre.** Cada elemento declara *qué* hace
-  y un único escucha en el documento resuelve el clic:
-
-  ```html
-  <button data-accion="pagar" data-monedas="150">…</button>
-  ```
-
-  El *cómo* vive en la tabla `ACCIONES`, al final de `app.js`. Para añadir un
-  botón: pon su `data-accion` en el HTML y su entrada en esa tabla. **No vuelvas
-  a usar `onclick`**: ataba el marcado a que ciertas funciones fueran globales,
-  y era lo que impedía pasar a módulos. Como la delegación es sobre el
-  documento, también funciona con el HTML que se genera en caliente (tienda,
-  lista de jugadores, tabla de administración) sin enganchar nada al repintar.
-- **Navegación** = `cambiarPantalla(nombre)`, que alterna la clase `.activa` sobre
-  los `div.pantalla`. Referencias en el objeto `pantallas` (arriba de `app.js`).
-- **Modales**: usa `mostrarAlerta()` / `mostrarConfirmacion()`, no `alert()` ni
-  `confirm()` nativos. Ya no queda ninguno de los nativos en el código.
-- **Sesión**: el token JWT vive en `localStorage.loteria_token` y el perfil
-  cacheado en `loteria_usuario`. Toda llamada a la API pasa por el helper `api()`,
-  que añade `Authorization: Bearer`. El socket manda el token en su handshake.
-  Nunca uses `fetch` directo contra la API.
-- **SSO desde el Hub**: llega como `?tk=<JWT>`. El parámetro `sso` (base64 sin
-  firmar) era el mecanismo viejo; el Hub ya no lo genera.
-- **Cartas**: modo `pozo` usa `assets/imagenes/cartas/cuatro/` con nombres sin ceros
-  (`1.jpg`); los demás modos usan `assets/imagenes/cartas/` con ceros (`01.jpg`).
-  La variable es `rutaCartasJugador`. Las cartas cantadas del historial siempre salen
-  de `assets/imagenes/barajas/` con ceros.
-- **CSP** declarada en un `<meta>` de `index.html`. Si agregas un dominio externo
-  (script, fetch, websocket), hay que añadirlo ahí o el navegador lo bloquea.
+Se valoró extraer `autenticacion.js` y `apuestas.js` y se decidió que **no**: el
+rendimiento decreciente ya no compensa el archivo extra.
 
 ## Modos de juego
 
@@ -346,7 +282,15 @@ los de la sala, y la sesión vive en `localStorage`.
   quites. El arnés comprueba que haya handshake justo por esto: una app que
   pinta bien puede estar completamente desconectada.
 - **Entrar desde el Hub era una carrera.** El perfil llega por red y `window.onload`
-  decidía antes de tiempo que no había sesión. Existe `entrandoDesdeHub`.
+  decidía antes de tiempo que no había sesión. Existe `sesion.entrandoDesdeHub`, y
+  `verificarSSO()` se llama ANTES de registrar `window.onload`. Si mueves esa
+  llamada de sitio, la carrera vuelve.
+- **El `?sso=` viejo se retiró.** Era JSON en base64 sin firmar: cualquiera podía
+  fabricarse uno. En la práctica ya no servía para operar —sin token, la primera
+  llamada a la API daba 401 y la sesión se limpiaba sola— pero sí llegaba a
+  procesar el perfil falsificado. El Hub lleva tiempo mandando solo `?tk=`, así que
+  se quitó. **No lo reintroduzcas.**
+  ⚠️ Serpientes y Pirinola **todavía lo aceptan** (`params.get('sso')`).
 - **Los modales de aviso y confirmación comparten contenedor.** Hay que limpiar
   la prueba de victoria o reaparece donde no toca.
 - **El backend mandaba el documento entero del usuario al navegador.**

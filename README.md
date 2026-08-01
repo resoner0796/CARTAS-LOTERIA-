@@ -55,10 +55,8 @@ Es un solo proceso para todo el ecosistema.
 ```
 index.html          Todas las pantallas (login, menú, sala, selección, juego, admin)
 css/style.css       Estilos
-js/app.js           Punto de entrada y grueso de la lógica (en claro)
-js/modulos/         Piezas ya separadas: config, utiles, ui, sesion, monedero,
-                    tienda, admin, socket, efectos, animaciones, estado,
-                    sala, favoritos, tablero, validacion, audio
+js/app.js           Punto de entrada: arranque, login y eventos de partida
+js/modulos/         18 módulos (ver CLAUDE.md para el detalle de cada uno)
 scripts/            Empaquetado + ofuscación, corre en el build de Vercel
 vercel.json         Configuración de build
 service-worker.js   Cacheo offline
@@ -149,7 +147,7 @@ El bote se reparte entre los ganadores validados por el host.
 - **Transferencias** de monedas entre jugadores por nickname.
 - **Historial** de movimientos en horario CDMX.
 - **Panel admin** para recargas manuales y listado de usuarios.
-- **SSO** desde el Hub por token en la URL.
+- **SSO** desde el Hub por token firmado en la URL (`?tk=`).
 
 ---
 
@@ -196,7 +194,7 @@ propósito.
 - [x] Ofuscación automática en el build de Vercel
 - [x] Quitar los `onclick` del HTML (paso previo a modularizar)
 - [x] Empaquetado con esbuild antes de ofuscar (habilita los módulos)
-- [ ] Partir `app.js` en módulos ES — **en curso**: 16 módulos fuera; app.js pasó de 2.030 a 890 líneas
+- [x] Partir `app.js` en módulos ES — 18 módulos; de 2.030 líneas a ~700
 - [ ] Evaluar migración de Render a VPS propio
 
 ---

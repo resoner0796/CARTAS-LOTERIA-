@@ -11,6 +11,8 @@ import { escaparHtml, actualizarValor } from './modulos/utiles.js';
 import { socket } from './modulos/socket.js';
 import { sonidos, sonarApuesta } from './modulos/audio.js';
 import { emitirLoteria, iniciarValidacion } from './modulos/validacion.js';
+import { verificarSSO } from './modulos/sso.js';
+import { iniciarJugadores, alternarSilencio } from './modulos/jugadores.js';
 import { sesion, partida } from './modulos/estado.js';
 import { guardarSetFavorito, cargarSetFavorito } from './modulos/favoritos.js';
 import {
@@ -63,23 +65,8 @@ socket.on('pozo-actualizado', (monto) => {
     refrescarPozoUI();
 });
 
-// ==================== SILENCIO EN LA SALA ====================
-// Quién tiene los sonidos cortados. Lo decide el anfitrión y lo manda el
-// servidor, que es quien de verdad descarta los efectos: aquí solo se pinta.
+// La lista de jugadores y el silencio viven en modulos/jugadores.js.
 
-window.alternarSilencio = function(email) {
-    if (!partida.soyHost) return;
-    const callado = partida.silenciados.includes(email);
-    socket.emit("silenciar-jugador", { sala: partida.sala, email, silenciar: !callado });
-};
-
-socket.on("silenciados-actualizados", (lista) => {
-    partida.silenciados = Array.isArray(lista) ? lista : [];
-});
-
-socket.on("estas-silenciado", () => {
-    mostrarAlerta("El anfitrión silenció tus efectos de sonido en esta sala.", "Sin sonidos 🔇");
-});
 
 // El token, el helper api() y el manejo del 401 viven en modulos/sesion.js.
 
@@ -90,11 +77,8 @@ const stripePromise = Stripe(STRIPE_CLAVE_PUBLICA);
 // Las referencias a las pantallas viven en modulos/ui.js.
 
 // Referencias DOM - Elementos UI
-const jugadoresLista = document.getElementById("jugadoresLista");
-const jugadoresListaIngame = document.getElementById("jugadoresListaIngame");
 const btnSalirSala = document.getElementById("btnSalirSala");
 const btnApostar = document.getElementById("btnApostar");
-const monedasEl = document.getElementById("monedas-valor");
 const boteEl = document.getElementById("bote-valor");
 
 // Referencias DOM - Modales y Audios
@@ -102,126 +86,11 @@ const boteEl = document.getElementById("bote-valor");
 // Audios
 
 
-// ==================== AUTO-LOGIN DESDE EL HUB (SSO) ====================
-// Se marca ANTES de que window.onload pueda ejecutarse. Sin esto había una
-// carrera: el arranque miraba el localStorage y, como el perfil todavía no
-// había llegado del servidor, daba la sesión por inexistente y sacaba la
-// pantalla de acceso. Con el arranque en frío de Render esa petición puede
-// tardar bastante, así que el jugador que venía del Hub se quedaba viendo un
-// login que no debía existir.
+// Entrar desde el Hub vive en modulos/sso.js. Se llama AQUÍ, antes de que
+// window.onload pueda ejecutarse: si no, el arranque decide que no hay sesión
+// mientras el perfil todavía viene por la red.
+verificarSSO(configurarMenu, ocultarSplashGlobal);
 
-(function verificarSSO() {
-    const params = new URLSearchParams(window.location.search);
-    // `tk` es el formato actual: el token firmado que reparte el Hub.
-    const tk = params.get('tk');
-    if (tk) localStorage.setItem("loteria_token", tk);
-
-    // `sso` era el formato viejo, JSON en base64 sin firmar. Se sigue aceptando
-    // por si queda algún enlace antiguo circulando, pero el Hub ya no lo genera.
-    const tokenSSO = params.get('sso') || tk;
-    
-    if (!tokenSSO) return;
-
-    const limpiarUrl = () => window.history.replaceState({}, document.title, window.location.pathname);
-
-    // --- FORMATO NUEVO: JWT firmado por el backend ---
-    // No lo validamos aquí, y no hace falta: no tenemos la llave y el servidor lo
-    // verifica en cada petición. Eso es justo lo que le faltaba al formato viejo,
-    // que era JSON en base64 sin firma y cualquiera podía fabricarse uno.
-    if (tokenSSO.split('.').length === 3) {
-        sesion.entrandoDesdeHub = true;
-        localStorage.setItem("loteria_token", tokenSSO);
-        api('/usuario/datos-frescos')
-            .then(r => r.json())
-            .then(d => {
-                if (!d.success) throw new Error("el servidor rechazó el token");
-                const perfil = {
-                    email: d.email, nickname: d.nickname, monedas: d.monedas,
-                    esAdmin: !!d.esAdmin, inventario: d.inventario || [],
-                    fichaActiva: d.fichaActiva, cartasFavoritas: d.cartasFavoritas || []
-                };
-                localStorage.setItem("loteria_usuario", JSON.stringify(perfil));
-                limpiarUrl();
-
-                // Se entra en el momento, sin recargar. Recargar significaba
-                // esperar dos veces: la petición del perfil y la carga entera
-                // de la página otra vez.
-                sesion.usuario = perfil;
-                if (perfil.fichaActiva) establecerFicha(perfil.fichaActiva);
-                if (perfil.cartasFavoritas?.length) {
-                    localStorage.setItem("loteria_cartas_fav", JSON.stringify(perfil.cartasFavoritas));
-                }
-                sesion.entrandoDesdeHub = false;
-
-                // Primero se entra, y solo después lo accesorio. Si algo de esto
-                // fallara —el socket, una imagen, la tienda— no tiene por qué
-                // costarle la sesión a alguien que ya se identificó bien.
-                cambiarPantalla("menu");
-                ocultarSplashGlobal();
-
-                try {
-                    configurarMenu();
-                    actualizarSaldoUI(sesion.usuario);
-                    sincronizarDatosForzoso();
-                    if (typeof socket !== "undefined" && socket) socket.disconnect().connect();
-
-                    const invitacion = new URLSearchParams(window.location.search).get('sala');
-                    if (invitacion) unirseSalaDirecto(invitacion, null);
-                } catch (fallo) {
-                    console.warn("Entramos, pero algo del arranque falló:", fallo);
-                }
-            })
-            .catch(e => {
-                console.error("SSO:", e);
-                localStorage.removeItem("loteria_token");
-                limpiarUrl();
-                sesion.entrandoDesdeHub = false;
-                ocultarSplashGlobal(() => {
-                    cambiarPantalla("login");
-                    mostrarAlerta("No pudimos validar tu sesión del Hub. Entra de nuevo.", "Sesión");
-                });
-            });
-        return;
-    }
-
-    // --- FORMATO VIEJO: base64 sin firmar ---
-    // Se mantiene mientras el Hub se actualiza al formato nuevo. Es falsificable,
-    // así que hay que retirarlo en cuanto el Hub mande JWT.
-    {
-        try {
-            // 1. Decodificar el token (Base64 -> JSON)
-            const jsonUsuario = atob(tokenSSO);
-            const usuarioHub = JSON.parse(jsonUsuario);
-            
-            console.log("🔓 Login Automático desde Hub:", usuarioHub.nickname);
-
-            // 2. Recuperar preferencias anteriores SI EXISTEN antes de sobrescribir
-            // Esto ayuda a que no haya un "parpadeo" de la skin default si ya estaba guardada
-            const prevFicha = localStorage.getItem("loteria_ficha_activa");
-            const prevCartas = localStorage.getItem("loteria_cartas_fav");
-
-            if(prevFicha) usuarioHub.fichaActiva = prevFicha;
-            if(prevCartas) usuarioHub.cartasFavoritas = JSON.parse(prevCartas);
-
-            // 3. Guardar en el LocalStorage de la Lotería
-            localStorage.setItem("loteria_usuario", JSON.stringify(usuarioHub));
-            
-            // 4. Limpiar la URL para que no se vea el token feo
-            const nuevaUrl = window.location.pathname;
-            window.history.replaceState({}, document.title, nuevaUrl);
-            
-            // 5. 🔥 IMPORTANTE: Forzar recarga de ventana si es la primera vez que entra
-            // para asegurar que window.onload ejecute toda la lógica de conexión
-            if (!sessionStorage.getItem("sso_processed")) {
-                sessionStorage.setItem("sso_processed", "true");
-                window.location.reload();
-            }
-            
-        } catch (e) {
-            console.error("Error procesando SSO:", e);
-        }
-    }
-})();
 // ===================================================================
 
 // Los modales y la navegación entre pantallas viven en modulos/ui.js.
@@ -548,58 +417,11 @@ socket.on('estado-sala-restaurado', (estado) => {
     if(estado.monedas !== undefined) {
         sesion.usuario.monedas = estado.monedas;
         configurarMenu();
-        actualizarValor(monedasEl, estado.monedas);
+        actualizarValor(document.getElementById("monedas-valor"), estado.monedas);
     }
 });
 
-socket.on("jugadores-actualizados", jugadores => {
-  partida.jugadores = jugadores;
-   
-  const misDatos = Object.values(jugadores).find(j => j.email === sesion.usuario?.email);
-  if (misDatos) {
-    actualizarValor(monedasEl, misDatos.monedas);
-    partida.haApostado = misDatos.apostado; 
-    sesion.usuario.monedas = misDatos.monedas;
-    localStorage.setItem("loteria_usuario", JSON.stringify(sesion.usuario));
-    configurarMenu();
-  }
-   
-  if (btnApostar) btnApostar.disabled = partida.haApostado;
-   
-  const htmlLista = "<h3>Jugadores en sala:</h3>" +
-    Object.values(jugadores).map(j => {
-      const check = j.apostado ? "💸" : "";
-      const crown = j.host ? "👑" : ""; 
-      
-      // LÓGICA DE LA FLAMA 🔥
-      let fuego = "";
-      if (j.racha > 0) {
-          fuego = "🔥";
-          if (j.racha > 1) fuego += `<small style="color:orange; font-weight:bold;">x${j.racha}</small>`;
-      }
-
-      // Botón de silencio: solo lo ve el anfitrión, y no sobre sí mismo.
-      let botonMute = "";
-      if (partida.soyHost && j.email && j.email !== sesion.usuario?.email) {
-          const callado = partida.silenciados.includes(j.email);
-          botonMute = `<button class="btn-mute ${callado ? 'callado' : ''}"
-                        data-accion="silenciar" data-email="${escaparHtml(j.email)}"
-                        title="${callado ? 'Devolverle los sonidos' : 'Silenciar sus sonidos'}"
-                        >${callado ? '🔇' : '🔊'}</button>`;
-      }
-      const iconoCallado = (!partida.soyHost && partida.silenciados.includes(j.email)) ? ' 🔇' : '';
-
-      // Le damos un estilo "flex" para que se vea alineado
-      return `
-        <div style="display:flex; justify-content:space-between; align-items:center; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.1);">
-            <span>${crown} ${escaparHtml(j.nickname)} ${fuego}${iconoCallado}</span>
-            <span style="display:flex; align-items:center; gap:6px;">${check}${botonMute}</span>
-        </div>`;
-    }).join("");
-    
-  if(jugadoresLista) jugadoresLista.innerHTML = htmlLista;
-  if(jugadoresListaIngame) jugadoresListaIngame.innerHTML = htmlLista;
-});
+iniciarJugadores(configurarMenu);
 
 socket.on('bote-actualizado', (bote) => { actualizarValor(boteEl, bote); });
 
