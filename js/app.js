@@ -14,6 +14,7 @@ import { emitirLoteria, iniciarValidacion } from './modulos/validacion.js';
 import { verificarSSO } from './modulos/sso.js';
 import { iniciarJugadores, alternarSilencio } from './modulos/jugadores.js';
 import { sesion, partida } from './modulos/estado.js';
+import { pintarMonedas, TOPE_MONEDAS_POZO } from './modulos/monedas.js';
 import { guardarSetFavorito, cargarSetFavorito } from './modulos/favoritos.js';
 import {
     generarCartas, renumerarSeleccion, seleccionarCarta,
@@ -58,6 +59,8 @@ function refrescarPozoUI() {
     if (!caja) return;
     caja.style.display = pozoDisponible() ? "flex" : "none";
     actualizarValor(document.getElementById("pozo-valor"), partida.pozo);
+    // El pozo puede crecer mucho entre partidas, así que la torre se corta en 25.
+    pintarMonedas(document.getElementById("pozoMonedas"), partida.pozo, TOPE_MONEDAS_POZO);
 }
 
 socket.on('pozo-actualizado', (monto) => {
@@ -423,7 +426,12 @@ socket.on('estado-sala-restaurado', (estado) => {
 
 iniciarJugadores(configurarMenu);
 
-socket.on('bote-actualizado', (bote) => { actualizarValor(boteEl, bote); });
+socket.on('bote-actualizado', (bote) => {
+  actualizarValor(boteEl, bote);
+  // Una moneda por peso: cada tabla apostada cuesta $1, así que la torre del
+  // bote crece exactamente igual que el número.
+  pintarMonedas(document.getElementById("boteMonedas"), bote);
+});
 
 socket.on("error-apuesta", msg => {
   mostrarAlerta(msg || "Error al apostar", "Ups");

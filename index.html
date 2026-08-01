@@ -306,10 +306,8 @@
                 <button class="btn-recargar-verde" data-accion="abrir-recarga">Recargar ➕</button>
               </div>
               <div class="apuesta-control">
-                  <div class="bote-monedas">
-                      <img src="assets/imagenes/ui/peso.png" alt="">
-                      <img src="assets/imagenes/ui/peso.png" alt="">
-                      <img src="assets/imagenes/ui/peso.png" alt="">
+                  <!-- Las monedas las pinta modulos/monedas.js: una por peso -->
+                  <div class="bote-monedas" id="boteMonedas">
                       <strong id="bote-valor">0</strong>
                   </div>
                   <span style="font-weight:600;font-size:0.8rem">Bote</span>
@@ -317,10 +315,8 @@
               </div>
 
               <div class="pozo-control" id="pozoControl" style="display:none;">
-                  <div class="bote-monedas pozo-monedas">
-                      <img src="assets/imagenes/ui/peso.png" alt="">
-                      <img src="assets/imagenes/ui/peso.png" alt="">
-                      <img src="assets/imagenes/ui/peso.png" alt="">
+                  <!-- Igual que el bote, pero con tope de 25 monedas -->
+                  <div class="bote-monedas pozo-monedas" id="pozoMonedas">
                       <strong id="pozo-valor">0</strong>
                   </div>
                   <span style="font-weight:600;font-size:0.8rem">Pozo</span>

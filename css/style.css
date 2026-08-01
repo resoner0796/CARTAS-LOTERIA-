@@ -402,10 +402,9 @@ button[onclick*="unirseSala"], #btnBarajear, #btnLimpiarCartas {
 .moneda-stack:first-of-type { margin-top: 0; }
 #monedas-valor { color: var(--amarillo-maiz); font-size: 2rem; font-weight: 800; margin-top: 0.5rem; text-shadow: 0 2px 4px rgba(0,0,0,0.5); }
 .bote-monedas { position: relative; width: 55px; height: 55px; display: flex; justify-content: center; align-items: center; margin-bottom: 0.5rem; }
-.bote-monedas img { position: absolute; width: 40px; height: 40px; filter: drop-shadow(0 4px 4px rgba(0,0,0,0.5)); }
-.bote-monedas img:nth-child(2) { transform: translate(18px, 10px); z-index: 2; }
-.bote-monedas img:nth-child(3) { transform: translate(10px, 18px); z-index: 3; }
-.bote-monedas img:nth-child(4) { transform: translate(0px, 20px); z-index: 4; }
+/* Las tres monedas fijas que había aquí, cada una con su transform, se fueron:
+   ahora las pinta modulos/monedas.js y son tantas como dinero haya. Las reglas
+   viejas seguían aplicando a las nuevas y las desparramaban por el hueco. */
 #bote-valor { color: var(--amarillo-maiz); font-weight: 800; font-size: 1.4rem; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 13; text-shadow: 0 0 8px rgba(0,0,0,0.9); }
 
 /* LISTA JUGADORES (CON BORDE DORADO) */
@@ -1570,22 +1569,33 @@ textarea::placeholder { color: rgba(255,255,255,0.6); }
    ========================================================================= */
 
 /* Base (móvil vertical): dos columnas.
-   El orden del DOM es Cambiar · Limpiar · Lotería · Salir, pero de pie conviene
-   tener arriba los dos que más se pican durante la partida —Limpiar y Lotería—
-   porque son los que caen bajo el pulgar. Los de menos uso quedan debajo.
+   El orden del DOM no manda aquí: se reacomoda con `order` para que lo que más
+   se usa durante la partida quede abajo, cerca del pulgar, y lo de preparar la
+   mesa quede arriba. Un anfitrión sostiene el teléfono con una mano mientras
+   canta, así que la distancia al pulgar es lo que decide.
+
+   Quien no es anfitrión no ve Barajear, Iniciar ni Detener, y la cuadrícula se
+   cierra sola: le quedan Limpiar · Lotería arriba y Cambiar · Salir abajo.
 
        ┌───────────┬───────────┐
-       │  Limpiar  │  LOTERÍA  │
+       │ Barajear  │  Iniciar  │   preparar la mesa
        ├───────────┼───────────┤
-       │  Cambiar  │   Salir   │
-       └───────────┴───────────┘                                            */
+       │  Limpiar  │  LOTERÍA  │   lo que se pica jugando
+       ├───────────┼───────────┤
+       │  Detener  │  Cambiar  │
+       ├───────────┼───────────┤
+       │   Salir   │           │
+       └───────────┴───────────┘
+
+   En escritorio y en móvil acostado esto no aplica: ahí van todos en una fila,
+   en el orden del DOM.                                                      */
 .botones-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 
 #btnBarajear      { order: 1; }
 #btnIniciarJuego  { order: 2; }
-#btnDetenerJuego  { order: 3; }
-#btnLimpiarCartas { order: 4; }
-#btnLoteria       { order: 5; }
+#btnLimpiarCartas { order: 3; }
+#btnLoteria       { order: 4; }
+#btnDetenerJuego  { order: 5; }
 #btnCambiarCartas { order: 6; }
 #btnSalirSala     { order: 7; }
 
@@ -1957,7 +1967,7 @@ textarea::placeholder { color: rgba(255,255,255,0.6); }
     .pozo-apunte { font-size: 0.6rem; padding: 4px 6px; gap: 3px; }
     .pozo-apunte input { width: 15px; height: 15px; }
     .bote-monedas { width: 46px; height: 46px; }
-    .bote-monedas img { width: 34px; height: 34px; }
+    .bote-monedas .moneda-bote { width: 22px; height: 22px; margin-left: -11px; }
     #bote-valor, #pozo-valor { font-size: 1.15rem; }
 }
 @media (max-width: 360px) {
@@ -1969,3 +1979,45 @@ textarea::placeholder { color: rgba(255,255,255,0.6); }
    el ganador, el premio, el pozo. Sin `pre-line` el navegador los colapsa en
    un espacio y todo queda en un párrafo corrido. */
 #modalSistemaMensaje { white-space: pre-line; }
+
+/* =========================================================
+   MONEDAS DINÁMICAS DEL BOTE Y DEL POZO
+   =========================================================
+   Antes eran tres imágenes fijas en el HTML, dijera lo que dijera el número.
+   Ahora las pinta modulos/monedas.js: una por peso, para que se vea crecer el
+   bote conforme la gente apuesta.
+
+   Las monedas se apilan desde ABAJO (bottom) porque una torre crece hacia
+   arriba. El módulo calcula la separación según cuántas haya, así que aquí no
+   se fija ninguna altura: sea el bote de 2 o el pozo de 25, la pila cabe en el
+   mismo hueco.                                                             */
+
+.bote-monedas .moneda-bote {
+    position: absolute;
+    left: 50%;
+    width: 26px;
+    height: 26px;
+    margin-left: -13px;              /* centra sobre `left: 50%` */
+    filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.55));
+    /* Sin transición en `bottom`: al repintar la torre las monedas son otras,
+       y animar su posición las hacía saltar desde abajo cada vez. */
+    pointer-events: none;
+}
+
+/* El número se aparta a la izquierda en vez de quedar encima de la torre.
+   Centrado, con una pila de 20 monedas detrás, no había sombra que lo salvara. */
+#bote-valor, #pozo-valor {
+    z-index: 50;
+    left: -2px;
+    transform: translateY(-50%);
+}
+
+/* Las del pozo se distinguen del bote con un tinte dorado más cálido. */
+.pozo-monedas .moneda-bote { filter: drop-shadow(0 2px 2px rgba(0,0,0,0.55)) saturate(1.4); }
+
+/* La última moneda que entra da un golpecito, para que se note que subió. */
+@keyframes monedaEntra {
+    from { transform: translateY(-6px) scale(0.8); opacity: 0; }
+    to   { transform: translateY(0) scale(1); opacity: 1; }
+}
+.bote-monedas .moneda-bote:last-of-type { animation: monedaEntra 0.25s ease-out; }

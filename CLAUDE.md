@@ -167,6 +167,7 @@ después de cada movimiento; de 2.030 líneas en un archivo a **18 módulos**.
 | `efectos.js` | Soundboard: sonidos que dispara **la gente** |
 | `audio.js` | Sonidos que dispara **el juego** |
 | `animaciones.js` | Gestos y decoración. Puro DOM |
+| `monedas.js` | Las torres del bote y del pozo: una moneda por peso |
 | `app.js` | Arranque, login/registro, y los eventos de socket de la partida |
 
 ### Las cinco reglas del cliente
