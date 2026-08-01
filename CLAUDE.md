@@ -330,13 +330,19 @@ la tercera no sabes qué hace el código que realmente se publica. Los dos bugs 
 caros de este repo —botones renombrados por el ofuscador— los encontró la
 ejecución, nunca la lectura del diff.
 
-Bugs pendientes:
-- `manifest.json` apunta a íconos que no existen en esa ruta.
-- Los cuatro `icon-192`/`icon-512` son **el mismo blob de 1.5 MB** duplicado bajo
-  cuatro nombres que solo difieren en mayúsculas. Para un icono de 192px sobra
-  entero.
-- `cargar-usuarios-admin` y `gritar-loteria` truenan si `usuarioActual` es `null`.
-  No se alcanza jugando normal —ambas exigen sesión— pero les falta la guarda.
+Bugs pendientes: ninguno conocido en el cliente.
+
+⚠️ **Nombres de archivo: todo en minúsculas.** macOS no distingue mayúsculas en
+los nombres, pero git y el Linux de Vercel sí. Había un `icon-192.PNG` y un
+`icon-192.png`: en tu Mac son **el mismo archivo**, en producción son **dos**.
+Al optimizar los iconos, el cambio llegó a uno solo — y el `manifest.json` pedía
+justo el otro, así que la app instalada seguía bajando 1.5 MB de icono. No da
+ningún error: simplemente se sirve el archivo equivocado.
+Para comprobar que no vuelve a pasar:
+
+```bash
+git ls-files assets/ | awk '{print tolower($0)}' | sort | uniq -d
+```
 
 ### Assets
 

@@ -202,8 +202,8 @@ propósito.
 - [x] XSS del nickname escapado en los 5 puntos de inyección
 - [x] Dejar de mandar el hash de la contraseña al navegador
 - [x] Registrar el service worker
-- [ ] Arreglar `manifest.json` (íconos apuntan a rutas rotas)
-- [ ] Optimizar assets a WebP (~100 MB actuales)
+- [x] Arreglar `manifest.json` y unificar los nombres de archivo a minúsculas
+- [x] Optimizar assets — de 101 MB a 53 MB, midiendo a qué tamaño se ven de verdad
 - [x] Pruebas automáticas en Chrome, sobre la fuente y sobre el bundle ofuscado
 - [x] Ofuscación automática en el build de Vercel
 - [x] Quitar los `onclick` del HTML (paso previo a modularizar)
