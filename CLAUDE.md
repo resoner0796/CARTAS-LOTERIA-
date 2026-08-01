@@ -81,6 +81,9 @@ js/modulos/           Piezas ya separadas (ver "Modularización")
   socket.js             La conexión Socket.IO, con su guarda
   efectos.js            Soundboard en partida
   animaciones.js        Arrastre del botón flotante y vuelo de monedas
+  estado.js             Estado compartido de la partida y la sesión
+  sala.js               Crear, entrar, invitar y salir de salas
+  favoritos.js          Guardar y recuperar el set de tablas preferido
 scripts/obfuscate.js  Empaqueta y ofusca en el build de Vercel — ver abajo
 vercel.json           buildCommand + outputDirectory
 service-worker.js     Estrategias de caché (PWA)
@@ -132,7 +135,7 @@ Si vuelves a meter un `onclick`, esa red lo cubre — pero mejor no.
 ### Modularización (en curso)
 
 `app.js` se está partiendo en `js/modulos/`, **un módulo a la vez**, verificando
-después de cada movimiento. Van diez:
+después de cada movimiento. Van trece:
 
 ```
        config.js   utiles.js        (hojas: no importan nada)
@@ -165,7 +168,10 @@ después de cada movimiento. Van diez:
   pasarse por argumento, porque un socket es una conexión, no estado de partida.
 - **`efectos.js`** — el soundboard.
 - **`animaciones.js`** — gestos y decoración. Puro DOM.
-- **`app.js`** — todo lo demás, por ahora.
+- **`estado.js`** — lo que comparten varios módulos mientras se juega.
+- **`sala.js`** — crear, entrar, invitar y salir.
+- **`favoritos.js`** — el set de tablas preferido.
+- **`app.js`** — el tablero, los eventos del socket y la validación de ganadores.
 
 Los cuatro últimos **reciben el usuario como argumento**; ninguno lee
 `usuarioActual`.
@@ -204,10 +210,24 @@ Dos ejemplos ya en el código:
   El módulo puede mutar el objeto que recibe (así el saldo baja en pantalla al
   instante), pero no sabe de dónde salió ni quién más lo mira.
 
-**El socket ya no es un obstáculo**: los módulos que lo necesiten lo importan.
-Lo que queda por repartir es sala, selección, juego, apuestas y validación, que
-comparten el ESTADO de la partida (`salaActual`, `seleccionadas`, `soyHost`…).
-Ahí es donde habrá que decidir de verdad cómo se comparte.
+**Cómo se comparte el estado** (`estado.js`): son OBJETOS exportados, no
+variables sueltas. Si se exportara `let sala = ""`, cada módulo se llevaría una
+copia del valor al importar y no vería los cambios de los demás; con un objeto,
+todos miran el mismo sitio. Se eligió esto antes que getters por variable o un
+store con eventos: para el tamaño de este juego tiene menos piezas móviles, y no
+hace falta reaccionar a los cambios porque quien pinta ya se entera por los
+eventos del socket.
+
+⚠️ En `estado.js` va **solo** lo que comparten varios módulos. Si algo lo usa un
+único archivo, déjalo ahí: ese objeto es el sitio fácil donde acaba amontonándose
+todo si nadie lo cuida.
+
+**Para evitar ciclos, pasa funciones como argumento.** `favoritos.js` necesita
+seleccionar tablas y `sala.js` necesita limpiar el tablero, pero ninguno importa
+del juego: las reciben. Al revés habría dependencias en círculo.
+
+Queda por repartir el núcleo que sigue en `app.js`: el tablero (generar tablas,
+elegir, marcar fichas), los escuchas del socket y la validación de ganadores.
 
 ⚠️ **En `socket.js` la global se lee como `window.io`, nunca como `io` a secas.**
 Escrita suelta, el ofuscador la trata como un global más del bundle y a veces la

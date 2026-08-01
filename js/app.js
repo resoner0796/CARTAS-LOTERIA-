@@ -10,6 +10,11 @@ import { STRIPE_CLAVE_PUBLICA, FICHA_POR_DEFECTO } from './modulos/config.js';
 import { escaparHtml, actualizarValor } from './modulos/utiles.js';
 import { socket } from './modulos/socket.js';
 import { sesion, partida } from './modulos/estado.js';
+import { guardarSetFavorito, cargarSetFavorito } from './modulos/favoritos.js';
+import {
+    compartirSala, crearSalaPropia, unirseSalaExistente,
+    unirseSalaDirecto, salirDeSalaEnJuego
+} from './modulos/sala.js';
 import { iniciarBotonArrastrable, animarVueloMonedas } from './modulos/animaciones.js';
 import { toggleMenuSonidos, renderizarSonidosJuego } from './modulos/efectos.js';
 import {
@@ -449,100 +454,10 @@ function configurarMenu() {
 // ======================================================
 // GESTIÓN DE SALAS
 // ======================================================
-// ==================== COMPARTIR SALA (FIX GLOBAL) ====================
+// Crear sala, entrar, invitar y salir viven en modulos/sala.js.
+// resetearUI se queda aquí porque lo que limpia son elementos del tablero.
 
-window.compartirSala = function() {
-    if (!partida.sala) return mostrarAlerta("Primero debes entrar a una sala.", "Error");
-
-    const urlBase = window.location.origin + window.location.pathname;
-    const linkInvitacion = `${urlBase}?sala=${encodeURIComponent(partida.sala)}`;
-    
-    const datosShare = {
-        title: '¡Juguemos Lotería! 🎰',
-        text: `Únete a mi sala "${partida.sala}" en Juegos en la Nube. ¡Entra ya!`,
-        url: linkInvitacion
-    };
-
-    // 1. Detectamos si estamos dentro del HUB (Iframe)
-    if (window.self !== window.top) {
-        console.log("📡 Enviando señal al HUB para compartir...");
-        // Le mandamos el mensaje al Padre (HUB)
-        window.parent.postMessage({
-            action: 'COMPARTIR_NATIVO',
-            datos: datosShare
-        }, '*');
-        return; // El HUB se encarga, nosotros terminamos aquí.
-    }
-
-    // 2. Si NO estamos en el Hub (estamos directo en la página), intentamos normal
-    if (navigator.share) {
-        navigator.share(datosShare).catch(console.error);
-    } else {
-        // Fallback PC
-        navigator.clipboard.writeText(linkInvitacion)
-            .then(() => mostrarAlerta("Link copiado 📋", "Listo"));
-    }
-};
-
-
-
-function crearSalaPropia() {
-    const nombreSala = document.getElementById("inputCrearSala").value.trim();
-    const selectModo = document.getElementById("inputModoJuego");
-    const modoJuego = selectModo ? selectModo.value : "clasico"; 
-    
-    if(!nombreSala) return mostrarAlerta("Ponle nombre a tu sala");
-    unirseSalaDirecto(nombreSala, modoJuego);
-}
-
-function unirseSalaExistente() {
-    const nombreSala = document.getElementById("inputUnirseSala").value.trim();
-    if(!nombreSala) return mostrarAlerta("Escribe el nombre de la sala");
-    unirseSalaDirecto(nombreSala, null);
-}
-
-function unirseSalaDirecto(nombreSala, modo) {
-    partida.sala = nombreSala;
-    
-    // Configurar Fondos
-    const basePath = "assets/imagenes/ui/";
-    let fondoSel = "fondo-seleccion.PNG";
-    let fondoJuego = "fondo-juego.PNG";
-
-    if(partida.sala === "Familia") { fondoSel = "fondo-seleccion-familia.PNG"; fondoJuego = "fondo-juego-familia.PNG"; }
-    if(partida.sala === "Oficina") { fondoSel = "fondo-seleccion-oficina.PNG"; fondoJuego = "fondo-juego-oficina.PNG"; }
-    if(partida.sala === "Amigos") { fondoSel = "fondo-seleccion-amigos.PNG"; fondoJuego = "fondo-juego-amigos.PNG"; }
-
-    aplicarFondo(pantalla('seleccion'), basePath + fondoSel);
-    aplicarFondo(pantalla('juego'), basePath + fondoJuego);
-
-    socket.emit("unirse-sala", { 
-        nickname: sesion.usuario.nickname, 
-        email: sesion.usuario.email,
-        sala: partida.sala,
-        modo: modo
-    });
-
-    document.getElementById("tituloSalaActual").textContent = `Sala: ${partida.sala}`;
-    cambiarPantalla("sala");
-}
-
-function aplicarFondo(elemento, imageUrl) {
-    elemento.style.backgroundImage = `url("${imageUrl}")`;
-    elemento.style.backgroundSize = 'cover';
-    elemento.style.backgroundPosition = 'center';
-}
-
-// Funcionalidad Botón Salir
-if(btnSalirSala) btnSalirSala.addEventListener("click", () => salirDeSalaEnJuego());
-
-function salirDeSalaEnJuego() {
-    mostrarConfirmacion("¿Seguro que quieres salir de la sala?", () => {
-        socket.emit("salir-sala", partida.sala);
-        resetearUI();
-        cambiarPantalla("menu");
-    });
-}
+if (btnSalirSala) btnSalirSala.addEventListener("click", () => salirDeSalaEnJuego(resetearUI));
 
 function resetearUI() {
   partida.silenciados = [];
@@ -1260,80 +1175,7 @@ if(btnApostar) btnApostar.addEventListener("click", () => {
 // La recarga con tarjeta y la tienda de artículos viven en
 // modulos/tienda.js. Reciben el usuario como argumento.
 
-// ==================== PRESETS DE CARTAS ====================
-
-async function guardarSetFavorito(boton) {
-    if(partida.seleccionadas.length === 0) return mostrarAlerta("Selecciona cartas primero.");
-    
-    // 1. Guardado Local
-    localStorage.setItem("loteria_cartas_fav", JSON.stringify(partida.seleccionadas));
-    
-    // 2. Guardado en Nube (BD)
-    if(sesion.usuario && sesion.usuario.email) {
-        try {
-            const btn = boton; // el botón llega desde el despachador de acciones
-            if (!btn) throw new Error('sin botón');
-            const textoOriginal = btn.innerText;
-            btn.innerText = "Guardando...";
-            
-            await api(`/usuario/guardar-preferencias`, {
-                method: 'POST',
-                body: JSON.stringify({ 
-                    email: sesion.usuario.email, 
-                    cartasFavoritas: partida.seleccionadas 
-                })
-            });
-            
-            // Actualizamos el objeto local
-            sesion.usuario.cartasFavoritas = partida.seleccionadas;
-            localStorage.setItem("loteria_usuario", JSON.stringify(sesion.usuario));
-            
-            btn.innerText = textoOriginal;
-            mostrarAlerta("¡Cartas guardadas en tu cuenta! ☁️", "Guardado");
-        } catch (e) {
-            console.error(e);
-            mostrarAlerta("Se guardó localmente, pero falló la nube.", "Aviso");
-        }
-    } else {
-        mostrarAlerta("Inicia sesión para guardar en la nube.", "Guardado Local");
-    }
-}
-
-function cargarSetFavorito() {
-    let idsFavoritos = [];
-
-    // 1. Intentar leer del usuario logueado (Nube)
-    if (sesion.usuario && sesion.usuario.cartasFavoritas && sesion.usuario.cartasFavoritas.length > 0) {
-        idsFavoritos = sesion.usuario.cartasFavoritas;
-    } 
-    // 2. Si no, intentar leer del localStorage (Local)
-    else {
-        const guardadas = localStorage.getItem("loteria_cartas_fav");
-        if (guardadas) idsFavoritos = JSON.parse(guardadas);
-    }
-
-    if(idsFavoritos.length === 0) return mostrarAlerta("No tienes ningún set guardado.", "Sin datos");
-    
-    // Lógica de selección visual
-    partida.seleccionadas.forEach(id => {
-        socket.emit("deseleccionar-carta", { carta: id, sala: partida.sala });
-    });
-    partida.seleccionadas = [];
-    
-    document.querySelectorAll("#contenedorCartas .carta-img").forEach(img => {
-        img.classList.remove("seleccionada");
-    });
-
-    idsFavoritos.forEach((id, index) => {
-        setTimeout(() => {
-            const img = document.querySelector(`.carta-img[data-id="${id}"]`);
-            if(img) seleccionarCarta(img);
-            renumerarSeleccion();
-        }, index * 50);
-    });
-    
-    mostrarAlerta("Tus cartas favoritas han sido cargadas.", "Listo");
-}
+// El set de tablas favorito vive en modulos/favoritos.js.
 
 function iniciarJuegoConVelocidad() {
     const selector = document.getElementById("velocidadJuego");
@@ -1486,11 +1328,13 @@ const ACCIONES = {
     'crear-sala':             () => crearSalaPropia(),
     'unirse-sala':            () => unirseSalaExistente(),
     'compartir-sala':         () => compartirSala(),
-    'salir-sala':             () => salirDeSalaEnJuego(),
+    'salir-sala':             () => salirDeSalaEnJuego(resetearUI),
     'silenciar':              (el) => alternarSilencio(el.dataset.email),
 
     // --- Selección de tablas ---
-    'cargar-favoritas':       () => cargarSetFavorito(),
+    // Se le pasan las dos funciones de selección para no crear un ciclo:
+    // favoritos.js las necesita, pero el juego ya importa de favoritos.
+    'cargar-favoritas':       () => cargarSetFavorito(seleccionarCarta, renumerarSeleccion),
     'guardar-favoritas':      (el) => guardarSetFavorito(el),
 
     // --- Mesa de juego ---
