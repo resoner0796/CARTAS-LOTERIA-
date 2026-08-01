@@ -9,18 +9,22 @@
 import { STRIPE_CLAVE_PUBLICA, FICHA_POR_DEFECTO } from './modulos/config.js';
 import { escaparHtml, actualizarValor } from './modulos/utiles.js';
 import { socket } from './modulos/socket.js';
+import { sonidos, sonarApuesta } from './modulos/audio.js';
+import { emitirLoteria, iniciarValidacion } from './modulos/validacion.js';
 import { sesion, partida } from './modulos/estado.js';
 import { guardarSetFavorito, cargarSetFavorito } from './modulos/favoritos.js';
+import {
+    generarCartas, renumerarSeleccion, seleccionarCarta,
+    montarMesa, limpiarFichas, cambiarCartas,
+    restaurarSeleccionVisual, resetearTablero, limpiarHistorialCantadas
+} from './modulos/tablero.js';
 import {
     compartirSala, crearSalaPropia, unirseSalaExistente,
     unirseSalaDirecto, salirDeSalaEnJuego
 } from './modulos/sala.js';
 import { iniciarBotonArrastrable, animarVueloMonedas } from './modulos/animaciones.js';
 import { toggleMenuSonidos, renderizarSonidosJuego } from './modulos/efectos.js';
-import {
-    cambiarPantalla, pantalla, iniciarModales,
-    mostrarAlerta, mostrarConfirmacion
-} from './modulos/ui.js';
+import { cambiarPantalla, pantalla, iniciarModales, mostrarAlerta } from './modulos/ui.js';
 import { api, guardarToken, obtenerToken, borrarSesion } from './modulos/sesion.js';
 import {
     abrirModalTransferencia, cerrarModalTransferencia, cancelarTransferencia,
@@ -30,8 +34,7 @@ import {
 import {
     abrirModalRecarga, cerrarTienda, volverAPaquetes, iniciarPagoEmbedded,
     actualizarSaldoUI, abrirCategoriaTienda, cerrarModalTiendaDetalle,
-    refrescarCategoria, previewSonido, usarFicha, comprarItem,
-    fichaEnUso, establecerFicha
+    refrescarCategoria, previewSonido, usarFicha, comprarItem, establecerFicha
 } from './modulos/tienda.js';
 import {
     verificarSiSoyAdmin, abrirPanelAdmin, cargarUsuariosAdmin,
@@ -87,10 +90,6 @@ const stripePromise = Stripe(STRIPE_CLAVE_PUBLICA);
 // Las referencias a las pantallas viven en modulos/ui.js.
 
 // Referencias DOM - Elementos UI
-const contenedorCartas = document.getElementById("contenedorCartas");
-const juegoCartas = document.getElementById("juegoCartas");
-const btnIniciar = document.getElementById("btnIniciar"); 
-const historial = document.getElementById("historial");
 const jugadoresLista = document.getElementById("jugadoresLista");
 const jugadoresListaIngame = document.getElementById("jugadoresListaIngame");
 const btnSalirSala = document.getElementById("btnSalirSala");
@@ -99,20 +98,8 @@ const monedasEl = document.getElementById("monedas-valor");
 const boteEl = document.getElementById("bote-valor");
 
 // Referencias DOM - Modales y Audios
-const loteriaModal = document.getElementById("loteriaModal");
-const modalLoteriaTitulo = document.getElementById("modalLoteriaTitulo");
-const modalLoteriaTexto = document.getElementById("modalLoteriaTexto");
-const btnAceptarGanador = document.getElementById("btnAceptarGanador");
-const btnRechazarGanador = document.getElementById("btnRechazarGanador");
-const modalVerificationArea = document.getElementById("modalVerificationArea");
 
 // Audios
-const audioBarajear = document.getElementById("audioBarajear");
-const audioCampana = document.getElementById("audioCampana");
-const audioCorre = document.getElementById("audioCorre");
-const audioAplausos = document.getElementById("audioAplausos");
-const audioKachin = new Audio("assets/audios/kachin.mp3"); // Sonido de apuesta
-const loteriaMensaje = document.getElementById("loteriaMensaje");
 
 
 // ==================== AUTO-LOGIN DESDE EL HUB (SSO) ====================
@@ -455,24 +442,11 @@ function configurarMenu() {
 // GESTIÓN DE SALAS
 // ======================================================
 // Crear sala, entrar, invitar y salir viven en modulos/sala.js.
-// resetearUI se queda aquí porque lo que limpia son elementos del tablero.
+// resetearTablero se queda aquí porque lo que limpia son elementos del tablero.
 
-if (btnSalirSala) btnSalirSala.addEventListener("click", () => salirDeSalaEnJuego(resetearUI));
+if (btnSalirSala) btnSalirSala.addEventListener("click", () => salirDeSalaEnJuego(resetearTablero));
 
-function resetearUI() {
-  partida.silenciados = [];
-  partida.pozo = 0;
-  const chkPozoSalida = document.getElementById("chkPozo");
-  if (chkPozoSalida) { chkPozoSalida.checked = false; chkPozoSalida.disabled = false; }
-  limpiarFichas();
-  partida.seleccionadas = [];
-  juegoCartas.innerHTML = "";
-  btnIniciar.style.display = "none";
-  historial.innerHTML = "";
-  partida.haApostado = false;
-  if (btnApostar) btnApostar.disabled = false;
-  window.history.pushState({}, document.title, window.location.pathname);
-}
+
 
 
 
@@ -480,226 +454,15 @@ function resetearUI() {
 // LÓGICA DE JUEGO (CLIENTE)
 // ======================================================
 
-function generarCartas() {
-  contenedorCartas.innerHTML = "";
-  
-  let totalCartasAMostrar = 53;
-  
-  // Si es Pozo, son 20 cartas
-  if (partida.modo === 'pozo') {
-      totalCartasAMostrar = 20;
-  }
+// El tablero vive en modulos/tablero.js: elegir tablas, ponerlas en la mesa,
+// marcar fichas y seguir las cartas cantadas.
 
-  // Generamos el array de números (1 al total)
-  for (let i = 1; i <= totalCartasAMostrar; i++) {
-    const img = document.createElement("img");
-    
-    let nombreArchivo = "";
-    let dataId = "";
-
-    if (partida.modo === 'pozo') {
-        // CORRECCIÓN POZO: Usamos el número directo (1, 2, 3... 20) SIN CEROS
-        nombreArchivo = `${i}.jpg`;
-        dataId = String(i); 
-    } else {
-        // TRADICIONAL: Usamos formato con ceros (01, 02... 54)
-        const numeroConCero = String(i).padStart(2, '0');
-        nombreArchivo = `${numeroConCero}.jpg`;
-        dataId = numeroConCero;
-    }
-
-    img.src = `${partida.rutaCartas}${nombreArchivo}`;
-    img.classList.add("carta-img");
-    img.dataset.id = dataId; // Guardamos el ID limpio
-
-    // Al dar click, seleccionamos y ACTUALIZAMOS EL BOTÓN
-    img.onclick = () => {
-        seleccionarCarta(img);
-        actualizarTextoBotonApuesta();
-    };
-
-    // La tabla va envuelta para poder colgarle encima el número de orden.
-    // Un <img> no admite ::before ni ::after, por eso hace falta el contenedor.
-    const envoltura = document.createElement("div");
-    envoltura.className = "carta-seleccion";
-
-    const insignia = document.createElement("span");
-    insignia.className = "orden-carta";
-
-    envoltura.appendChild(img);
-    envoltura.appendChild(insignia);
-    contenedorCartas.appendChild(envoltura);
-  } // <--- AQUÍ ESTABA EL ERROR, TENÍAS UN "});" EXTRA. YA LO QUITÉ.
-}
-
-/**
- * Pinta sobre cada tabla elegida el lugar que ocupa (1 a 4).
- *
- * Ese orden es el mismo con el que se acomodan en la mesa, así que el jugador
- * decide dónde le queda cada una. Hay que repintarlo entero en cada cambio: si
- * sueltas la segunda, la tercera pasa a ser segunda.
- */
-function renumerarSeleccion() {
-    document.querySelectorAll("#contenedorCartas .carta-seleccion").forEach(env => {
-        const img = env.querySelector(".carta-img");
-        const insignia = env.querySelector(".orden-carta");
-        if (!img || !insignia) return;
-        const lugar = partida.seleccionadas.indexOf(img.dataset.id);
-        if (lugar === -1) {
-            env.classList.remove("elegida");
-            insignia.textContent = "";
-        } else {
-            env.classList.add("elegida");
-            insignia.textContent = lugar + 1;
-        }
-    });
-}
-
-function seleccionarCarta(img) {
-  const id = img.dataset.id;
-   
-  // CASO 1: YA ESTABA SELECCIONADA (DESMARCAR)
-  if (partida.seleccionadas.includes(id)) {
-      partida.seleccionadas = partida.seleccionadas.filter(c => c !== id);
-      img.classList.remove("seleccionada");
-      socket.emit("deseleccionar-carta", { carta: id, sala: partida.sala });
-      
-      // Lógica del Host (Botón Iniciar)
-      if (partida.seleccionadas.length < 2) btnIniciar.style.display = "none";
-      
-      // ACTUALIZAR PRECIO DEL BOTÓN APOSTAR
-      actualizarTextoBotonApuesta();
-      renumerarSeleccion();
-      return;
-  }
-
-  // Verificar si la carta está ocupada por otro (bloqueada)
-  if (img.style.pointerEvents === 'none') return; 
-   
-  // CASO 2: SELECCIONAR NUEVA (MÁXIMO 4)
-  if (partida.seleccionadas.length < 4) {
-    img.classList.add("seleccionada");
-    partida.seleccionadas.push(id);
-    socket.emit("seleccionar-carta", { carta: id, sala: partida.sala });
-    
-    // Lógica del Host (Botón Iniciar)
-    if (partida.seleccionadas.length >= 2) btnIniciar.style.display = "block";
-    
-    // ACTUALIZAR PRECIO DEL BOTÓN APOSTAR
-    actualizarTextoBotonApuesta();
-    renumerarSeleccion();
-  }
-}
-
-btnIniciar.onclick = () => {
-  cambiarPantalla("juego");
-  juegoCartas.innerHTML = "";
-  
-  partida.seleccionadas.forEach(id => {
-    const contenedor = document.createElement("div");
-    contenedor.classList.add("carta-juego");
-    contenedor.dataset.id = id;
-    
-    // USAMOS LA RUTA DINÁMICA AQUÍ TAMBIÉN
-    contenedor.innerHTML = `<img src="${partida.rutaCartas}${id}.jpg" class="carta-img seleccionada">`;
-    
-    contenedor.onclick = e => marcarFicha(e, contenedor);
-    juegoCartas.appendChild(contenedor);
-  });
-  
-  renderizarSonidosJuego(sesion.usuario, partida.sala);
+const btnIniciarJuego = document.getElementById("btnIniciar");
+if (btnIniciarJuego) btnIniciarJuego.onclick = () => {
+    cambiarPantalla("juego");
+    montarMesa();
+    renderizarSonidosJuego(sesion.usuario, partida.sala);
 };
-
-function actualizarTextoBotonApuesta() {
-    const btn = document.getElementById("btnApostar");
-    if (!btn) return;
-
-    // Contamos cuántas cartas visuales tienen la clase "seleccionada"
-    const seleccionadasVisuales = document.querySelectorAll("#contenedorCartas .carta-img.seleccionada").length;
-    
-    // Calculamos el total
-    const totalPagar = seleccionadasVisuales * partida.costoCarta;
-
-    if (seleccionadasVisuales > 0) {
-        btn.innerText = `Apostar $${totalPagar}`;
-        btn.disabled = false;
-        btn.style.opacity = "1";
-    } else {
-        btn.innerText = "Selecciona cartas";
-        btn.disabled = true;
-        btn.style.opacity = "0.5";
-    }
-}
-
-function marcarFicha(e, contenedor) {
-  const elementoClickeado = e.target;
-
-  if (elementoClickeado.classList.contains("ficha")) {
-      if(navigator.vibrate) navigator.vibrate(10);
-      elementoClickeado.remove();
-      return; 
-  }
-
-  const img = contenedor.querySelector("img.carta-img"); 
-  if (!img) return;
-
-  const bounds = img.getBoundingClientRect();
-  const x = e.clientX - bounds.left;
-  const y = e.clientY - bounds.top;
-   
-  const px = (x / bounds.width) * 100;
-  const py = (y / bounds.height) * 100;
-   
-  if(navigator.vibrate) navigator.vibrate(30);
-
-  const ficha = document.createElement("img");
-  
-  // CORRECCIÓN: Usamos la skin seleccionada (Bitcoin, Frijol, etc.)
-  // Si no ha elegido ninguna, usará la default automáticamente.
-  ficha.src = fichaEnUso();
-  
-  ficha.classList.add("ficha");
-  ficha.style.left = `${px}%`;
-  ficha.style.top = `${py}%`;
-   
-  contenedor.appendChild(ficha);
-}
-
-function limpiarFichas() {
-  document.querySelectorAll(".ficha").forEach(f => f.remove());
-}
-
-function cambiarCartas() {
-    const ejecutarCambio = () => {
-        partida.seleccionadas.forEach(id => {
-            socket.emit("deseleccionar-carta", { carta: id, sala: partida.sala });
-        });
-
-        partida.seleccionadas = [];
-        limpiarFichas();
-        juegoCartas.innerHTML = "";
-        btnIniciar.style.display = "none";
-        
-        document.querySelectorAll("#contenedorCartas .carta-img").forEach(img => {
-            img.classList.remove("seleccionada");
-            img.style.opacity = 1;
-            img.style.pointerEvents = "auto";
-        });
-        renumerarSeleccion();
-
-        cambiarPantalla("seleccion");
-    };
-
-    const btnDetener = document.getElementById("btnDetenerJuego");
-    if(btnDetener && btnDetener.style.display !== "none" && partida.soyHost) {
-        mostrarConfirmacion("El juego está corriendo. ¿Pausar para cambiar cartas?", () => {
-            socket.emit("detener-juego", partida.sala);
-            ejecutarCambio();
-        });
-    } else {
-        ejecutarCambio();
-    }
-}
 
 // ======================================================
 // SOCKETS: EVENTOS DEL SERVIDOR
@@ -768,28 +531,12 @@ socket.on('info-sala', (data) => {
 });
 
 /** Vuelve a marcar en el grid las tablas que ya estaban elegidas. */
-function restaurarSeleccionVisual() {
-    partida.seleccionadas.forEach(id => {
-        const img = document.querySelector(`#contenedorCartas .carta-img[data-id="${id}"]`);
-        if (img) img.classList.add("seleccionada");
-    });
-    renumerarSeleccion();
-    actualizarTextoBotonApuesta();
-    if (btnApostar && partida.haApostado) btnApostar.disabled = true;
-}
+
 
 socket.on('estado-sala-restaurado', (estado) => {
     if(estado.cartas && estado.cartas.length > 0) {
         partida.seleccionadas = estado.cartas;
-        juegoCartas.innerHTML = "";
-        partida.seleccionadas.forEach(id => {
-            const contenedor = document.createElement("div");
-            contenedor.classList.add("carta-juego");
-            contenedor.dataset.id = id;
-            contenedor.innerHTML = `<img src="${partida.rutaCartas}${id}.jpg" class="carta-img seleccionada">`;
-            contenedor.onclick = e => marcarFicha(e, contenedor);
-            juegoCartas.appendChild(contenedor);
-        });
+        montarMesa();   // misma mesa que al empezar, sin duplicar la lógica
         
         if(estado.enJuego) cambiarPantalla("juego");
         else cambiarPantalla("sala"); 
@@ -863,286 +610,33 @@ socket.on("error-apuesta", msg => {
 });
 
 // SONIDO DE APUESTA (NUEVO)
-socket.on("reproducir-sonido-apuesta", () => {
-    audioKachin.currentTime = 0; 
-    audioKachin.volume = 0.6; 
-    audioKachin.play().catch(e => console.log("Audio play error:", e));
-    if(navigator.vibrate) navigator.vibrate(50); 
-});
+socket.on("reproducir-sonido-apuesta", () => sonarApuesta());
 
 // Eventos de Juego
 socket.on("barajear", () => {
-  audioBarajear.currentTime = 0;
-  audioBarajear.play().catch(e => console.warn("Audio:", e));
-  historial.innerHTML = "";
-  partida.historialIds = [];
+  sonidos.barajear();
+  limpiarHistorialCantadas();
 });
 
-socket.on("campana", () => { audioCampana.currentTime = 0; audioCampana.play().catch(()=>{}); });
-socket.on("corre", () => { audioCorre.currentTime = 0; audioCorre.play().catch(()=>{}); });
+socket.on("campana", () => sonidos.campana());
+socket.on("corre", () => sonidos.corre());
 
-socket.on("partida-reiniciada", () => {
-  limpiarFichas();
-  historial.innerHTML = "";
-  partida.historialIds = [];
-});
 
-socket.on("carta-cantada", (cartaId) => {
-  const img = document.createElement("img");
-  const formattedId = String(cartaId).padStart(2, '0');
-  img.src = `assets/imagenes/barajas/${formattedId}.png`; 
-  historial.prepend(img);
-  historial.scrollLeft = 0;
-  partida.historialIds.unshift(formattedId);
-   
-  const audioVoz = new Audio(`assets/audios/${formattedId}.mp3`);
-  audioVoz.play();
-});
 
-socket.on("cartas-desactivadas", ids => {
-  document.querySelectorAll("#contenedorCartas .carta-img").forEach(img => {
-    if (ids.includes(img.dataset.id) && !partida.seleccionadas.includes(img.dataset.id)) {
-      img.style.opacity = 0.3;
-      img.style.pointerEvents = "none";
-    } else {
-      img.style.opacity = 1;
-      img.style.pointerEvents = "auto";
-    }
-  });
-});
+
+
+
 
 socket.on("juego-detenido", () => {
-    if (partida.soyHost) audioCorre.pause();
+    if (partida.soyHost) sonidos.pararCorre();
 });
 
 // ======================================================
 // LOTERÍA (GANADORES)
 // ======================================================
 
-function emitirLoteria() {
-  audioCorre.pause();
-  audioCampana.pause();
-  audioBarajear.pause();
-   
-  // La skin viaja con el tablero para que los demás vean las fichas que usas.
-  const boardState = {
-      cards: partida.seleccionadas, 
-      chips: {}, 
-      skin: fichaEnUso() 
-  };
-
-  document.querySelectorAll('#juegoCartas .carta-juego').forEach(cardContainer => {
-    const cardId = cardContainer.dataset.id;
-    const cardChips = [];
-    cardContainer.querySelectorAll('.ficha').forEach(ficha => {
-      cardChips.push({ left: ficha.style.left, top: ficha.style.top });
-    });
-    if (cardChips.length > 0) boardState.chips[cardId] = cardChips;
-  });
-
-  socket.emit("loteria", { nickname: sesion.usuario.nickname, sala: partida.sala, boardState });
-}
-
-socket.on("pausa-empate", ({ primerGanador, tiempo }) => {
-    loteriaMensaje.style.display = "block";
-    loteriaMensaje.innerHTML = `
-        <div style="font-size:2rem; color: gold; text-shadow: 2px 2px 0 #000;">¡${escaparHtml(primerGanador)} gritó BUENAS!</div>
-        <div style="font-size:1.2rem; margin-top:20px; color: white;">Esperando empates... <span id="contadorEmpate" style="font-weight:bold; font-size:1.5rem;">${tiempo}</span>s</div>
-    `;
-    
-    let timeLeft = tiempo;
-    const timer = setInterval(() => {
-        timeLeft--;
-        const el = document.getElementById("contadorEmpate");
-        if(el) el.textContent = timeLeft;
-        if(timeLeft <= 0) clearInterval(timer);
-    }, 1000);
-});
-
-socket.on("notificar-otro-ganador", (otroNick) => {
-    loteriaMensaje.innerHTML += `<div style="font-size:1.5rem; color:#ff4081; font-weight:bold; margin-top:10px; animation: pulsate 0.5s infinite;">¡${escaparHtml(otroNick)} TAMBIÉN GRITÓ!</div>`;
-    if(navigator.vibrate) navigator.vibrate([100, 100]);
-});
-
-socket.on("iniciar-validacion-secuencial", (listaReclamantes) => {
-    loteriaMensaje.style.display = "none"; 
-    procesarSiguienteValidacion(listaReclamantes);
-});
-
-socket.on("continuar-validacion", (listaReclamantes) => {
-    procesarSiguienteValidacion(listaReclamantes);
-});
-
-function procesarSiguienteValidacion(lista) {
-    const siguiente = lista.find(r => r.status === 'pendiente');
-    if (siguiente) {
-        const total = lista.length;
-        const index = lista.filter(r => r.status !== 'pendiente').length + 1;
-        abrirModalValidacionHost(siguiente, index, total);
-    }
-}
-
-function abrirModalValidacionHost(candidato, index, total) {
-    partida.ganadorTemp = candidato.id;
-    
-    modalLoteriaTitulo.textContent = `Validando Ganador (${index} de ${total})`;
-    modalLoteriaTexto.textContent = `${candidato.nickname} reclama victoria. Revisa su tabla.`;
-    
-    // Historial (Cartas cantadas - Estas siempre son de la baraja normal)
-    const modalHistorialFlex = document.getElementById("modalHistorialFlex");
-    modalHistorialFlex.innerHTML = "";
-    tablaGanadoraElegida = null;
-
-    const aviso = document.getElementById("avisoCartaGanadora");
-    if (aviso) aviso.textContent = "Toca la tabla que se llenó (opcional)";
-
-    partida.historialIds.forEach(cartaId => {
-         const img = document.createElement("img");
-         img.src = `assets/imagenes/barajas/${cartaId}.png`;
-         modalHistorialFlex.appendChild(img);
-    });
-
-    // Tabla del Jugador (AQUÍ ESTABA EL ERROR)
-    modalVerificationArea.innerHTML = '';
-    const bs = candidato.boardState;
-    
-    // Recuperamos la skin del jugador o usamos la default si no viene
-    const skinJugador = bs.skin || "assets/imagenes/ui/ficha.PNG";
-
-    if (bs && bs.cards) {
-        bs.cards.forEach(cardId => {
-            const cardContainer = document.createElement('div');
-            cardContainer.className = 'carta-juego';
-            
-            const cardImg = document.createElement('img');
-            
-            // --- CORRECCIÓN 1: USAR LA RUTA DINÁMICA ---
-            // Ya no usamos "assets/imagenes/cartas/...", usamos la variable
-            cardImg.src = `${partida.rutaCartas}${cardId}.jpg`;
-            
-            cardImg.className = 'carta-img seleccionada';
-            cardImg.style.pointerEvents = "none";
-            cardContainer.appendChild(cardImg);
-
-            // El anfitrión marca CUÁL de las tablas se llenó. Esa es la prueba
-            // que se le enseña a la sala: la tabla completa con sus fichas.
-            cardContainer.dataset.tabla = cardId;
-            cardContainer.classList.add("tabla-validable");
-            cardContainer.onclick = () => elegirTablaGanadora(cardId);
-            
-            if (bs.chips && bs.chips[cardId]) {
-                bs.chips[cardId].forEach(chipPos => {
-                    const ficha = document.createElement("img");
-                    
-                    // --- CORRECCIÓN 2: USAR LA SKIN DEL JUGADOR ---
-                    ficha.src = skinJugador;
-                    
-                    ficha.className = "ficha";
-                    ficha.style.left = chipPos.left;
-                    ficha.style.top = chipPos.top;
-                    ficha.style.pointerEvents = "none";
-                    cardContainer.appendChild(ficha);
-                });
-            }
-            modalVerificationArea.appendChild(cardContainer);
-        });
-    }
-    
-    // La casilla del pozo solo tiene sentido si hay algo acumulado.
-    const vered = document.getElementById("pozoVeredicto");
-    const chkPozoWin = document.getElementById("chkGanoPozo");
-    if (vered) {
-        const aplica = pozoDisponible() && partida.pozo > 0;
-        vered.style.display = aplica ? "flex" : "none";
-        if (chkPozoWin) chkPozoWin.checked = false;
-        if (aplica) {
-            vered.querySelector("span").textContent =
-                `🎰 También se llevó el POZO de $${partida.pozo} (llenó las 4 del centro)`;
-        }
-    }
-
-    loteriaModal.classList.add("active");
-}
-
-// Cuál de las tablas del reclamante fue la que se llenó. La marca el anfitrión.
-let tablaGanadoraElegida = null;
-
-function elegirTablaGanadora(tablaId) {
-    tablaGanadoraElegida = (tablaGanadoraElegida === tablaId) ? null : tablaId;
-    document.querySelectorAll("#modalVerificationArea .tabla-validable").forEach(cont => {
-        cont.classList.toggle("elegida-ganadora", cont.dataset.tabla === tablaGanadoraElegida);
-    });
-    const aviso = document.getElementById("avisoCartaGanadora");
-    if (aviso) {
-        aviso.textContent = tablaGanadoraElegida
-            ? "Marcada la tabla ganadora ✓"
-            : "Toca la tabla que se llenó (opcional)";
-    }
-}
-
-if(btnAceptarGanador) btnAceptarGanador.onclick = () => {
-    if (partida.ganadorTemp) {
-        const chkPozoWin = document.getElementById("chkGanoPozo");
-        socket.emit("veredicto-host", {
-            sala: partida.sala, candidatoId: partida.ganadorTemp, esValido: true,
-            tablaGanadora: tablaGanadoraElegida,
-            ganoPozo: !!(chkPozoWin && chkPozoWin.checked)
-        });
-        if (chkPozoWin) chkPozoWin.checked = false;
-        loteriaModal.classList.remove("active"); 
-    }
-};
-
-if(btnRechazarGanador) btnRechazarGanador.onclick = () => {
-    if (partida.ganadorTemp) {
-        socket.emit("veredicto-host", { sala: partida.sala, candidatoId: partida.ganadorTemp, esValido: false });
-        loteriaModal.classList.remove("active");
-    }
-};
-
-socket.on("ganadores-multiples", ({ ganadores, premio, prueba, pozoGanado, ganadorPozo }) => {
-    loteriaMensaje.style.display = "none";
-    // Se vuelve a habilitar pero NO se desmarca: entrar al pozo es una decisión
-    // que dura mientras estés en la sala, no una casilla que haya que picar cada
-    // partida. Se suelta al salir de la sala.
-    const chkP = document.getElementById("chkPozo");
-    if (chkP) chkP.disabled = false;
-    let msg = "";
-    if (ganadores.length > 1) {
-        msg = `¡EMPATE! 🤝\nGanadores: ${ganadores.join(", ")}\nSe llevan ${premio} monedas cada uno.`;
-    } else {
-        msg = `¡TENEMOS GANADOR! 🏆\n${ganadores[0]} se lleva ${premio} monedas.`;
-    }
-    if (pozoGanado > 0 && ganadorPozo) {
-        msg += `\n\n🎰 ¡Y SE LLEVÓ EL POZO!\n${ganadorPozo} suma ${pozoGanado} monedas más.`;
-    }
-    // La ruta viaja DENTRO de la prueba porque el modal vive en modulos/ui.js y
-    // no conoce el estado de la partida. Importa: en modo Pozo las tablas salen
-    // de otra carpeta, así que sin esto la tabla ganadora saldría rota.
-    mostrarAlerta(msg, "¡RESULTADO FINAL!", prueba && { ...prueba, ruta: partida.rutaCartas });
-    
-    audioAplausos.currentTime = 0;
-    audioAplausos.play().catch(()=>{});
-    if(navigator.vibrate) navigator.vibrate([100,50,100,50,500]);
-
-    for (let i = 0; i < 100; i++) {
-        const confeti = document.createElement("div");
-        confeti.classList.add("confeti");
-        confeti.style.left = Math.random() * 100 + "vw";
-        confeti.style.top = "-10px";
-        confeti.style.backgroundColor = `hsl(${Math.random()*360}, 100%, 50%)`;
-        confeti.style.animationDelay = (Math.random() * 2) + "s";
-        document.body.appendChild(confeti);
-        confeti.addEventListener("animationend", () => confeti.remove());
-    }
-});
-
-socket.on("falsa-alarma-masiva", () => {
-    loteriaMensaje.style.display = "none";
-    mostrarAlerta("Todos los reclamos fueron rechazados. ¡Sigue el juego!", "Falsa Alarma 🤡");
-    audioCorre.play().catch(()=>{});
-});
-
+// Gritar lotería y la validación del anfitrión viven en modulos/validacion.js.
+iniciarValidacion();
 
 // APUESTAS
 if(btnApostar) btnApostar.addEventListener("click", () => {
@@ -1328,7 +822,7 @@ const ACCIONES = {
     'crear-sala':             () => crearSalaPropia(),
     'unirse-sala':            () => unirseSalaExistente(),
     'compartir-sala':         () => compartirSala(),
-    'salir-sala':             () => salirDeSalaEnJuego(resetearUI),
+    'salir-sala':             () => salirDeSalaEnJuego(resetearTablero),
     'silenciar':              (el) => alternarSilencio(el.dataset.email),
 
     // --- Selección de tablas ---

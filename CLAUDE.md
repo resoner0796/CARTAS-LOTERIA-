@@ -84,6 +84,9 @@ js/modulos/           Piezas ya separadas (ver "Modularización")
   estado.js             Estado compartido de la partida y la sesión
   sala.js               Crear, entrar, invitar y salir de salas
   favoritos.js          Guardar y recuperar el set de tablas preferido
+  tablero.js            Elegir tablas, la mesa, las fichas y las cartas cantadas
+  validacion.js         Gritar lotería y el veredicto del anfitrión
+  audio.js              Sonidos del juego (no confundir con efectos.js)
 scripts/obfuscate.js  Empaqueta y ofusca en el build de Vercel — ver abajo
 vercel.json           buildCommand + outputDirectory
 service-worker.js     Estrategias de caché (PWA)
@@ -135,7 +138,7 @@ Si vuelves a meter un `onclick`, esa red lo cubre — pero mejor no.
 ### Modularización (en curso)
 
 `app.js` se está partiendo en `js/modulos/`, **un módulo a la vez**, verificando
-después de cada movimiento. Van trece:
+después de cada movimiento. Van dieciséis:
 
 ```
        config.js   utiles.js        (hojas: no importan nada)
@@ -171,7 +174,16 @@ después de cada movimiento. Van trece:
 - **`estado.js`** — lo que comparten varios módulos mientras se juega.
 - **`sala.js`** — crear, entrar, invitar y salir.
 - **`favoritos.js`** — el set de tablas preferido.
-- **`app.js`** — el tablero, los eventos del socket y la validación de ganadores.
+- **`tablero.js`** — el juego en sí: elegir tablas, la mesa, las fichas.
+- **`validacion.js`** — gritar lotería y el veredicto del anfitrión.
+- **`audio.js`** — los sonidos que dispara el juego. **No confundir con
+  `efectos.js`**: aquellos los dispara la gente y viajan por el socket.
+- **`app.js`** — arranque, sesión, y los eventos de socket que no son de nadie
+  en concreto (sala, jugadores, bote).
+
+**Cada módulo escucha sus propios eventos de socket.** `carta-cantada` lo atiende
+`tablero.js`, `pausa-empate` lo atiende `validacion.js`. Antes estaban los treinta
+juntos en app.js y había que leerlos todos para saber quién tocaba qué.
 
 Los cuatro últimos **reciben el usuario como argumento**; ninguno lee
 `usuarioActual`.

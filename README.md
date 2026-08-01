@@ -58,7 +58,7 @@ css/style.css       Estilos
 js/app.js           Punto de entrada y grueso de la lógica (en claro)
 js/modulos/         Piezas ya separadas: config, utiles, ui, sesion, monedero,
                     tienda, admin, socket, efectos, animaciones, estado,
-                    sala, favoritos
+                    sala, favoritos, tablero, validacion, audio
 scripts/            Empaquetado + ofuscación, corre en el build de Vercel
 vercel.json         Configuración de build
 service-worker.js   Cacheo offline
@@ -196,7 +196,7 @@ propósito.
 - [x] Ofuscación automática en el build de Vercel
 - [x] Quitar los `onclick` del HTML (paso previo a modularizar)
 - [x] Empaquetado con esbuild antes de ofuscar (habilita los módulos)
-- [ ] Partir `app.js` en módulos ES — **en curso**: 13 módulos fuera; queda el tablero, los escuchas del socket y la validación
+- [ ] Partir `app.js` en módulos ES — **en curso**: 16 módulos fuera; app.js pasó de 2.030 a 890 líneas
 - [ ] Evaluar migración de Render a VPS propio
 
 ---
