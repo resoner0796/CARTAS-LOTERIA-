@@ -256,7 +256,7 @@ input::placeholder { color: rgba(255,255,255,0.6); }
        margen del marco y los huecos. Medido, con 25% la ficha ocupaba el 124%
        de su casilla — se salía por los cuatro lados y tapaba a las vecinas.
        Con 18% queda en torno al 85%: se ve tapada sin invadir nada. */
-    width: 18%;
+    width: 22%;
     max-width: 64px;
     height: auto;
     top: 50%; left: 50%;
@@ -306,7 +306,7 @@ input::placeholder { color: rgba(255,255,255,0.6); }
 
 /* FICHA EN MODAL VICTORIA (MÁS CHICA) */
 #modalVerificationArea .ficha {
-    width: 25% !important; 
+    width: 28% !important; 
 }
 
 /* TAMAÑOS MÓVIL BASE */
