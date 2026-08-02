@@ -259,6 +259,33 @@ input::placeholder { color: rgba(255,255,255,0.6); }
     pointer-events: auto; 
 }
 
+/* Las fichas saliendo despedidas al pulsar Limpiar.
+   El 25% se pasa un poco de tamaño antes de salir: es el impulso, y sin él
+   parece que se caen en vez de que las lancen. El translate(-50%,-50%) tiene
+   que ir en TODOS los pasos — es lo que centra la ficha, y perderlo a mitad de
+   animación la haría saltar media ficha de sitio antes de volar. */
+@keyframes ficha-despedida {
+    0%   { transform: translate(-50%, -50%) scale(1) rotate(0deg); opacity: 1; }
+    25%  { transform: translate(-50%, -50%) scale(1.22) rotate(-10deg); opacity: 1; }
+    100% {
+        transform: translate(calc(-50% + var(--vx, 0px)), calc(-50% + var(--vy, 0px)))
+                   scale(0.25) rotate(var(--giro, 180deg));
+        opacity: 0;
+    }
+}
+
+.ficha.saliendo {
+    animation: ficha-despedida 550ms cubic-bezier(0.35, -0.35, 0.65, 1) forwards;
+    animation-delay: var(--retraso, 0ms);
+    pointer-events: none;
+    z-index: 30;                 /* por encima de las tablas mientras vuela */
+}
+
+/* Quien haya pedido menos movimiento en su sistema ve las fichas irse sin más. */
+@media (prefers-reduced-motion: reduce) {
+    .ficha.saliendo { animation: none; opacity: 0; transition: opacity 120ms; }
+}
+
 /* FICHA EN MODAL VICTORIA (MÁS CHICA) */
 #modalVerificationArea .ficha {
     width: 25% !important; 

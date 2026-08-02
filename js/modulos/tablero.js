@@ -253,8 +253,56 @@ export function marcarFicha(e, contenedor) {
     contenedor.appendChild(ficha);
 }
 
-export function limpiarFichas() {
-    document.querySelectorAll(".ficha").forEach(f => f.remove());
+/** Cuánto vuelan las fichas al salir despedidas, y cuánto tardan. */
+const VUELO = 260;                  // px desde el centro de su tabla
+const DURACION_VUELO = 550;         // ms, igual que la animación del CSS
+const CASCADA = 200;                // ms de diferencia entre la primera y la última
+
+/**
+ * Quita las fichas del tablero.
+ *
+ * Con `animado`, salen despedidas del centro hacia afuera antes de irse: las de
+ * en medio primero y las de las esquinas al final. Solo se anima al pulsar
+ * Limpiar, que es cuando la mesa se queda a la vista; los otros sitios que
+ * llaman aquí cambian de pantalla acto seguido y la animación no se vería.
+ */
+export function limpiarFichas(animado = false) {
+    const fichas = [...document.querySelectorAll(".ficha")];
+    if (!animado || fichas.length === 0) {
+        fichas.forEach(f => f.remove());
+        return;
+    }
+
+    // La dirección de cada ficha sale de dónde está DENTRO de su tabla. Se
+    // colocan con left/top en porcentaje, así que el centro es el 50% y la
+    // distancia se mide en esas mismas unidades: sirve igual con la tabla
+    // grande del móvil que con cuatro pequeñas en el escritorio.
+    const posiciones = fichas.map(f => {
+        const x = parseFloat(f.style.left) - 50;
+        const y = parseFloat(f.style.top) - 50;
+        const d = Math.hypot(x, y);
+        return { x, y, d: Number.isFinite(d) ? d : 0 };
+    });
+    const masLejos = Math.max(...posiciones.map(p => p.d)) || 1;
+
+    fichas.forEach((f, i) => {
+        const p = posiciones[i];
+        // Una ficha justo en el centro no tiene hacia dónde salir: se le da un
+        // rumbo cualquiera en vez de dejarla desvaneciéndose en el sitio.
+        const angulo = p.d > 0.5 ? Math.atan2(p.y, p.x) : Math.random() * Math.PI * 2;
+
+        f.style.setProperty("--vx", `${Math.cos(angulo) * VUELO}px`);
+        f.style.setProperty("--vy", `${Math.sin(angulo) * VUELO}px`);
+        f.style.setProperty("--giro", `${(Math.random() * 2 - 1) * 220}deg`);
+        f.style.setProperty("--retraso", `${(p.d / masLejos) * CASCADA}ms`);
+        f.classList.add("saliendo");
+    });
+
+    // Se borran de una sola vez al final. Escuchar `animationend` en cada ficha
+    // parece más fino, pero ese evento no llega si la pestaña está en segundo
+    // plano o si el sistema tiene desactivadas las animaciones, y las fichas se
+    // quedarían encima del tablero para siempre.
+    setTimeout(() => fichas.forEach(f => f.remove()), DURACION_VUELO + CASCADA + 60);
 }
 
 /** Suelta todas las tablas y vuelve a la pantalla de selección. */

@@ -708,7 +708,7 @@ const ACCIONES = {
     'guardar-favoritas':      (el) => guardarSetFavorito(el),
 
     // --- Mesa de juego ---
-    'limpiar-fichas':         () => limpiarFichas(),
+    'limpiar-fichas':         () => limpiarFichas(true),
     'barajear':               () => socket.emit('barajear', partida.sala),
     'iniciar-juego':          () => iniciarJuegoConVelocidad(),
     'detener-juego':          () => socket.emit('detener-juego', partida.sala),
