@@ -18,6 +18,9 @@ import { cambiarPantalla, mostrarConfirmacion } from './ui.js';
 import { fichaEnUso } from './tienda.js';
 import { esPropia, tablaPorId, pintarTabla } from './tablasPropias.js';
 
+/** La baraja completa: siempre 54, salga el modo que salga. */
+const TOTAL_BARAJAS = 54;
+
 /** Tope de tablas por jugador. Más no caben en la mesa. */
 const MAXIMO_TABLAS = 4;
 
@@ -434,6 +437,7 @@ socket.on("carta-cantada", (cartaId) => {
         historial.scrollLeft = 0;
     }
     partida.historialIds.unshift(id);
+    refrescarContador();
 
     new Audio(`assets/audios/${id}.mp3`).play().catch(() => {});
 
@@ -456,10 +460,23 @@ export function apagarAvisoBaraja() {
         .forEach(c => c.classList.remove('baraja-cantada'));
 }
 
+/**
+ * Cuántas barajas van de las 54.
+ *
+ * Solo los números: se probó con «Baraja 23 · quedan 31» y las palabras
+ * ocupaban más que el dato, en la pantalla donde menos sitio hay.
+ */
+export function refrescarContador() {
+    const el = $("contadorBarajas");
+    if (!el) return;
+    el.textContent = `${partida.historialIds.length}/${TOTAL_BARAJAS}`;
+}
+
 export function limpiarHistorialCantadas() {
     const historial = $("historial");
     if (historial) historial.innerHTML = "";
     partida.historialIds = [];
+    refrescarContador();
 }
 
 socket.on("partida-reiniciada", () => {

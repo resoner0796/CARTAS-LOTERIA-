@@ -308,15 +308,16 @@ input::placeholder { color: rgba(255,255,255,0.6); }
     max-width: 45%; 
 }
 
-/* El tablero del móvil: 2×2. El hueco sube a 14px porque con las cuatro cartas
-   pegadas se leen como un bloque y no como cuatro cartas.
+/* El tablero del móvil: 2×2. El hueco es de 9px: lo justo para que se lean como
+   cuatro cartas y no como un bloque, sin regalar ancho — cada píxel de hueco es
+   medio píxel menos de carta por lado.
    La base tiene que dejar sitio al hueco (2 × base + hueco ≤ 100%): si no, la
    cuarta salta a una tercera fila. */
-#juegoCartas { gap: 14px; }
+#juegoCartas { gap: 9px; }
 
 #juegoCartas .carta-juego {
-    flex-basis: calc(50% - 8px);
-    max-width: calc(50% - 8px);
+    flex-basis: calc(50% - 5px);
+    max-width: calc(50% - 5px);
     position: relative;
     display: flex; justify-content: center;
 }
@@ -1405,8 +1406,8 @@ body {
        leen como un bloque si van pegadas. La base tiene que bajar la MITAD del
        hueco (2 × base + hueco ≤ 100%): si no, la cuarta carta no cabe en la
        segunda fila y salta a una tercera. */
-    #juegoCartas { gap: 14px; }
-    #juegoCartas .carta-juego { flex-basis: calc(50% - 8px); max-width: calc(50% - 8px); }
+    #juegoCartas { gap: 12px; }
+    #juegoCartas .carta-juego { flex-basis: calc(50% - 7px); max-width: calc(50% - 7px); }
 
     .menu-card { min-width: 45%; }
 
@@ -1639,6 +1640,29 @@ textarea::placeholder { color: rgba(255,255,255,0.6); }
    proporción real salía 0.624 en vez de los 0.616 del archivo. Poco, pero es
    lo que hacía que en el modal de validación pareciera que faltaba un trozo. */
 .carta-img { box-sizing: border-box; }
+
+/* El contador de barajas cantadas, encima del historial.
+   Va alineado a la derecha y en pequeño: es un dato de apoyo, no un titular, y
+   el espacio vertical es lo más escaso de la pantalla de juego en el móvil. */
+.contador-barajas {
+    /* La pantalla de juego es un flex en columna centrado, así que un div se
+       encoge a su contenido y el `text-align` no tiene sobre qué alinear. El
+       ancho tiene que ser el mismo que el del historial para que el número
+       quede a plomo con su esquina. */
+    /* Las mismas medidas que `.historial-container`, para que el número quede a
+       plomo con su esquina derecha. La pantalla de juego es un flex en columna
+       centrado: sin ancho propio el div se encoge a su contenido y el
+       `text-align` no tiene sobre qué alinear — el número salía centrado. */
+    width: 95%;
+    max-width: 600px;
+    text-align: right;
+    font-size: 0.8rem;
+    font-weight: bold;
+    color: var(--amarillo-maiz, gold);
+    letter-spacing: 0.5px;
+    padding: 0 6px 4px;
+    font-variant-numeric: tabular-nums;   /* que no baile al cambiar de cifra */
+}
 
 /* La baraja con la que se cerró la figura, debajo de la carta ganadora.
    Se enseña grande a propósito: es el dato que la gente repite después, y
@@ -2217,13 +2241,30 @@ textarea::placeholder { color: rgba(255,255,255,0.6); }
     display: grid;
     grid-template-columns: repeat(4, 1fr);
     gap: 3px;
-    background: #fff;
-    /* El margen blanco alrededor de la rejilla es lo que hace que parezca una
-       carta impresa. Con 4px las barajas de la orilla quedaban pegadas al
-       borde y se veía recortada. */
-    padding: 9px;
-    border-radius: 6px;
-    border: 2px solid var(--amarillo-maiz, gold);
+    /* El marco de la carta, en cristal esmerilado como el resto de la interfaz.
+       Antes era blanco liso, que era lo que más desentonaba de la pantalla: la
+       barra del historial, el modal y el panel de apuestas ya son de cristal.
+       Se usan las MISMAS variables que ellos para que si algún día cambia el
+       tono, cambie en todo a la vez. */
+    background: linear-gradient(145deg,
+        rgba(255, 255, 255, 0.22),
+        rgba(255, 255, 255, 0.08));
+    backdrop-filter: blur(14px) saturate(140%);
+    -webkit-backdrop-filter: blur(14px) saturate(140%);
+    /* El margen alrededor de la rejilla es lo que hace que parezca una carta.
+       Con 4px las barajas de la orilla quedaban pegadas al borde. */
+    /* El marco tiene que verse: es la superficie donde ocurre el cristal. Con
+       menos de 12px el efecto queda escondido detrás de las barajas y la carta
+       parece la de antes con otro color. */
+    padding: 12px;
+    border-radius: 16px;
+    /* Dos filos: el dorado de fuera marca la carta, y el claro de dentro es lo
+       que da el brillo de cristal en el canto. */
+    border: 3px solid var(--amarillo-maiz, gold);
+    box-shadow:
+        0 8px 26px rgba(0, 0, 0, 0.45),
+        inset 0 1px 0 rgba(255, 255, 255, 0.45),
+        inset 0 -1px 0 rgba(0, 0, 0, 0.18);
     aspect-ratio: 4 / 6.35;     /* 4 columnas × 4 casillas de 1:1.587 */
     width: 100%;
     /* Las fichas cuelgan de aquí y se colocan en porcentaje: este es el
@@ -2236,7 +2277,10 @@ textarea::placeholder { color: rgba(255,255,255,0.6); }
 }
 
 .casilla-tabla {
-    background: #fff;
+    /* Casi blanco, no blanco del todo: sobre el cristal, un blanco liso vuelve
+       a tapar el efecto y la carta parece otra vez de papel. */
+    background: rgba(255, 255, 255, 0.92);
+    border-radius: 3px;
     overflow: hidden;
     display: flex;
     align-items: center;
@@ -2388,7 +2432,12 @@ textarea::placeholder { color: rgba(255,255,255,0.6); }
    en blanco, y un recuadro alrededor de la nada llama la atención sobre lo que
    justamente no hay. */
 .casilla-vacia,
-.casilla-bloqueada { border-color: transparent; background: #fff; }
+.casilla-bloqueada {
+    border-color: transparent;
+    /* Casi transparente: en el modo esquinas se ve el cristal por debajo, que
+       es lo que hace que el hueco parezca parte de la carta y no un agujero. */
+    background: rgba(255, 255, 255, 0.10);
+}
 
 /* --- «Mis Cartas» agrupadas por tipo ---
    Dentro de una sala, las que sirven para ese modo van primero y el resto queda

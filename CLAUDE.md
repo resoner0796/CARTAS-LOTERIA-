@@ -293,6 +293,17 @@ carta cuyas barajas no hayan salido. Si alguna vez se quita ese requisito, no se
 pierde seguridad; si se invierte —fiarse de las fichas y no del historial— se
 pierde todo.
 
+**Hay que gritar CON la baraja que cierra.** La figura tiene que incluir la
+última cantada; si se te pasó el momento, ya no vale, como en la mesa de verdad.
+Sin esta regla bastaba con darse cuenta tarde —o **esperar a ver si caía algo
+mejor, como el pozo**— y gritar cuando conviniera con una figura cerrada hacía
+tres barajas. Se apaga con `exigirUltima: false`, que es lo que usan las pruebas
+de las figuras en sí.
+
+⚠️ Esto ata los tiempos de los bots: sus retardos de tapar y gritar SE SUMAN, y
+esa suma tiene que caber entre dos cantes. Si se baja la velocidad de la sala por
+debajo de 2 s por baraja, hay que revisarlos o dejarán de ganar nunca.
+
 **Un grito en falso ya no para la partida.** Antes bastaba con picar LOTERÍA de
 broma para congelar a toda la sala hasta que el anfitrión resolviera. Hoy se le
 contesta a quien gritó y el juego sigue cantando.
@@ -505,6 +516,13 @@ los de la sala, y la sesión vive en `localStorage`.
   22px. En el tablero del móvil, con cuatro cartas, el espacio entre ellas medía
   **-12px**: se solapaban. Se veía como «amontonadas», que es un síntoma que
   suena a falta de margen y era desbordamiento.
+- **Apostar sin monedas no hacía nada, en silencio.** La condición
+  `monedas >= costoTotal + costoPozo` simplemente no se cumplía y el evento
+  moría ahí. Como el navegador hace volar las monedas ANTES de saber si se
+  aceptó, se veía la animación, el bote no subía y no aparecía ningún aviso:
+  parecía que el juego se había colgado. Salta sobre todo con el pozo, que suma
+  $1 aparte y descuadra la cuenta que el jugador hacía de cabeza. Ahora el
+  servidor contesta `apuesta-rechazada` con cuánto falta.
 - **Cachear respuestas parciales revienta la Cache API.** Los `<audio>` se piden
   por rangos y el servidor responde `206`; `cache.put()` solo admite respuestas
   completas y rechazaba con "Cache.put() encountered a network error". Como los

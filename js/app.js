@@ -422,6 +422,19 @@ socket.on('info-sala', (data) => {
 /** Vuelve a marcar en el grid las tablas que ya estaban elegidas. */
 
 
+/**
+ * El servidor no aceptó la apuesta.
+ *
+ * Llega solo a quien apostó. Hace falta porque el navegador hace volar las
+ * monedas ANTES de saber si se aceptó: sin este aviso se veía la animación, el
+ * bote no subía y no aparecía nada, que parecía que el juego se había colgado.
+ * El saldo se recoloca solo con el `jugadores-actualizados` que viene detrás.
+ */
+socket.on('apuesta-rechazada', ({ motivo }) => {
+    if (btnApostar) btnApostar.disabled = false;
+    mostrarAlerta(motivo || "No se pudo apostar.", "Sin apuesta 💸");
+});
+
 socket.on('estado-sala-restaurado', (estado) => {
     if(estado.cartas && estado.cartas.length > 0) {
         partida.seleccionadas = estado.cartas;

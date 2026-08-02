@@ -198,7 +198,7 @@
     <!-- Solo lo ve el anfitrión, y solo antes de empezar. Lo enseña
          jugadores.js al recibir la lista, que es cuando se sabe si eres tú. -->
     <div id="zonaBots" style="display:none; width:100%; margin-top:14px;">
-        <div style="font-size:0.85rem; color:#bbb; margin-bottom:8px;">
+        <div style="font-size:0.85rem; color:#bbb; margin-bottom:8px; text-align:center;">
             ¿Falta gente? Mete jugadores de la casa:
         </div>
         <div class="sala-botones-row">
@@ -273,6 +273,9 @@
   </div>
 
   <div id="pantallaJuego" class="pantalla">
+    <!-- Cuántas barajas van de las 54. Encima del historial y a la derecha:
+         es un dato de apoyo y el alto de esta pantalla es lo más escaso. -->
+    <div id="contadorBarajas" class="contador-barajas"></div>
     <div class="historial-container">
       <div id="historial"></div>
     </div>

@@ -179,6 +179,18 @@ module.exports = async function cartas(navegador, url) {
         mesa.barajas, '17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32');
     r.igual('y tampoco ahí queda una imagen de carta', mesa.imagenesDeCarta, 0);
 
+    // ── El contador de barajas ───────────────────────────────────────────────
+    const contador = () => pagina.evaluate(() =>
+        document.getElementById('contadorBarajas')?.textContent || '');
+
+    await recibirDelServidor(pagina, 'carta-cantada', '05');
+    r.igual('el contador cuenta la primera baraja', await contador(), '1/54');
+    await recibirDelServidor(pagina, 'carta-cantada', '06');
+    await recibirDelServidor(pagina, 'carta-cantada', '07');
+    r.igual('y sigue contando', await contador(), '3/54');
+    r.falso('sin palabras, solo los números',
+        /baraja|quedan/i.test(await contador()));
+
     // ── El aviso de la baraja cantada ────────────────────────────────────────
     // La mesa tiene la carta '02', que lleva las barajas 17 a 32.
     await pagina.evaluate(() => {
@@ -250,6 +262,23 @@ module.exports = async function cartas(navegador, url) {
         r.igual('y sigue mandando la posición de las fichas para dibujarlas',
             (grito.datos?.boardState?.chips?.['02'] || []).length, 4);
     }
+
+    // ── Apostar sin monedas avisa, en vez de no hacer nada ───────────────────
+    // El navegador hace volar las monedas ANTES de saber si se aceptó: sin este
+    // aviso se veía la animación, el bote no subía y no aparecía nada.
+    await recibirDelServidor(pagina, 'apuesta-rechazada', {
+        motivo: 'No te alcanza: 4 cartas cuestan $4 y el pozo $1. Te faltan $1.'
+    });
+    const sinMonedas = await pagina.evaluate(() => ({
+        visible: document.getElementById('modalSistema')?.classList.contains('active'),
+        texto: document.getElementById('modalSistemaMensaje')?.textContent || '',
+        botonListo: !document.getElementById('btnApostar')?.disabled
+    }));
+    r.cierto('si no alcanza para la apuesta, avisa', sinMonedas.visible);
+    r.cierto('y dice cuánto falta', sinMonedas.texto.includes('Te faltan $1'));
+    r.cierto('y deja volver a intentarlo', sinMonedas.botonListo);
+    await pagina.evaluate(() => document.getElementById('btnModalAceptar')?.click());
+    await esperar(200);
 
     // ── Un grito en falso no para la partida ─────────────────────────────────
     await recibirDelServidor(pagina, 'loteria-rechazada', { motivo: 'Te faltó una para la figura' });
