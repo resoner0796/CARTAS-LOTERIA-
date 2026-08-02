@@ -2261,3 +2261,75 @@ textarea::placeholder { color: rgba(255,255,255,0.6); }
 
 /* Las que ya están puestas en la tabla, para no repetirlas sin darse cuenta. */
 .baraja-usada { opacity: 0.3; filter: grayscale(1); }
+
+/* --- Arreglos del creador de tablas --------------------------------------
+   Todos los .modal comparten z-index 10000, así que entre dos abiertos gana el
+   que esté más abajo en el HTML. El creador se abre DESDE la tienda, y la
+   tienda está después en el documento: quedaba tapada encima y había que
+   cerrarla para ver lo que se estaba armando.
+
+   Se les da un orden explícito, del que abre al que se abre encima:
+       tienda (10000)  →  creador (10010)  →  elector de baraja (10020)      */
+
+#modalCrearTabla   { z-index: 10010; }
+#modalElegirBaraja { z-index: 10020; }
+
+/* Las cuatro filas miden lo mismo, pase lo que pase dentro.
+   Sin esto, una fila con imágenes crecía más que una con casillas vacías y las
+   barajas salían estiradas: el grid repartía el alto según el contenido. */
+.tabla-generada { grid-template-rows: repeat(4, 1fr); }
+
+/* Cada casilla manda sobre su propia proporción, para que la baraja no se
+   deforme al entrar. */
+.casilla-tabla { aspect-ratio: 1 / 1.32; min-height: 0; min-width: 0; }
+.casilla-tabla img { object-fit: contain; }
+
+/* En esquinas, el hueco vacío no lleva ni contorno: se busca que parezca papel
+   en blanco, y un recuadro alrededor de la nada llama la atención sobre lo que
+   justamente no hay. */
+.casilla-vacia,
+.casilla-bloqueada { border-color: transparent; background: #fff; }
+
+/* --- «Mis Cartas» agrupadas por tipo ---
+   Dentro de una sala, las que sirven para ese modo van primero y el resto queda
+   debajo, apagado. En una sala de Pozo una tabla normal no sirve: se gana
+   llenando el centro y las esquinas. */
+
+.grid-mis-cartas { display: block; }        /* ahora manda cada grupo */
+
+.grupo-tablas {
+    color: var(--amarillo-maiz, gold);
+    font-size: 0.85rem;
+    margin: 14px 0 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+.grupo-tablas:first-child { margin-top: 0; }
+
+/* Las que no sirven en esta sala: se ven, pero no se disputan la atención. */
+.grupo-inutil { color: #888; font-weight: 400; text-transform: none; }
+.tablas-inutiles { opacity: 0.4; }
+
+.fila-tablas {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 12px;
+}
+
+.mi-tabla { position: relative; }
+.marca-personalizada {
+    position: absolute;
+    top: 4px; right: 4px;
+    background: rgba(0, 0, 0, 0.75);
+    color: var(--amarillo-maiz, gold);
+    font-size: 0.6rem;
+    padding: 2px 5px;
+    border-radius: 4px;
+}
+
+.paso-crear {
+    text-align: center;
+    font-size: 0.75rem;
+    color: #aaa;
+    margin: 0 0 8px;
+}

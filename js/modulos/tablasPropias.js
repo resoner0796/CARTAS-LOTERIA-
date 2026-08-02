@@ -16,13 +16,28 @@
 import { socket } from './socket.js';
 import { mostrarAlerta } from './ui.js';
 import { cerrarModalTiendaDetalle } from './tienda.js';
+import { partida } from './estado.js';
 
 /** Casillas de una tabla: rejilla de 4×4. */
 const CASILLAS = 16;
 
 /** Precios, solo para PINTARLOS. Quien cobra es el servidor, con los suyos. */
 export const PACK = { precio: 20, cuantas: 4 };
-export const PERSONALIZADA = { precio: 25 };
+export const PERSONALIZADA = { precio: 25, cuantas: 2 };
+
+/**
+ * Qué tipo de tabla se usa en cada modo de juego.
+ *
+ * En una sala de Pozo no tiene sentido enseñar tablas normales: se gana llenando
+ * el centro y las esquinas, y una tabla de 16 cartas ahí no sirve. El filtro
+ * evita que alguien elija una tabla con la que no puede ganar.
+ */
+export const TIPO_POR_MODO_JUEGO = {
+    tradicional: 'normal',
+    llena: 'normal',
+    pozo: 'esquinas',
+    doble: 'dobles'
+};
 
 /** Dónde van las cartas en el modo esquinas. Igual que en el servidor. */
 const CASILLAS_ESQUINAS = [0, 3, 5, 6, 9, 10, 12, 15];
@@ -98,6 +113,13 @@ export function cerrarMisCartas() {
     if (modal) modal.classList.remove('active');
 }
 
+/**
+ * Pinta «Mis Cartas», agrupadas por tipo.
+ *
+ * Si se está dentro de una sala, se enseñan PRIMERO las del tipo que sirve para
+ * ese modo de juego y las demás quedan debajo, apagadas: en una sala de Pozo una
+ * tabla normal no sirve, se gana llenando el centro y las esquinas.
+ */
 function renderizarMisCartas() {
     const zona = document.getElementById('gridMisCartas');
     const aviso = document.getElementById('avisoMisCartas');
@@ -114,19 +136,48 @@ function renderizarMisCartas() {
     }
     if (aviso) aviso.style.display = 'none';
 
-    misTablas.forEach(tabla => {
-        const caja = document.createElement('div');
-        caja.className = 'mi-tabla';
+    // El tipo que sirve aquí, si estamos en una sala.
+    const tipoUtil = partida.sala ? TIPO_POR_MODO_JUEGO[partida.modo] : null;
 
-        caja.appendChild(pintarTabla(tabla));
+    // Se agrupan por tipo, con el útil primero.
+    const porTipo = new Map();
+    misTablas.forEach(t => {
+        if (!porTipo.has(t.modo)) porTipo.set(t.modo, []);
+        porTipo.get(t.modo).push(t);
+    });
 
-        const pie = document.createElement('div');
-        pie.className = 'mi-tabla-pie';
-        const nombre = MODOS_TABLA.find(m => m.id === tabla.modo);
-        pie.textContent = nombre ? nombre.nombre : tabla.modo;
-        caja.appendChild(pie);
+    const orden = [...porTipo.keys()].sort((a, b) => {
+        if (a === tipoUtil) return -1;
+        if (b === tipoUtil) return 1;
+        return 0;
+    });
 
-        zona.appendChild(caja);
+    orden.forEach(tipo => {
+        const info = MODOS_TABLA.find(m => m.id === tipo);
+        const sirveAqui = !tipoUtil || tipo === tipoUtil;
+
+        const titulo = document.createElement('h3');
+        titulo.className = 'grupo-tablas' + (sirveAqui ? '' : ' grupo-inutil');
+        titulo.textContent = `${info ? info.nombre : tipo} · ${porTipo.get(tipo).length}`;
+        if (!sirveAqui) titulo.textContent += ' — no sirve en esta sala';
+        zona.appendChild(titulo);
+
+        const fila = document.createElement('div');
+        fila.className = 'fila-tablas' + (sirveAqui ? '' : ' tablas-inutiles');
+
+        porTipo.get(tipo).forEach(tabla => {
+            const caja = document.createElement('div');
+            caja.className = 'mi-tabla';
+            caja.appendChild(pintarTabla(tabla));
+            if (tabla.personalizada) {
+                const marca = document.createElement('span');
+                marca.className = 'marca-personalizada';
+                marca.textContent = '✎ tuya';
+                caja.appendChild(marca);
+            }
+            fila.appendChild(caja);
+        });
+        zona.appendChild(fila);
     });
 }
 
@@ -158,9 +209,9 @@ export function abrirGeneradorTienda() {
         </div>
 
         <div class="pack-tablas">
-            <p class="pack-titulo">Arma la tuya</p>
+            <p class="pack-titulo">Arma las tuyas</p>
             <p class="pack-precio">$${PERSONALIZADA.precio} monedas</p>
-            <p class="pack-nota">Eliges tú carta por carta, las 16 casillas.</p>
+            <p class="pack-nota">Armas ${PERSONALIZADA.cuantas} tablas eligiendo carta por carta.</p>
             <button class="btn-use" data-accion="abrir-creador">CREAR A MI GUSTO</button>
         </div>
     `;
@@ -210,8 +261,12 @@ socket.on('pack-comprado', ({ cuantas }) => {
 socket.on('error-pack', (mensaje) => {
     const boton = document.querySelector('[data-accion="comprar-pack"]');
     if (boton) { boton.disabled = false; boton.textContent = 'COMPRAR'; }
+    // Si el servidor rechaza, se vuelve al último paso con lo armado intacto:
+    // perder las dos tablas por un fallo de red sería para tirar el teléfono.
     const guardar = document.getElementById('btnGuardarTabla');
-    if (guardar) { guardar.disabled = false; guardar.textContent = `CREAR — $${PERSONALIZADA.precio}`; }
+    if (guardar) { guardar.disabled = false; }
+    if (tablasTerminadas.length >= PERSONALIZADA.cuantas) tablasTerminadas.pop();
+    actualizarEstadoCreador();
     mostrarAlerta(mensaje || 'No se pudo comprar el pack', 'Ups');
 });
 
@@ -226,6 +281,9 @@ socket.on('error-pack', (mensaje) => {
 let enConstruccion = new Array(16).fill(null);
 let modoEnConstruccion = 'normal';
 let casillaElegida = null;
+
+/** Las que ya se terminaron. Se arman las dos y se pagan juntas al final. */
+let tablasTerminadas = [];
 
 /** ¿Qué casillas se pueden llenar en este modo? */
 function casillasDelModo(modo) {
@@ -246,6 +304,7 @@ export function abrirCreador() {
 
     modoEnConstruccion = 'normal';
     enConstruccion = new Array(16).fill(null);
+    tablasTerminadas = [];
     if (select) select.value = 'normal';
     modal.classList.add('active');
     pintarCreador();
@@ -256,11 +315,18 @@ export function cerrarCreador() {
     if (modal) modal.classList.remove('active');
 }
 
-/** Al cambiar de tipo se vacía: las casillas válidas ya no son las mismas. */
+/**
+ * Al cambiar de tipo se vacía todo, incluidas las ya terminadas.
+ *
+ * Las dos tablas del lote van del mismo tipo: se compran juntas y se usan en el
+ * mismo modo de juego. Guardar una normal y otra de esquinas dejaría media
+ * compra inservible para la sala a la que se entre.
+ */
 export function cambiarModoCreador() {
     const select = document.getElementById('selectModoCrear');
     modoEnConstruccion = select ? select.value : 'normal';
     enConstruccion = new Array(16).fill(null);
+    tablasTerminadas = [];
     pintarCreador();
 }
 
@@ -296,16 +362,27 @@ function pintarCreador() {
     actualizarEstadoCreador();
 }
 
-/** Dice qué falta y habilita el botón solo cuando la tabla está lista. */
+/** Dice qué falta, por cuál tabla se va, y habilita el botón cuando toca. */
 function actualizarEstadoCreador() {
     const aviso = document.getElementById('avisoCrear');
     const boton = document.getElementById('btnGuardarTabla');
+    const paso = document.getElementById('pasoCrear');
     const revision = revisarEnConstruccion();
+    const vaPor = tablasTerminadas.length + 1;
+    const esLaUltima = vaPor === PERSONALIZADA.cuantas;
+
+    if (paso) paso.textContent = `Tabla ${vaPor} de ${PERSONALIZADA.cuantas}`;
 
     if (aviso) aviso.textContent = revision.ok
-        ? '¡Lista! Puedes guardarla.'
+        ? (esLaUltima ? '¡Listas! Se guardan las dos.' : 'Lista. Ahora la siguiente.')
         : revision.motivo;
-    if (boton) boton.disabled = !revision.ok;
+
+    if (boton) {
+        boton.disabled = !revision.ok;
+        boton.textContent = esLaUltima
+            ? `GUARDAR LAS ${PERSONALIZADA.cuantas} — $${PERSONALIZADA.precio}`
+            : 'SIGUIENTE TABLA →';
+    }
 }
 
 /**
@@ -386,24 +463,43 @@ function elegirBaraja(numero) {
     pintarCreador();
 }
 
-/** Manda la tabla al servidor, que la revisa otra vez y cobra. */
+/**
+ * Da por buena la tabla y pasa a la siguiente; con la última, las manda todas.
+ *
+ * Se arman las dos ANTES de pagar y se cobran juntas. Cobrar una a una obligaría
+ * a llevar la cuenta de cuántas quedan pagadas, y eso se queda a medias en
+ * cuanto alguien cierra el navegador entre una y otra.
+ */
 export function guardarTablaPersonalizada() {
     const revision = revisarEnConstruccion();
     if (!revision.ok) return mostrarAlerta(revision.motivo, 'Falta algo');
 
+    // Que la segunda no sea igual que la primera: se llenarían a la vez.
+    const firma = [...enConstruccion].filter(c => c !== null).sort((a, b) => a - b).join('-');
+    if (tablasTerminadas.some(t => t.firma === firma)) {
+        return mostrarAlerta('Esa tabla es igual que la anterior. Cambia alguna carta.', 'Repetida');
+    }
+
+    tablasTerminadas.push({ cartas: [...enConstruccion], firma });
+
+    if (tablasTerminadas.length < PERSONALIZADA.cuantas) {
+        enConstruccion = new Array(16).fill(null);
+        pintarCreador();
+        return;
+    }
+
     const boton = document.getElementById('btnGuardarTabla');
     if (boton) { boton.disabled = true; boton.textContent = 'Guardando...'; }
 
-    socket.emit('comprar-tabla-personalizada', {
-        cartas: enConstruccion,
+    socket.emit('comprar-tablas-personalizadas', {
+        tablas: tablasTerminadas.map(t => t.cartas),
         modo: modoEnConstruccion
     });
 }
 
-socket.on('tabla-personalizada-creada', () => {
-    const boton = document.getElementById('btnGuardarTabla');
-    if (boton) { boton.disabled = false; boton.textContent = `CREAR — $${PERSONALIZADA.precio}`; }
+socket.on('tablas-personalizadas-creadas', ({ cuantas }) => {
+    tablasTerminadas = [];
     cerrarCreador();
     cerrarModalTiendaDetalle();
-    mostrarAlerta('Tu tabla quedó guardada en «Mis Cartas».', '¡Listo! 🎴');
+    mostrarAlerta(`Tus ${cuantas} tablas quedaron guardadas en «Mis Cartas».`, '¡Listo! 🎴');
 });
