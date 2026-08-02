@@ -472,6 +472,51 @@ export function refrescarContador() {
     el.textContent = `${partida.historialIds.length}/${TOTAL_BARAJAS}`;
 }
 
+/**
+ * Encoge la barra del historial en cuanto se baja.
+ *
+ * Arriba del todo se ve entera; al hacer scroll se queda una franja fina con
+ * las últimas cantadas. Fija ocupa 110px, que en un móvil son el 13% de la
+ * pantalla para siempre y justo donde más falta hace el sitio.
+ *
+ * ⚠️ En esta app **el scroll NO es de `window`**. El CSS pone
+ * `html, body { height: 100%; overflow-x: hidden }`, y `overflow-x: hidden`
+ * convierte el otro eje en `auto`: con la altura fijada al 100%, el que
+ * desborda y scrollea es el BODY. `window.scrollY` vale siempre 0 aquí, así
+ * que mirarlo —que es lo que uno escribe sin pensar— no detecta nada.
+ */
+function desplazamiento() {
+    return window.scrollY
+        || document.body.scrollTop
+        || document.documentElement.scrollTop
+        || 0;
+}
+
+function iniciarBarraHistorial() {
+    const DESDE = 40;             // px de scroll a partir de los cuales se encoge
+    let pedida = false;
+
+    const revisar = () => {
+        pedida = false;
+        const barra = $("barraHistorial");
+        if (!barra) return;
+        barra.classList.toggle("encogida", desplazamiento() > DESDE);
+    };
+
+    // En `document` y con captura: el evento `scroll` de un elemento no
+    // burbujea, así que engancharlo en `window` no vería el del body.
+    document.addEventListener("scroll", () => {
+        // Una sola comprobación por fotograma: el evento se dispara decenas de
+        // veces por segundo y leer la posición en cada una obliga al navegador
+        // a recalcular el diseño.
+        if (pedida) return;
+        pedida = true;
+        requestAnimationFrame(revisar);
+    }, { capture: true, passive: true });
+}
+
+iniciarBarraHistorial();
+
 export function limpiarHistorialCantadas() {
     const historial = $("historial");
     if (historial) historial.innerHTML = "";

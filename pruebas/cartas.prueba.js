@@ -336,14 +336,14 @@ module.exports = async function cartas(navegador, url) {
         premio: 40,
         pozoGanado: 0,
         ganadorPozo: null,
-        prueba: {
+        pruebas: [{
             tabla: '02',
             nickname: 'Arnes',
             barajas: [17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32],
             fichas: [{ left: '12.5%', top: '12.5%' }],
             figura: 'diagonal',
             barajaFinal: 21
-        }
+        }]
     });
 
     const final = await pagina.evaluate(() => ({
@@ -357,6 +357,46 @@ module.exports = async function cartas(navegador, url) {
     r.cierto('enseña la carta ganadora como rejilla', final.casillas === 16);
     r.cierto('y la baraja con la que se cerró',
         final.cierre.endsWith('/barajas/21.png'));
+
+    await pagina.evaluate(() => document.getElementById('btnModalAceptar')?.click());
+    await esperar(200);
+
+    // ── En un empate se enseñan TODAS las cartas ganadoras ───────────────────
+    // Antes el servidor guardaba una sola prueba por sala —la del primero que
+    // gritara— y la sala se quedaba sin saber con qué habían ganado los demás.
+    await recibirDelServidor(pagina, 'ganadores-multiples', {
+        ganadores: ['Arnes', 'Fulano'],
+        premio: 20,
+        pozoGanado: 0,
+        ganadorPozo: null,
+        pruebas: [
+            {
+                tabla: '02', nickname: 'Arnes',
+                barajas: [17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32],
+                fichas: [{ left: '12.5%', top: '12.5%' }],
+                figura: 'horizontal', barajaFinal: 20
+            },
+            {
+                tabla: '03', nickname: 'Fulano',
+                barajas: [33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48],
+                fichas: [{ left: '87.5%', top: '87.5%' }],
+                figura: 'diagonal', barajaFinal: 48
+            }
+        ]
+    });
+
+    const empate = await pagina.evaluate(() => ({
+        cartas: document.querySelectorAll('#modalCartaGanadora .tabla-generada').length,
+        cierres: document.querySelectorAll('#modalCartaGanadora .prueba-cierre img').length,
+        texto: document.getElementById('modalCartaGanadora')?.textContent || '',
+        enFila: !!document.querySelector('#modalCartaGanadora .pruebas-empate')
+    }));
+
+    r.igual('en un empate se pintan las dos cartas', empate.cartas, 2);
+    r.igual('cada una con la baraja que la cerró', empate.cierres, 2);
+    r.cierto('rotuladas con el nombre de cada ganador',
+        empate.texto.includes('Arnes') && empate.texto.includes('Fulano'));
+    r.cierto('y puestas en fila, no una debajo de otra', empate.enFila);
 
     await pagina.evaluate(() => document.getElementById('btnModalAceptar')?.click());
     await esperar(200);
@@ -516,6 +556,37 @@ module.exports = async function cartas(navegador, url) {
     r.cierto(`la ficha cabe en su casilla (ocupa el ${laFicha}%)`,
         laFicha > 0 && laFicha <= 100);
     r.cierto('y se ve, no es un punto', laFicha >= 60);
+
+    // ── La barra del historial se queda fija y se encoge ─────────────────────
+    const barra = await pagina.evaluate(async () => {
+        const b = document.getElementById('barraHistorial');
+        const img = () => document.querySelector('#historial img')?.getBoundingClientRect().height || 0;
+
+        const arriba = { pegajosa: getComputedStyle(b).position, alto: img(), clase: b.className };
+
+        // El scroll es del BODY, no de window: el CSS le pone altura 100% y
+        // `overflow-x: hidden`, que convierte el otro eje en `auto`.
+        document.body.scrollTop = 400;
+        await new Promise(r => setTimeout(r, 500));
+        const abajo = {
+            clase: b.className,
+            alto: img(),
+            // Sigue a la vista: es todo el sentido de que sea fija.
+            arribaDeTodo: Math.round(b.getBoundingClientRect().top)
+        };
+
+        document.body.scrollTop = 0;
+        await new Promise(r => setTimeout(r, 500));
+        return { arriba, abajo, vuelta: b.className };
+    });
+
+    r.igual('la barra del historial es fija', barra.arriba.pegajosa, 'sticky');
+    r.falso('arriba del todo se ve entera', barra.arriba.clase.includes('encogida'));
+    r.cierto('al bajar se encoge', barra.abajo.clase.includes('encogida'));
+    r.cierto(`y las barajas se hacen chicas (${Math.round(barra.arriba.alto)}px → ${Math.round(barra.abajo.alto)}px)`,
+        barra.abajo.alto > 0 && barra.abajo.alto < barra.arriba.alto);
+    r.cierto('sin perderse de vista', barra.abajo.arribaDeTodo <= 1);
+    r.falso('y al volver arriba se despliega otra vez', barra.vuelta.includes('encogida'));
 
     r.cierto('sin errores de JS', errores.length === 0);
     if (errores.length) console.log('       ' + errores.join('\n       '));

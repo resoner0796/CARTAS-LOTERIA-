@@ -318,6 +318,20 @@ y ahora se llama una sola vez, al cerrar la ventana de empates.
 en el cliente: es lógica pura, determinista, y un fallo no se ve en pantalla —
 se ve en el saldo de alguien.
 
+## La barra del historial
+
+Va fija arriba (`position: sticky`) y **se encoge al bajar**: entera mide 110px,
+que en un móvil son el 13% de la pantalla ocupados para siempre, justo donde más
+falta hace el sitio. Al hacer scroll las barajas pasan de 92 a 53px de alto.
+
+- La clase `encogida` la pone `tablero.js` mirando el scroll **del body**, no de
+  `window` — ver la nota de arriba, es el error fácil.
+- El fondo tiene que ser **opaco**. El primer intento fue un degradado que se
+  desvanecía en el tercio de abajo y por ahí se veían pasar las cartas de la
+  mesa: parecía que la barra estaba rota.
+- Se anima el alto de las barajas, no el de la barra: así no hay saltos de
+  layout mientras se hace scroll.
+
 ## Bots
 
 Un bot es un jugador más de `salaInfo.jugadores`, con las mismas propiedades, para
@@ -511,6 +525,14 @@ los de la sala, y la sesión vive en `localStorage`.
   y no contra el borde exterior, porque es sobre el padding box donde el
   navegador resuelve un `left:%` — medido, la ficha cae a menos de 1px de donde
   se picó.
+- **El scroll de esta app NO es de `window`.** El CSS pone
+  `html, body { height: 100%; overflow-x: hidden }`, y `overflow-x: hidden`
+  convierte el otro eje en `auto`: con la altura fijada al 100%, el que desborda
+  y scrollea es el **body**. `window.scrollY` vale siempre 0, y un
+  `addEventListener('scroll')` en `window` no se entera de nada — el evento
+  `scroll` de un elemento no burbujea. Hay que escuchar en `document` con
+  `capture: true` y leer `document.body.scrollTop`. Costó verlo porque el código
+  que uno escribe sin pensar es justo el que no funciona, y no da ningún error.
 - **La ficha se mide en porcentaje de la CARTA, no de la casilla.** Una carta
   son cuatro columnas más el marco y los huecos, así que el 25% de la carta es
   MÁS que una casilla: medido, la ficha ocupaba el **124%** de la suya y tapaba

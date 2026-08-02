@@ -133,7 +133,7 @@ socket.on("loteria-rechazada", ({ motivo, baraja }) => {
     sonidos.corre();
 });
 
-socket.on("ganadores-multiples", ({ ganadores, premio, prueba, pozoGanado, ganadorPozo }) => {
+socket.on("ganadores-multiples", ({ ganadores, premio, pruebas, pozoGanado, ganadorPozo }) => {
     const mensaje = $("loteriaMensaje");
     if (mensaje) mensaje.style.display = "none";
 
@@ -154,13 +154,18 @@ socket.on("ganadores-multiples", ({ ganadores, premio, prueba, pozoGanado, ganad
     // Con qué figura se ganó. Lo dice el servidor, que es quien la encontró, y
     // es información que antes no existía: el anfitrión validaba a ojo y nadie
     // llegaba a saber si había sido una diagonal o las cuatro esquinas.
-    if (prueba && prueba.figura) {
-        msg += `\n\nGanó por: ${NOMBRE_FIGURA[prueba.figura] || prueba.figura}.`;
+    //
+    // Con varios ganadores la figura de cada uno va rotulada en su carta, así
+    // que aquí solo se pone cuando hay uno: repetir «ganó por diagonal» al lado
+    // de dos cartas no dice de cuál habla.
+    const lista = Array.isArray(pruebas) ? pruebas : [];
+    if (lista.length === 1 && lista[0].figura) {
+        msg += `\n\nGanó por: ${NOMBRE_FIGURA[lista[0].figura] || lista[0].figura}.`;
     }
 
-    // La prueba llega del servidor con las barajas de la carta ganadora dentro,
-    // así que ya no hace falta pasarle una carpeta de dónde sacar la imagen.
-    mostrarAlerta(msg, "¡RESULTADO FINAL!", prueba);
+    // Las pruebas llegan del servidor con las barajas de cada carta ganadora
+    // dentro: una por ganador, todas se enseñan.
+    mostrarAlerta(msg, "¡RESULTADO FINAL!", lista);
 
     sonidos.aplausos();
     lanzarConfeti();

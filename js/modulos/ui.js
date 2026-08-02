@@ -80,86 +80,21 @@ export function mostrarAlerta(mensaje, titulo = "Aviso del Sistema", prueba = nu
     const zonaCarta = document.getElementById("modalCartaGanadora");
     if (zonaCarta) {
         zonaCarta.innerHTML = "";
-        // Se pinta si hay una carta que enseñar, o una sola baraja suelta —que
-        // es el caso de «se te pasó»: ahí no interesa la carta entera, solo
-        // cuál era la que había que cazar.
-        if (prueba && (prueba.barajas || prueba.barajaFinal)) {
-            const soloBaraja = !prueba.barajas;
 
-            const rotulo = document.createElement("p");
-            rotulo.className = "prueba-titulo";
-            rotulo.textContent = soloBaraja ? "Era esta:" : "Carta ganadora:";
+        // `prueba` puede venir sola o en lista: en un empate llega una por
+        // ganador, para que la sala vea con qué ganó cada quien.
+        const pruebas = (Array.isArray(prueba) ? prueba : [prueba])
+            .filter(p => p && (p.barajas || p.barajaFinal));
 
-            const marco = document.createElement("div");
-            marco.className = "prueba-tabla";
+        if (pruebas.length > 0) {
+            // Con más de una se ponen en fila y se rotula cada una con su
+            // nombre: sin el nombre, dos cartas juntas no dicen de quién son.
+            const varias = pruebas.length > 1;
+            const fila = document.createElement("div");
+            fila.className = varias ? "pruebas-empate" : "";
 
-            // La carta ganadora viaja con sus 16 barajas, puestas por el
-            // servidor, y aquí se pinta la rejilla. Cuando solo hay una baraja
-            // suelta, este bloque se salta entero.
-            //
-            // Se construye a mano en vez de llamar a tablasPropias.js a
-            // propósito: este módulo no importa nada del juego, y hacerlo por
-            // una rejilla de 16 casillas lo ataría a media aplicación.
-            const rejilla = document.createElement("div");
-            rejilla.className = "tabla-generada";
-            (prueba.barajas || []).forEach(baraja => {
-                const casilla = document.createElement("div");
-                casilla.className = "casilla-tabla";
-                if (baraja === null || baraja === undefined) {
-                    casilla.classList.add("casilla-vacia");
-                } else {
-                    const b = document.createElement("img");
-                    b.src = `assets/imagenes/barajas/${String(baraja).padStart(2, '0')}.png`;
-                    b.alt = "";
-                    casilla.appendChild(b);
-                }
-                rejilla.appendChild(casilla);
-            });
-            // Las fichas van DENTRO de la rejilla, no en el marco.
-            //
-            // Su posición es un porcentaje que se midió sobre la rejilla al
-            // ponerlas, así que solo cae en su sitio si se calcula contra la
-            // rejilla. Colgadas del marco caían 85px a la izquierda: el marco es
-            // más ancho y la rejilla va centrada dentro.
-            (prueba.fichas || []).forEach(pos => {
-                const ficha = document.createElement("img");
-                ficha.src = prueba.skin || FICHA_POR_DEFECTO;
-                ficha.className = "ficha";
-                ficha.style.left = pos.left;
-                ficha.style.top = pos.top;
-                rejilla.appendChild(ficha);
-            });
-
-            // Sin carta que enseñar no hay marco: en «se te pasó» solo se pinta
-            // la baraja suelta de más abajo.
-            if (!soloBaraja) {
-                marco.appendChild(rejilla);
-                zonaCarta.appendChild(rotulo);
-                zonaCarta.appendChild(marco);
-            } else {
-                zonaCarta.appendChild(rotulo);
-            }
-
-            // La baraja: con la que se cerró si se ganó, o con la que se debió
-            // gritar si se pasó. Se enseña grande porque es lo que la gente
-            // cuenta después — «gané con el gallo», «se me fue el gallo».
-            if (prueba.barajaFinal) {
-                const cierre = document.createElement("div");
-                cierre.className = "prueba-cierre";
-
-                const texto = document.createElement("p");
-                texto.className = "prueba-titulo";
-                texto.textContent = soloBaraja ? "" : "Cerró con:";
-
-                const baraja = document.createElement("img");
-                baraja.src = `assets/imagenes/barajas/${String(prueba.barajaFinal).padStart(2, '0')}.png`;
-                baraja.alt = "";
-
-                cierre.appendChild(texto);
-                cierre.appendChild(baraja);
-                zonaCarta.appendChild(cierre);
-            }
-
+            pruebas.forEach(p => fila.appendChild(pintarPrueba(p, varias)));
+            zonaCarta.appendChild(fila);
             zonaCarta.style.display = "block";
         } else {
             zonaCarta.style.display = "none";
@@ -170,6 +105,100 @@ export function mostrarAlerta(mensaje, titulo = "Aviso del Sistema", prueba = nu
 
     m.caja.classList.add("active");
     if (navigator.vibrate) navigator.vibrate(50);
+}
+
+/**
+ * Pinta una carta ganadora: la rejilla, sus fichas y la baraja de cierre.
+ *
+ * Se construye a mano en vez de llamar a tablasPropias.js a propósito: este
+ * módulo no importa nada del juego, y hacerlo por una rejilla de 16 casillas lo
+ * ataría a media aplicación.
+ */
+function pintarPrueba(prueba, conNombre = false) {
+    const bloque = document.createElement("div");
+    bloque.className = "prueba-bloque";
+
+    // Sin carta que enseñar solo se pinta la baraja suelta: es el caso de «se
+    // te pasó», donde lo único que importa es cuál era la que había que cazar.
+    const soloBaraja = !prueba.barajas;
+
+    const rotulo = document.createElement("p");
+    rotulo.className = "prueba-titulo";
+    rotulo.textContent = soloBaraja
+        ? "Era esta:"
+        : (conNombre ? escaparHtmlSimple(prueba.nickname || "") : "Carta ganadora:");
+    bloque.appendChild(rotulo);
+
+    if (!soloBaraja) {
+        const marco = document.createElement("div");
+        marco.className = "prueba-tabla";
+
+        const rejilla = document.createElement("div");
+        rejilla.className = "tabla-generada";
+        (prueba.barajas || []).forEach(baraja => {
+            const casilla = document.createElement("div");
+            casilla.className = "casilla-tabla";
+            if (baraja === null || baraja === undefined) {
+                casilla.classList.add("casilla-vacia");
+            } else {
+                const b = document.createElement("img");
+                b.src = `assets/imagenes/barajas/${String(baraja).padStart(2, '0')}.png`;
+                b.alt = "";
+                casilla.appendChild(b);
+            }
+            rejilla.appendChild(casilla);
+        });
+
+        // Las fichas van DENTRO de la rejilla, no en el marco. Su posición es un
+        // porcentaje medido sobre la rejilla al ponerlas, así que solo cae en su
+        // sitio si se resuelve contra ella. Colgadas del marco caían 85px a la
+        // izquierda: el marco es más ancho y la rejilla va centrada dentro.
+        (prueba.fichas || []).forEach(pos => {
+            const ficha = document.createElement("img");
+            ficha.src = prueba.skin || FICHA_POR_DEFECTO;
+            ficha.className = "ficha";
+            ficha.style.left = pos.left;
+            ficha.style.top = pos.top;
+            rejilla.appendChild(ficha);
+        });
+
+        marco.appendChild(rejilla);
+        bloque.appendChild(marco);
+    }
+
+    // La baraja: con la que se cerró si se ganó, o con la que se debió gritar si
+    // se pasó. Se enseña grande porque es lo que la gente cuenta después —
+    // «gané con el gallo», «se me fue el gallo».
+    if (prueba.barajaFinal) {
+        const cierre = document.createElement("div");
+        cierre.className = "prueba-cierre";
+
+        const texto = document.createElement("p");
+        texto.className = "prueba-titulo";
+        texto.textContent = soloBaraja ? "" : "Cerró con:";
+
+        const baraja = document.createElement("img");
+        baraja.src = `assets/imagenes/barajas/${String(prueba.barajaFinal).padStart(2, '0')}.png`;
+        baraja.alt = "";
+
+        cierre.appendChild(texto);
+        cierre.appendChild(baraja);
+        bloque.appendChild(cierre);
+    }
+
+    return bloque;
+}
+
+/**
+ * El nickname va como TEXTO, nunca como html.
+ *
+ * Se escribe aquí en vez de importar `escaparHtml` porque este módulo no importa
+ * nada, y en realidad no hace falta escapar: usando `textContent` el navegador
+ * ya lo trata como texto. La función existe para que quede claro que es a
+ * propósito y nadie la cambie por innerHTML.
+ */
+function escaparHtmlSimple(texto) {
+    return String(texto ?? "");
 }
 
 /** Confirmación de dos botones. El callback solo corre si aceptan. */

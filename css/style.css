@@ -298,10 +298,10 @@ input::placeholder { color: rgba(255,255,255,0.6); }
    tope de 60px la ficha quedaba como una lenteja encima de la baraja. El 25% ya
    es proporcional; lo que sobraba era el tope. */
 @media (min-width: 1024px) {
-    /* Mismo porcentaje que en el móvil: al ser relativo a la carta, escala solo
-       y guarda la proporción con la casilla. Solo sube el tope, porque aquí las
-       cartas son mucho más grandes. */
-    #juegoCartas .ficha { width: 18%; max-width: 92px; }
+    /* Aquí se piden más grandes: la carta es el doble y la ficha se veía
+       pequeña encima. El 21% llena el 93% de su casilla — por encima de eso
+       vuelve a desbordar sobre las vecinas. */
+    #juegoCartas .ficha { width: 21%; max-width: 108px; }
 }
 
 /* FICHA EN MODAL VICTORIA (MÁS CHICA) */
@@ -1669,6 +1669,84 @@ textarea::placeholder { color: rgba(255,255,255,0.6); }
     padding: 0 6px 4px;
     font-variant-numeric: tabular-nums;   /* que no baile al cambiar de cifra */
 }
+
+/* ── LA BARRA DEL HISTORIAL, FIJA ARRIBA ──────────────────────────────────
+   Durante la partida se hace lo mismo todo el rato: cantan una baraja, bajas a
+   buscarla en tus cartas, y si dudas subes a comprobar cuál era. Fija, ese
+   último viaje desaparece.
+
+   El problema es el alto: la barra mide 110px, que en un móvil son el 13% de la
+   pantalla ocupados para siempre, justo donde más falta hace el sitio. Por eso
+   se ENCOGE en cuanto se baja: arriba del todo se ve entera, y al hacer scroll
+   se queda una franja fina con las últimas cantadas. La clase la pone
+   tablero.js mirando el scroll. */
+#barraHistorial {
+    position: sticky;
+    top: 0;
+    z-index: 40;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    /* Fondo OPACO. El primer intento fue un degradado que se desvanecía en el
+       tercio de abajo, y por ahí se veían pasar las cartas de la mesa: parecía
+       que la barra estaba rota. Se desvanece solo en los últimos píxeles, lo
+       justo para que el corte no sea una línea dura. */
+    background: linear-gradient(to bottom,
+        #0a0a0c 0%,
+        #0a0a0c 88%,
+        rgba(10, 10, 12, 0) 100%);
+    padding: 6px 0 10px;
+    /* Una sombra debajo, para que se lea como una capa por encima de la mesa y
+       no como parte de ella. */
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.55);
+}
+
+/* La barra encogida. Se anima el alto de las barajas, no el de la barra: así no
+   hay saltos de layout mientras se hace scroll. */
+#barraHistorial .historial-container {
+    transition: min-height 0.18s ease, padding 0.18s ease;
+}
+#barraHistorial #historial img {
+    transition: width 0.18s ease, height 0.18s ease;
+}
+
+#barraHistorial.encogida .historial-container {
+    min-height: 0;
+    padding: 5px 10px !important;
+    margin-bottom: 6px;
+}
+#barraHistorial.encogida #historial img { width: 34px; height: 51px; }
+#barraHistorial.encogida #historial { gap: 6px; }
+
+/* El contador se va al lado en cuanto la barra se encoge: ahí una línea propia
+   cuesta más de lo que aporta. */
+#barraHistorial.encogida .contador-barajas {
+    padding: 0 6px 2px;
+    font-size: 0.72rem;
+}
+
+/* Quien haya pedido menos movimiento no ve la barra cambiar de tamaño. */
+@media (prefers-reduced-motion: reduce) {
+    #barraHistorial .historial-container,
+    #barraHistorial #historial img { transition: none; }
+}
+
+/* Varias cartas ganadoras, cuando hay empate.
+   En fila y con scroll lateral: apiladas obligarían a bajar para ver la
+   segunda, y el modal ya es alto. Cada una se encoge para que quepan dos a la
+   vista, que es el caso normal de un empate. */
+.pruebas-empate {
+    display: flex;
+    gap: 14px;
+    justify-content: center;
+    align-items: flex-start;
+    overflow-x: auto;
+    padding-bottom: 6px;
+}
+.pruebas-empate .prueba-bloque { flex: 0 0 auto; max-width: 46%; }
+.pruebas-empate .prueba-tabla { width: 100%; max-width: none; }
+.pruebas-empate .prueba-cierre img { width: 62px; }
 
 /* La baraja con la que se cerró la figura, debajo de la carta ganadora.
    Se enseña grande a propósito: es el dato que la gente repite después, y
