@@ -345,12 +345,15 @@ export function resetearTablero() {
  * se marcara solo, no habría partida.
  */
 function resaltarBarajaCantada(numeroConCeros) {
+    // Primero se apaga la anterior: el aviso late hasta que cantan la siguiente,
+    // así que solo puede haber una encendida. Con varias a la vez no se sabría
+    // cuál es la que acaban de decir.
+    document.querySelectorAll('#juegoCartas .baraja-cantada')
+        .forEach(c => c.classList.remove('baraja-cantada'));
+
     document.querySelectorAll('#juegoCartas .casilla-tabla img').forEach(img => {
         if (!img.src.endsWith(`/${numeroConCeros}.png`)) return;
-        const casilla = img.parentElement;
-        casilla.classList.remove('baraja-cantada');
-        void casilla.offsetWidth;          // reinicia la animación
-        casilla.classList.add('baraja-cantada');
+        img.parentElement.classList.add('baraja-cantada');
     });
 }
 
@@ -383,6 +386,12 @@ socket.on("cartas-desactivadas", ids => {
 });
 
 /** Borra las cartas ya cantadas: al barajear y al reiniciar la partida. */
+/** Apaga el aviso de la baraja en juego. Al barajear o al parar la partida. */
+export function apagarAvisoBaraja() {
+    document.querySelectorAll('#juegoCartas .baraja-cantada')
+        .forEach(c => c.classList.remove('baraja-cantada'));
+}
+
 export function limpiarHistorialCantadas() {
     const historial = $("historial");
     if (historial) historial.innerHTML = "";
@@ -392,4 +401,5 @@ export function limpiarHistorialCantadas() {
 socket.on("partida-reiniciada", () => {
     limpiarFichas();
     limpiarHistorialCantadas();
+    apagarAvisoBaraja();
 });

@@ -25,7 +25,7 @@ import {
 import {
     generarCartas, renumerarSeleccion, seleccionarCarta,
     montarMesa, limpiarFichas, cambiarCartas, alternarCartaPropia,
-    restaurarSeleccionVisual, resetearTablero, limpiarHistorialCantadas
+    restaurarSeleccionVisual, resetearTablero, limpiarHistorialCantadas, apagarAvisoBaraja
 } from './modulos/tablero.js';
 import {
     compartirSala, crearSalaPropia, unirseSalaExistente,
@@ -469,6 +469,7 @@ socket.on("reproducir-sonido-apuesta", () => sonarApuesta());
 socket.on("barajear", () => {
   sonidos.barajear();
   limpiarHistorialCantadas();
+  apagarAvisoBaraja();
 });
 
 socket.on("campana", () => sonidos.campana());
