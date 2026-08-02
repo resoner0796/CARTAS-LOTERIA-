@@ -50,6 +50,19 @@ async function prepararCaptura(pagina) {
     });
 }
 
+/** Se queda con todo lo que el cliente manda al servidor. */
+async function espiarEnvios(pagina) {
+    await pagina.evaluate(() => {
+        window.__enviados__ = [];
+        const socket = window.__socket__;
+        const orig = socket.emit.bind(socket);
+        socket.emit = function (ev, datos) {
+            window.__enviados__.push({ ev, datos });
+            return orig(ev, datos);
+        };
+    });
+}
+
 /** Dispara un evento de socket como si llegara del servidor. */
 async function recibirDelServidor(pagina, evento, datos) {
     const llego = await pagina.evaluate((ev, d) => {
@@ -190,6 +203,57 @@ module.exports = async function cartas(navegador, url) {
     });
     r.igual('poner la ficha encima apaga el latido', trasMarcar.latiendo, 0);
     r.igual('y la ficha se queda puesta', trasMarcar.fichas, 1);
+
+    // ── Gritar lotería manda QUÉ CASILLAS se taparon ─────────────────────────
+    // Es el dato con el que el servidor decide, y el que no se puede deducir de
+    // la posición de la ficha: la rejilla tiene margen y separación.
+    await espiarEnvios(pagina);
+
+    // Se parte de la mesa limpia: viene una ficha del bloque anterior. Un clic
+    // sintético sobre la baraja no la quita —el de verdad sí, porque la ficha
+    // está encima— así que se quedaría contada de más.
+    await pagina.evaluate(() =>
+        document.querySelector('[data-accion="limpiar-fichas"]').click());
+    await esperar(1200);          // lo que tarda la animación en llevárselas
+
+    const mesaLimpia = await pagina.evaluate(() =>
+        document.querySelectorAll('#juegoCartas .ficha').length);
+    r.igual('Limpiar se lleva las fichas del tablero', mesaLimpia, 0);
+
+    // Se tapan las cuatro de la fila de arriba de la carta que está en la mesa.
+    await pagina.evaluate(() => {
+        const casillas = document.querySelectorAll('#juegoCartas .casilla-tabla');
+        [0, 1, 2, 3].forEach(i => casillas[i].querySelector('img').click());
+    });
+    await esperar(200);
+
+    await pagina.evaluate(() =>
+        document.querySelector('[data-accion="gritar-loteria"]').click());
+    await esperar(400);
+
+    const grito = await pagina.evaluate(() =>
+        (window.__enviados__ || []).find(e => e.ev === 'loteria') || null);
+
+    r.cierto('gritar lotería manda el evento', !!grito);
+    if (grito) {
+        const marcadas = grito.datos?.boardState?.marcadas?.['02'] || [];
+        r.igual('con las casillas que se taparon, por su número',
+            marcadas.slice().sort((a, b) => a - b).join(','), '0,1,2,3');
+        r.igual('y sigue mandando la posición de las fichas para dibujarlas',
+            (grito.datos?.boardState?.chips?.['02'] || []).length, 4);
+    }
+
+    // ── Un grito en falso no para la partida ─────────────────────────────────
+    await recibirDelServidor(pagina, 'loteria-rechazada', { motivo: 'Te faltó una para la figura' });
+    const rechazo = await pagina.evaluate(() => ({
+        visible: document.getElementById('modalSistema')?.classList.contains('active'),
+        texto: document.getElementById('modalSistemaMensaje')?.textContent
+    }));
+    r.cierto('el servidor puede rechazar un grito en falso', rechazo.visible);
+    r.igual('y se enseña por qué', rechazo.texto, 'Te faltó una para la figura');
+
+    await pagina.evaluate(() => document.getElementById('btnModalAceptar')?.click());
+    await esperar(200);
 
     // ── Modo esquinas: los huecos ────────────────────────────────────────────
     await recibirDelServidor(pagina, 'info-sala', {

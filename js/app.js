@@ -10,7 +10,7 @@ import { STRIPE_CLAVE_PUBLICA, FICHA_POR_DEFECTO } from './modulos/config.js';
 import { escaparHtml, actualizarValor } from './modulos/utiles.js';
 import { socket } from './modulos/socket.js';
 import { sonidos, sonarApuesta } from './modulos/audio.js';
-import { emitirLoteria, iniciarValidacion } from './modulos/validacion.js';
+import { emitirLoteria } from './modulos/validacion.js';
 import { verificarSSO } from './modulos/sso.js';
 import { iniciarJugadores, alternarSilencio } from './modulos/jugadores.js';
 import { sesion, partida } from './modulos/estado.js';
@@ -503,7 +503,6 @@ function ponerBotonPausa(enPausa) {
 // ======================================================
 
 // Gritar lotería y la validación del anfitrión viven en modulos/validacion.js.
-iniciarValidacion();
 
 // APUESTAS
 if(btnApostar) btnApostar.addEventListener("click", () => {

@@ -3,36 +3,37 @@
 // ======================================================
 // El final de cada partida, que es la parte que reparte dinero:
 //
-//   1. Alguien grita lotería y manda su tablero con las fichas puestas.
-//   2. El servidor abre una pausa de unos segundos para recoger empates.
-//   3. El ANFITRIÓN revisa la tabla de cada reclamante y da su veredicto.
-//   4. El servidor reparte el bote entre los validados.
+//   1. Alguien grita lotería y manda sus cartas con las casillas que tapó.
+//   2. El SERVIDOR decide si hay figura. Si no la hay, se lo dice a esa persona
+//      y la partida sigue: un grito en falso ya no congela a toda la sala.
+//   3. Si la hay, se abre una pausa de unos segundos para recoger empates.
+//   4. El servidor reparte el bote entre quienes ganaron de verdad.
 //
-// El anfitrión valida mirando: por eso el reclamante manda las posiciones de sus
-// fichas y aquí se reconstruye su tabla tal cual la tenía. Y por eso el anfitrión
-// puede marcar CUÁL tabla se llenó — esa es la prueba que ve toda la sala, que
-// importa sobre todo cuando el anfitrión se valida a sí mismo.
+// Antes el paso 2 lo hacía el ANFITRIÓN mirando la carta de cada reclamante, con
+// dos problemas que no se arreglan mirando mejor: se validaba a sí mismo, y
+// cualquiera podía picar el botón de broma para parar la partida. Se pudo
+// automatizar cuando las cartas dejaron de ser imágenes — con una carta como
+// lista de números, el servidor sabe exactamente qué lleva cada una.
+//
+// Aquí ya no se juzga nada: solo se enseña lo que el servidor decidió.
 
 import { socket } from './socket.js';
 import { sesion, partida } from './estado.js';
 import { mostrarAlerta } from './ui.js';
 import { escaparHtml } from './utiles.js';
+import { NOMBRE_FIGURA } from './config.js';
 import { fichaEnUso } from './tienda.js';
-import { tablaPorId, pintarTabla } from './tablasPropias.js';
-import { FICHA_POR_DEFECTO } from './config.js';
+import { tablaPorId } from './tablasPropias.js';
 import { sonidos } from './audio.js';
 
 const $ = id => document.getElementById(id);
 
-/** Cuál de las tablas del reclamante se llenó. La marca el anfitrión, opcional. */
-let tablaGanadoraElegida = null;
-
 /**
  * Grita lotería.
  *
- * Va el tablero entero: qué tablas se tenían, dónde está cada ficha y con qué
- * skin. El servidor lo guarda para que el anfitrión pueda revisarlo aunque el
- * reclamante se desconecte.
+ * Va el tablero entero: qué cartas se tenían, qué casillas se taparon, dónde
+ * quedó cada ficha y con qué skin. Las casillas son lo que el servidor usa para
+ * decidir; el resto es para poder volver a dibujarlo.
  */
 export function emitirLoteria() {
     // Sin sesión no hay a quién adjudicar la victoria. No debería pasar jugando
@@ -45,10 +46,17 @@ export function emitirLoteria() {
         cards: partida.seleccionadas,
         chips: {},
         skin: fichaEnUso(),
-        // Cada carta viaja con sus 16 barajas dentro, para que el anfitrión
-        // pueda pintarla. El SERVIDOR las reemplaza por las suyas antes de que
-        // nadie las vea: lo que se manda desde aquí sirve para dibujar, nunca
-        // para decidir quién gana.
+        // QUÉ CASILLAS tapaste en cada carta. Esto es lo que el servidor usa
+        // para validar, junto con sus propias barajas y su historial.
+        //
+        // Va aparte de `chips` a propósito: las fichas llevan su posición en
+        // porcentaje, que sirve para volver a dibujarlas donde estaban, pero no
+        // dice en qué casilla cayeron. La rejilla tiene margen y separación, así
+        // que deducir la casilla del porcentaje sería aproximar justo el dato
+        // que decide el bote.
+        marcadas: {},
+        // Cada carta viaja también con sus barajas, solo para pintar. El
+        // SERVIDOR las reemplaza por las suyas antes de que nadie las vea.
         propias: {}
     };
 
@@ -58,9 +66,18 @@ export function emitirLoteria() {
     });
 
     document.querySelectorAll('#juegoCartas .carta-juego').forEach(contenedor => {
-        const fichas = [...contenedor.querySelectorAll('.ficha')]
-            .map(f => ({ left: f.style.left, top: f.style.top }));
-        if (fichas.length > 0) boardState.chips[contenedor.dataset.id] = fichas;
+        const fichas = [...contenedor.querySelectorAll('.ficha')];
+        if (fichas.length === 0) return;
+
+        boardState.chips[contenedor.dataset.id] =
+            fichas.map(f => ({ left: f.style.left, top: f.style.top }));
+
+        // Una ficha soltada en el margen de la rejilla no tapa ninguna casilla,
+        // y esas se quedan fuera en vez de colarse como un índice inventado.
+        boardState.marcadas[contenedor.dataset.id] = fichas
+            .map(f => f.dataset.casilla)
+            .filter(c => c !== undefined)
+            .map(Number);
     });
 
     socket.emit("loteria", {
@@ -68,142 +85,6 @@ export function emitirLoteria() {
         sala: partida.sala,
         boardState
     });
-}
-
-/** Toma el siguiente reclamante que quede por revisar. */
-function procesarSiguienteValidacion(lista) {
-    const siguiente = lista.find(r => r.status === 'pendiente');
-    if (!siguiente) return;
-
-    const total = lista.length;
-    const numero = lista.filter(r => r.status !== 'pendiente').length + 1;
-    abrirModalValidacionHost(siguiente, numero, total);
-}
-
-/** Reconstruye la tabla del reclamante para que el anfitrión la revise. */
-function abrirModalValidacionHost(candidato, numero, total) {
-    partida.ganadorTemp = candidato.id;
-    tablaGanadoraElegida = null;
-
-    const titulo = $("modalLoteriaTitulo");
-    const texto = $("modalLoteriaTexto");
-    if (titulo) titulo.textContent = `Validando Ganador (${numero} de ${total})`;
-    if (texto) texto.textContent = `${candidato.nickname} reclama victoria. Revisa su tabla.`;
-
-    const aviso = $("avisoCartaGanadora");
-    if (aviso) aviso.textContent = "Toca la tabla que se llenó (opcional)";
-
-    // Las cartas cantadas, para comparar. Siempre de la baraja de 54.
-    const historial = $("modalHistorialFlex");
-    if (historial) {
-        historial.innerHTML = "";
-        partida.historialIds.forEach(cartaId => {
-            const img = document.createElement("img");
-            img.src = `assets/imagenes/barajas/${cartaId}.png`;
-            historial.appendChild(img);
-        });
-    }
-
-    const zona = $("modalVerificationArea");
-    if (!zona) return;
-    zona.innerHTML = '';
-
-    const tablero = candidato.boardState;
-    if (!tablero || !tablero.cards) return;
-
-    // La skin viaja con el tablero: así se ve igual que la tenía el reclamante.
-    const skin = tablero.skin || FICHA_POR_DEFECTO;
-
-    tablero.cards.forEach(tablaId => {
-        const contenedor = document.createElement('div');
-        contenedor.className = 'carta-juego tabla-validable';
-        contenedor.dataset.tabla = tablaId;
-        contenedor.onclick = () => elegirTablaGanadora(tablaId);
-
-        // Las barajas de cada carta las pone el SERVIDOR en `propias`, sea del
-        // sistema o comprada. Es a propósito que no se lean de aquí: el
-        // anfitrión valida con lo que dice el servidor, no con lo que le mande
-        // el navegador del reclamante.
-        const barajas = tablero.propias && tablero.propias[tablaId];
-        if (!barajas) return;
-        contenedor.classList.add('carta-juego-rejilla');
-        contenedor.appendChild(pintarTabla({ cartas: barajas }));
-
-        (tablero.chips?.[tablaId] || []).forEach(pos => {
-            const ficha = document.createElement("img");
-            ficha.src = skin;
-            ficha.className = "ficha";
-            ficha.style.left = pos.left;
-            ficha.style.top = pos.top;
-            ficha.style.pointerEvents = "none";
-            contenedor.appendChild(ficha);
-        });
-
-        zona.appendChild(contenedor);
-    });
-
-    // La casilla del pozo solo tiene sentido si hay algo acumulado.
-    const veredictoPozo = $("pozoVeredicto");
-    const chkGanoPozo = $("chkGanoPozo");
-    if (veredictoPozo) {
-        const aplica = partida.modo === 'tradicional' && partida.pozo > 0;
-        veredictoPozo.style.display = aplica ? "flex" : "none";
-        if (chkGanoPozo) chkGanoPozo.checked = false;
-        if (aplica) {
-            veredictoPozo.querySelector("span").textContent =
-                `🎰 También se llevó el POZO de $${partida.pozo} (llenó las 4 del centro)`;
-        }
-    }
-
-    const modal = $("loteriaModal");
-    if (modal) modal.classList.add("active");
-}
-
-/** Marca o desmarca cuál tabla se llenó. Se puede dar veredicto sin elegir. */
-function elegirTablaGanadora(tablaId) {
-    tablaGanadoraElegida = (tablaGanadoraElegida === tablaId) ? null : tablaId;
-
-    document.querySelectorAll("#modalVerificationArea .tabla-validable").forEach(cont => {
-        cont.classList.toggle("elegida-ganadora", cont.dataset.tabla === tablaGanadoraElegida);
-    });
-
-    const aviso = $("avisoCartaGanadora");
-    if (aviso) {
-        aviso.textContent = tablaGanadoraElegida
-            ? "Marcada la tabla ganadora ✓"
-            : "Toca la tabla que se llenó (opcional)";
-    }
-}
-
-/** Engancha los botones de aceptar y rechazar del anfitrión. */
-export function iniciarValidacion() {
-    const aceptar = $("btnAceptarGanador");
-    const rechazar = $("btnRechazarGanador");
-    const modal = $("loteriaModal");
-
-    if (aceptar) aceptar.onclick = () => {
-        if (!partida.ganadorTemp) return;
-        const chkGanoPozo = $("chkGanoPozo");
-        socket.emit("veredicto-host", {
-            sala: partida.sala,
-            candidatoId: partida.ganadorTemp,
-            esValido: true,
-            tablaGanadora: tablaGanadoraElegida,
-            ganoPozo: !!(chkGanoPozo && chkGanoPozo.checked)
-        });
-        if (chkGanoPozo) chkGanoPozo.checked = false;
-        if (modal) modal.classList.remove("active");
-    };
-
-    if (rechazar) rechazar.onclick = () => {
-        if (!partida.ganadorTemp) return;
-        socket.emit("veredicto-host", {
-            sala: partida.sala,
-            candidatoId: partida.ganadorTemp,
-            esValido: false
-        });
-        if (modal) modal.classList.remove("active");
-    };
 }
 
 // ==================== LO QUE MANDA EL SERVIDOR ====================
@@ -234,13 +115,17 @@ socket.on("notificar-otro-ganador", (otroNick) => {
     if (navigator.vibrate) navigator.vibrate([100, 100]);
 });
 
-socket.on("iniciar-validacion-secuencial", (lista) => {
-    const mensaje = $("loteriaMensaje");
-    if (mensaje) mensaje.style.display = "none";
-    procesarSiguienteValidacion(lista);
+/**
+ * El servidor dice que no hay figura. Solo lo ve quien gritó.
+ *
+ * La partida NO se para: se sigue cantando mientras aparece el aviso. Es la
+ * diferencia con antes, cuando un grito en falso congelaba a toda la sala hasta
+ * que el anfitrión resolviera.
+ */
+socket.on("loteria-rechazada", ({ motivo }) => {
+    mostrarAlerta(motivo || "Todavía no tienes lotería.", "Aún no 🙈");
+    sonidos.corre();
 });
-
-socket.on("continuar-validacion", (lista) => procesarSiguienteValidacion(lista));
 
 socket.on("ganadores-multiples", ({ ganadores, premio, prueba, pozoGanado, ganadorPozo }) => {
     const mensaje = $("loteriaMensaje");
@@ -260,9 +145,13 @@ socket.on("ganadores-multiples", ({ ganadores, premio, prueba, pozoGanado, ganad
         msg += `\n\n🎰 ¡Y SE LLEVÓ EL POZO!\n${ganadorPozo} suma ${pozoGanado} monedas más.`;
     }
 
-    // La ruta viaja DENTRO de la prueba porque el modal vive en ui.js y no
-    // conoce el estado de la partida. En modo Pozo las tablas salen de otra
-    // carpeta, así que sin esto la tabla ganadora saldría rota.
+    // Con qué figura se ganó. Lo dice el servidor, que es quien la encontró, y
+    // es información que antes no existía: el anfitrión validaba a ojo y nadie
+    // llegaba a saber si había sido una diagonal o las cuatro esquinas.
+    if (prueba && prueba.figura) {
+        msg += `\n\nGanó por: ${NOMBRE_FIGURA[prueba.figura] || prueba.figura}.`;
+    }
+
     // La prueba llega del servidor con las barajas de la carta ganadora dentro,
     // así que ya no hace falta pasarle una carpeta de dónde sacar la imagen.
     mostrarAlerta(msg, "¡RESULTADO FINAL!", prueba);
@@ -271,11 +160,14 @@ socket.on("ganadores-multiples", ({ ganadores, premio, prueba, pozoGanado, ganad
     lanzarConfeti();
 });
 
+// Queda del flujo viejo. Hoy no debería llegar —el servidor no abre la pausa si
+// no hay una figura de verdad— pero si llegara, la sala tiene que enterarse de
+// que el juego sigue en vez de quedarse mirando el contador.
 socket.on("falsa-alarma-masiva", () => {
     const mensaje = $("loteriaMensaje");
     if (mensaje) mensaje.style.display = "none";
-    mostrarAlerta("Todos los reclamos fueron rechazados. ¡Sigue el juego!", "Falsa Alarma 🤡");
-    sonidos.corre();          // sigue la partida
+    mostrarAlerta("Se reanuda el juego.", "Sigue la partida");
+    sonidos.corre();
 });
 
 function lanzarConfeti() {

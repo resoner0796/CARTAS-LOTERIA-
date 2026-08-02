@@ -228,11 +228,12 @@ rendimiento decreciente ya no compensa el archivo extra.
 
 Definidos en el backend (`MODOS_JUEGO`), el front los recibe en el evento `info-sala`:
 
-| Modo | Costo por carta | Cartas para elegir | Conjunto |
-|---|---|---|---|
-| `tradicional` | 1 | 60 | `normal` (16 casillas) |
-| `llena` | 2 | 60 | `normal` (16 casillas) |
-| `pozo` | 2 | 20 | `esquinas` (8 casillas) |
+| Modo | Costo por carta | Cartas | Conjunto | Cómo se gana |
+|---|---|---|---|---|
+| `tradicional` | 1 | 60 | `normal` (16 casillas) | cualquier figura |
+| `llena` | 2 | 60 | `normal` (16 casillas) | las 16 casillas |
+| `pozo` | 2 | 20 | `esquinas` (8 casillas) | las 8 casillas |
+| `doble` | 2 | 60 | `dobles` (15 barajas en 16) | cualquier figura |
 
 ⚠️ **No confundir los dos conjuntos**, es la trampa más fácil de este proyecto:
 - **Carta** = lo que elige el jugador, la rejilla de 4×4. Ya **no es una imagen**:
@@ -249,17 +250,62 @@ La baraja que se canta siempre es de 54, sin importar el modo.
 
 ## Flujo de una partida
 
-1. `unirse-sala` → el server responde `rol-asignado` (host = quien creó la sala) e `info-sala`.
+1. `unirse-sala` → el server responde `rol-asignado` (host = quien creó la sala) e
+   `info-sala`, que trae las cartas del modo con sus barajas.
 2. El jugador elige hasta 4 cartas → `seleccionar-carta` / `deseleccionar-carta`.
    El server difunde `cartas-desactivadas` para que nadie repita carta.
 3. `apostar` → cobra `costoCarta × nº de cartas`, alimenta el bote.
 4. El host lanza `iniciar-juego` con una velocidad → el server empieza a emitir
    `carta-cantada` cada N ms.
-5. Alguien grita `loteria` → pausa de 4 s para recoger empates → el **host** valida
-   visualmente cada tabla reclamante (`veredicto-host`) → `ganadores-multiples`
-   reparte el bote.
-6. Al reconectar (F5), `reconectar` restaura cartas, apuesta y rol vía
-   `estado-sala-restaurado`.
+5. Alguien grita `loteria` mandando **qué casillas tapó** → el **servidor**
+   decide (`victoria.js`):
+   - si no hay figura → `loteria-rechazada` **solo a quien gritó**, y la partida
+     sigue cantando;
+   - si la hay → pausa de 4 s para recoger empates → `cerrarRonda()` reparte el
+     bote con `ganadores-multiples`.
+6. Al reconectar (F5), `reconectar` manda `info-sala` y luego restaura cartas,
+   apuesta y rol vía `estado-sala-restaurado`. **El orden importa**: sin las
+   cartas, el cliente no sabe pintar nada.
+
+## El servidor decide quién ganó
+
+Esto es lo que desbloqueó pasar las cartas a datos, y es el cambio más grande del
+proyecto. La lógica está en `victoria.js` del backend.
+
+**Las veinte figuras.** Cuatro horizontales, cuatro verticales, dos diagonales,
+las cuatro esquinas y los nueve cuadros de 2×2. Se **generan** en vez de
+escribirse a mano: una lista de veinte cuartetos copiada a mano es justo donde se
+cuela un número mal, y eso no daría ningún error — daría una figura que no existe
+o dejaría fuera una legítima, y el fallo solo aparecería el día que alguien la
+complete.
+
+**Qué manda el cliente.** `boardState.marcadas` = `{ cartaId: [índices] }`, los
+números de casilla que se taparon. Va aparte de `chips`, que lleva la posición en
+porcentaje: el porcentaje sirve para volver a dibujar la ficha donde estaba, pero
+NO dice en qué casilla cayó — la rejilla tiene margen y separación, así que
+deducirlo sería aproximar justo el dato que decide el bote.
+
+⚠️ **Qué es de fiar y qué no.** Lo que decide el dinero es que las barajas estén
+CANTADAS, y eso lo sabe el servidor: el historial es suyo y las barajas de la
+carta también. Las fichas las manda el navegador y podrían falsearse, pero mentir
+ahí solo saltaría el requisito de haber estado atento — nunca daría por buena una
+carta cuyas barajas no hayan salido. Si alguna vez se quita ese requisito, no se
+pierde seguridad; si se invierte —fiarse de las fichas y no del historial— se
+pierde todo.
+
+**Un grito en falso ya no para la partida.** Antes bastaba con picar LOTERÍA de
+broma para congelar a toda la sala hasta que el anfitrión resolviera. Hoy se le
+contesta a quien gritó y el juego sigue cantando.
+
+**Lo que se retiró.** Los eventos `iniciar-validacion-secuencial`,
+`continuar-validacion` y `veredicto-host`, y el modal donde el anfitrión juzgaba.
+El pago salió de dentro de `veredicto-host` a una función `cerrarRonda()`: antes
+corría cada vez que el anfitrión juzgaba a alguien y pagaba al juzgar al último,
+y ahora se llama una sola vez, al cerrar la ventana de empates.
+
+`victoria.js` tiene **55 pruebas propias**, y aquí sí son unitarias al revés que
+en el cliente: es lógica pura, determinista, y un fallo no se ve en pantalla —
+se ve en el saldo de alguien.
 
 ## Las cartas son datos, no imágenes
 
@@ -289,6 +335,12 @@ Lo que salió, medido:
 |---|---|---|---|---|
 | `normal` (60×16) | 17 o 18 veces, diferencia 1 | 7 | 4.55 | 4.74, y el máximo llega a 11 |
 | `esquinas` (20×8) | 2 o 3 veces, diferencia 1 | 1 | 0.83 | 1.19 |
+| `dobles` (60×15) | 16 o 17 veces, diferencia 1 | 6 | 3.99 | 4.17 |
+
+En `dobles` una carta lleva **15 barajas en 16 casillas**: la primera ocupa las
+dos del centro. Por eso los huecos del generador son una lista de LISTAS —cada
+elemento son las casillas que ocupa una misma baraja— y el equilibrio se calcula
+sobre las barajas, no sobre las casillas.
 
 ⚠️ **La media no se puede bajar.** Con reparto parejo sale fijada por la
 aritmética: 960 casillas entre 54 barajas hacen que cada una aparezca en ~17,8
@@ -414,6 +466,11 @@ ejecución, nunca la lectura del diff.
 
 Bugs pendientes: ninguno conocido en el cliente.
 
+⚠️ **`marcarFicha()` es ahora parte del camino del dinero.** Antes solo pintaba;
+hoy el `dataset.casilla` que le pone a cada ficha es lo que viaja al servidor
+para validar la victoria. Si se toca esa función, la prueba que hay que mirar es
+la de `cartas.prueba.js` que comprueba el `boardState` emitido.
+
 ⚠️ **Nombres de archivo: todo en minúsculas.** macOS no distingue mayúsculas en
 los nombres, pero git y el Linux de Vercel sí. Había un `icon-192.PNG` y un
 `icon-192.png`: en tu Mac son **el mismo archivo**, en producción son **dos**.
@@ -470,19 +527,21 @@ Firestore no cambia la regla: el backend lo lee de ahí y cobra lo que diga; el
 cliente solo pinta. Si en algún momento el precio vuelve a viajar en la
 petición, se reabre el agujero que costó cerrar seis veces.
 
-**2. Validar la lotería sin que nadie mire.** Es lo que desbloqueó pasar las
-cartas a datos, y lo que falta para cobrarlo. Hoy el anfitrión revisa cada
-reclamante a ojo, incluido a sí mismo, que es la parte más incómoda del juego.
-El servidor ya tiene las 16 barajas de cada carta y el historial de lo cantado:
-puede decidir solo. Ulises lo dejó apuntado como «validación por fichas».
-
-**3. Un bot.** Si el servidor elige cartas y las marca solo, se puede jugar sin
+**2. Un bot.** Si el servidor elige cartas y las marca solo, se puede jugar sin
 sala llena — y Serpientes ya tiene modo contra CPU, así que el ecosistema ya
-sabe hacerlo.
+sabe hacerlo. Ahora que el servidor sabe validar, sabe también cuándo el bot
+tendría lotería: es la misma función.
 
-**4. Modo Doble.** El generador ya sabe hacer cartas `dobles` (una baraja
-repetida en las dos casillas del centro) y se pueden comprar, pero no hay un
-modo de juego que las use. Faltaría añadirlo a `MODOS_JUEGO` con su costo.
+**3. Modos que ahora salen casi gratis.** Con las figuras como datos, añadir una
+variante es tocar `CONDICION_POR_MODO` y poco más:
+- **figura anunciada** — cada partida se juega a una sola figura, dicha antes de
+  empezar. Cambia el juego entero y es un campo en la sala.
+- **contrarreloj** — quien complete una figura en menos barajas cantadas.
+- **torneo por rondas** — el servidor ya lleva la cuenta de rachas.
+
+**4. Avisar de que te falta una.** El servidor ya calcula a qué figura estás más
+cerca, para el mensaje de rechazo. Ese mismo dato serviría para un aviso en
+pantalla — pero cuidado: quita tensión al juego y conviene que sea opcional.
 
 ### El generador original
 

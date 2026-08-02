@@ -243,13 +243,21 @@ export function marcarFicha(e, contenedor) {
     ficha.style.top = `${py}%`;
     contenedor.appendChild(ficha);
 
-    // La casilla marcada deja de latir. El aviso está para ayudar a encontrar la
-    // baraja que acaban de cantar, y una vez tapada ya no ayuda: sigue llamando
-    // la atención sobre algo que ya está resuelto.
-    //
-    // Se busca por dónde se tocó, no por el número: es lo único que dice QUÉ
-    // casilla se acaba de tapar, que es lo que hay que apagar.
-    e.target.closest?.('.casilla-tabla')?.classList.remove('baraja-cantada');
+    const casilla = e.target.closest?.('.casilla-tabla');
+    if (casilla) {
+        // Qué casilla se tapó, por su número dentro de la rejilla. Es lo que
+        // viaja al servidor para validar la victoria: la posición en porcentaje
+        // sirve para volver a dibujar la ficha donde estaba, pero no dice en
+        // qué casilla cayó — la rejilla tiene margen y separación, así que
+        // deducirlo del porcentaje sería aproximar justo lo que decide el bote.
+        const rejilla = casilla.parentElement;
+        ficha.dataset.casilla = [...rejilla.children].indexOf(casilla);
+
+        // Y deja de latir: el aviso está para ayudar a encontrar la baraja que
+        // acaban de cantar, y una vez tapada solo llama la atención sobre algo
+        // ya resuelto.
+        casilla.classList.remove('baraja-cantada');
+    }
 }
 
 /** Cuánto vuelan las fichas al salir despedidas, y cuánto tardan. */

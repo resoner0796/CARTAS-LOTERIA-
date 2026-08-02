@@ -128,9 +128,10 @@
                 <input type="text" id="inputCrearSala" placeholder="Ej: Familia">
                 <p style="margin-bottom:5px; font-size: 0.8rem;">Modo de Juego:</p>
 <select id="inputModoJuego" style="background:rgba(0,0,0,0.5); border:1px solid gold; color:white; margin-bottom:15px;">
-    <option value="tradicional">🏆 Tradicional ($1) - Gana con todo</option>
+    <option value="tradicional">🏆 Tradicional ($1) - Cualquier figura</option>
     <option value="llena">⚫ Carta Llena ($2) - Llenar todo</option>
-    <option value="pozo">🎯 Pozo y Esquinas ($2) - Baraja Especial</option>
+    <option value="pozo">🎯 Pozo y Esquinas ($2) - Cartas de 8</option>
+    <option value="doble">👯 Doble ($2) - Una baraja tapa dos</option>
 </select>
                 <div style="flex-grow: 1;"></div>
                 <button data-accion="crear-sala" class="btn-full">Crear ▶</button>
@@ -335,31 +336,6 @@
   </div>
   
   <div id="loteriaMensaje">¡LOTERÍA!</div>
-
-  <div id="loteriaModal" class="modal">
-    <div class="modal-content">
-      <h3 id="modalLoteriaTitulo" style="margin-top:0; color: gold;">Validar Lotería</h3>
-      <p id="modalLoteriaTexto">El jugador X dice Lotería.</p>
-      
-      <div style="text-align: left; margin-bottom: 5px; font-weight: bold; color: var(--accent-yellow);">Historial de cartas cantadas:</div>
-      <div class="historial-container-modal">
-          <div id="modalHistorialFlex"></div>
-      </div>
-      <div id="avisoCartaGanadora" style="text-align:left; font-size:0.8rem; color:#bbb; margin:-8px 0 12px;">Toca la carta con la que cerró (opcional)</div>
-      <div style="text-align: left; margin-top: 15px; font-weight: bold; color: var(--accent-yellow);">Tabla del Jugador:</div>
-      <div id="modalVerificationArea" class="juego-cartas" style="margin-top: 10px; justify-content: center;"></div>
-      
-      <label class="pozo-veredicto" id="pozoVeredicto" style="display:none;">
-        <input type="checkbox" id="chkGanoPozo">
-        <span>🎰 También se llevó el POZO (llenó las 4 del centro)</span>
-      </label>
-
-      <div class="modal-buttons">
-        <button id="btnRechazarGanador" style="background-color: #dc3545; color: white;">Rechazar ❌</button>
-        <button id="btnAceptarGanador" style="background-color: #aed581; color: black;">Confirmar ✅</button>
-      </div>
-    </div>
-  </div>
 
   <div id="modalSistema" class="modal">
     <div class="modal-content">

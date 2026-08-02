@@ -56,13 +56,13 @@ Es un solo proceso para todo el ecosistema.
 index.html          Todas las pantallas (login, menú, sala, selección, juego, admin)
 css/style.css       Estilos
 js/app.js           Punto de entrada: arranque, login y eventos de partida
-js/modulos/         18 módulos (ver CLAUDE.md para el detalle de cada uno)
+js/modulos/         20 módulos (ver CLAUDE.md para el detalle de cada uno)
 scripts/            Empaquetado + ofuscación, corre en el build de Vercel
 vercel.json         Configuración de build
 service-worker.js   Cacheo offline
 manifest.json       PWA
-assets/imagenes/    Cartas, barajas, fondos, fichas, UI
-assets/audios/      Voz de cada una de las 54 cartas + efectos
+assets/imagenes/    Barajas, fondos, fichas, UI (las cartas ya no son imágenes)
+assets/audios/      Voz de cada una de las 54 barajas + efectos
 ```
 
 ### Build: empaquetado y ofuscación
@@ -98,9 +98,13 @@ npm run test:build  # sobre el bundle ofuscado — el que se publica
 
 Abren Chrome de verdad y prueban la app entera: que arranque, que cada botón
 responda, que se conecte al servidor, que el texto de otros usuarios no ejecute
-código y que entrar desde el Hub no enseñe un login por el camino.
+código, que entrar desde el Hub no enseñe un login por el camino, y que las
+cartas que manda el servidor se pinten como rejilla con las barajas correctas.
 
 No necesitan backend. Sí necesitan Chrome instalado (se usa el del sistema).
+
+⚠️ Una prueba que nunca falla no prueba nada. Al añadir una, rómpela a propósito
+y comprueba que salta.
 
 ## 🚀 Correr local
 
@@ -122,17 +126,69 @@ python3 -m http.server 8000
 
 ## 🎮 Modos de juego
 
-| Modo | Costo por tabla | Tablas para elegir | Baraja cantada |
+| Modo | Costo por carta | Cartas para elegir | Cómo se gana |
 |---|---|---|---|
-| 🏆 Tradicional | $1 | 53 | 54 |
-| ⚫ Carta Llena | $2 | 53 | 54 |
-| 🎯 Pozo y Esquinas | $2 | 20 (set especial) | 54 |
+| 🏆 Tradicional | $1 | 60 | cualquiera de las 20 figuras |
+| ⚫ Carta Llena | $2 | 60 | las 16 casillas |
+| 🎯 Pozo y Esquinas | $2 | 20 (de 8 casillas) | las 8 casillas |
+| 👯 Doble | $2 | 60 | cualquier figura, y una baraja tapa dos |
 
-Ojo con la terminología: la **tabla** es lo que elige el jugador (hay 53) y la
-**carta** es lo que se canta (la baraja es de 54). Son conjuntos distintos.
+Ojo con la terminología: la **carta** es la rejilla de 4×4 que elige el jugador y
+la **baraja** es cada una de las 54 que se cantan. Son conjuntos distintos.
 
-Cada jugador elige hasta **4 tablas**, y ninguna puede repetirse dentro de la sala.
-El bote se reparte entre los ganadores validados por el host.
+**Las figuras que dan lotería** son veinte: 4 líneas horizontales, 4 verticales,
+2 diagonales, las 4 esquinas y los 9 cuadros de 2×2.
+
+```
+ 0  1  2  3      ●  ●  ●  ●      ●  ·  ·  ●      ·  ·  ·  ·
+ 4  5  6  7      ·  ·  ·  ·      ·  ·  ·  ·      ·  ●  ●  ·
+ 8  9 10 11      ·  ·  ·  ·      ·  ·  ·  ·      ·  ●  ●  ·
+12 13 14 15      ·  ·  ·  ·      ●  ·  ·  ●      ·  ·  ·  ·
+  índices        horizontal       esquinas          cuadro
+```
+
+En **Doble**, una misma baraja ocupa las dos casillas del centro: cuando la
+cantan tapas dos de golpe, así que el cuadro del centro y las líneas que pasan
+por ahí caen antes. Las partidas son más rápidas.
+
+Cada jugador elige hasta **4 cartas**, y ninguna puede repetirse dentro de la
+sala. **El servidor decide quién ganó** — ver más abajo.
+
+---
+
+## 🤖 El servidor decide quién ganó
+
+Este es el cambio más grande del proyecto, y solo se pudo hacer cuando **una
+carta dejó de ser una imagen**. Antes cada carta era un JPG y nadie más que el
+ojo humano sabía qué llevaba dentro; hoy es una lista de 16 números que genera y
+guarda el servidor.
+
+Con eso, al gritar lotería:
+
+1. El cliente manda **qué casillas tapó** en cada carta.
+2. El servidor cruza esas casillas con **sus** barajas y **su** historial de lo
+   cantado, y busca alguna de las 20 figuras.
+3. Si no hay figura, se lo dice **solo a quien gritó** y **la partida sigue**.
+4. Si la hay, se abre la pausa de empates y se reparte el bote.
+
+Lo que se gana:
+
+- **Se acabó el anfitrión validándose a sí mismo.** Era la parte más incómoda
+  del juego: quien creaba la sala juzgaba sus propias loterías.
+- **Un grito de broma ya no congela la sala.** Antes bastaba con picar el botón
+  para parar la partida hasta que el anfitrión resolviera.
+- **Nadie tiene que mirar.** Ni comparar barajas a ojo, ni fiarse.
+- Y ahora se sabe **con qué figura** se ganó, que antes no lo sabía nadie.
+
+⚠️ Lo que decide el dinero es que las barajas estén **cantadas**, y eso lo sabe
+el servidor: el historial es suyo y las barajas de la carta también. Las fichas
+las manda el navegador, así que podrían falsearse — pero mentir ahí solo saltaría
+el requisito de haber estado atento, nunca daría por buena una carta cuyas
+barajas no hayan salido.
+
+La lógica está en `victoria.js` del backend, con 55 pruebas propias. Ahí sí hay
+pruebas unitarias, al revés que en el cliente: es lógica pura, determinista, y un
+fallo no se ve en pantalla — se ve en el saldo de alguien.
 
 ---
 
@@ -208,14 +264,20 @@ propósito.
 - [x] Ofuscación automática en el build de Vercel
 - [x] Quitar los `onclick` del HTML (paso previo a modularizar)
 - [x] Empaquetado con esbuild antes de ofuscar (habilita los módulos)
-- [x] Partir `app.js` en módulos ES — 18 módulos; de 2.030 líneas a ~700
+- [x] Partir `app.js` en módulos ES — 20 módulos; de 2.030 líneas a ~770
+- [x] Generador de cartas: packs de 4 por 20 monedas, 2 a medida por 25, y
+      pantalla «Mis Cartas». La generación es del **servidor**
+- [x] **Las cartas dejan de ser imágenes** — 60 generadas y equilibradas por
+      modo, servidas como datos. Se fueron 45 MB de JPG
+- [x] **Validación automática de ganadores** — el servidor busca las 20 figuras;
+      se acabó el anfitrión juzgando a ojo
+- [x] Modo **Doble**: una baraja ocupa las dos casillas del centro
 - [ ] Evaluar migración de Render a VPS propio
 - [ ] Tienda dinámica: mover el catálogo a Firestore (hoy está duplicado en
       `config.js` y en el backend)
-- [ ] Generador de cartas: packs de 4 tablas por 20 monedas y pantalla «Mis
-      Cartas» — **la generación tiene que ser del servidor**, ver `CLAUDE.md`
-- [ ] A futuro: validación automática de ganadores, cuando las tablas tengan
-      barajas conocidas
+- [ ] Bot para jugar sin sala llena — el servidor ya sabe marcar cartas solo
+- [ ] Modos nuevos que ahora salen casi gratis: figura anunciada por partida,
+      contrarreloj, torneo por rondas
 
 ---
 

@@ -59,3 +59,19 @@ export const catalogoFichas = [
     { id: 'skin_verde',   nombre: 'Verde Neon', precio: 5, img: 'assets/imagenes/ui/fichasverdes.png' },
     { id: 'skin_frijol',  nombre: 'Frijolito', precio: 5, img: 'assets/imagenes/ui/fichasfrijol.png' }
 ];
+
+/**
+ * Cómo se llama cada figura de victoria de cara a la gente.
+ *
+ * El servidor manda el nombre corto (`esquinas`) y aquí se traduce. La lista de
+ * figuras vive en el backend, en `victoria.js`, que es quien decide: esto es
+ * solo para escribirlo bonito en el aviso del final.
+ */
+export const NOMBRE_FIGURA = {
+    horizontal: 'línea horizontal',
+    vertical:   'línea vertical',
+    diagonal:   'diagonal',
+    esquinas:   'cuatro esquinas',
+    cuadro:     'cuadro',
+    completa:   'carta llena'
+};
