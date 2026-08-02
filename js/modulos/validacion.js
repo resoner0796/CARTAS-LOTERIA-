@@ -122,8 +122,14 @@ socket.on("notificar-otro-ganador", (otroNick) => {
  * diferencia con antes, cuando un grito en falso congelaba a toda la sala hasta
  * que el anfitrión resolviera.
  */
-socket.on("loteria-rechazada", ({ motivo }) => {
-    mostrarAlerta(motivo || "Todavía no tienes lotería.", "Aún no 🙈");
+socket.on("loteria-rechazada", ({ motivo, baraja }) => {
+    // Si se le pasó, viene CUÁL era: se enseña la baraja, porque saber que se
+    // te pasó sin saber cuál era es una mitad de aviso.
+    mostrarAlerta(
+        motivo || "Todavía no tienes lotería.",
+        baraja ? "¡Se te fue! 😖" : "Aún no 🙈",
+        baraja ? { barajaFinal: baraja } : null
+    );
     sonidos.corre();
 });
 

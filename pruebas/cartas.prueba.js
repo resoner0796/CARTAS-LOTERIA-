@@ -284,10 +284,30 @@ module.exports = async function cartas(navegador, url) {
     await recibirDelServidor(pagina, 'loteria-rechazada', { motivo: 'Te faltó una para la figura' });
     const rechazo = await pagina.evaluate(() => ({
         visible: document.getElementById('modalSistema')?.classList.contains('active'),
-        texto: document.getElementById('modalSistemaMensaje')?.textContent
+        texto: document.getElementById('modalSistemaMensaje')?.textContent,
+        conBaraja: !!document.querySelector('#modalCartaGanadora .prueba-cierre img')
     }));
     r.cierto('el servidor puede rechazar un grito en falso', rechazo.visible);
     r.igual('y se enseña por qué', rechazo.texto, 'Te faltó una para la figura');
+    r.falso('sin baraja, porque no había ninguna que cazar', rechazo.conBaraja);
+
+    await pagina.evaluate(() => document.getElementById('btnModalAceptar')?.click());
+    await esperar(200);
+
+    // Y cuando SÍ se le pasó, se le enseña cuál era.
+    await recibirDelServidor(pagina, 'loteria-rechazada', {
+        motivo: '¡Se te pasó! Había que gritar con esa baraja.', baraja: 17
+    });
+    const seLePaso = await pagina.evaluate(() => ({
+        titulo: document.getElementById('modalSistemaTitulo')?.textContent || '',
+        baraja: document.querySelector('#modalCartaGanadora .prueba-cierre img')?.src || '',
+        // No se pinta la carta entera: solo interesa cuál era la baraja.
+        casillas: document.querySelectorAll('#modalCartaGanadora .casilla-tabla').length
+    }));
+    r.cierto('si se te pasó, el título lo dice', seLePaso.titulo.includes('fue'));
+    r.cierto('y se enseña CUÁL baraja era',
+        seLePaso.baraja.endsWith('/barajas/17.png'));
+    r.igual('sin pintar la carta entera, que ahí no aporta', seLePaso.casillas, 0);
 
     await pagina.evaluate(() => document.getElementById('btnModalAceptar')?.click());
     await esperar(200);

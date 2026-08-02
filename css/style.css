@@ -2250,16 +2250,15 @@ textarea::placeholder { color: rgba(255,255,255,0.6); }
     display: grid;
     grid-template-columns: repeat(4, 1fr);
     gap: 3px;
-    /* Cristal ESMERILADO, no transparente. La diferencia está en la opacidad de
-       la capa blanca: por debajo de 0.5 se ve el fondo negro a través y las
-       cartas salen grises. Aquí el marco se lee como blanco y el desenfoque se
-       sigue notando en los cantos, que es donde se ve que hay cristal y no
-       papel. */
-    background: linear-gradient(145deg,
-        rgba(255, 255, 255, 0.82),
-        rgba(238, 244, 255, 0.66));
-    backdrop-filter: blur(18px) saturate(150%);
-    -webkit-backdrop-filter: blur(18px) saturate(150%);
+    /* Blanco, como una carta impresa. Se probó el cristal esmerilado y no
+       convence: sobre el fondo negro, cualquier transparencia apaga el marco y
+       la carta se ve gris — que es justo lo contrario de lo que se buscaba.
+       Queda un degradado muy leve, lo justo para que no parezca un rectángulo
+       plano de pintura.
+
+       Sin `backdrop-filter`: a esta opacidad no se vería, y desenfocar lo que
+       hay detrás de cuatro cartas cuesta GPU en el móvil para nada. */
+    background: linear-gradient(145deg, #ffffff, #f2f5fa);
     /* El marco tiene que verse: es la superficie donde ocurre el cristal. Con
        menos de 12px el efecto queda escondido detrás de las barajas y la carta
        parece la de antes con otro color. */

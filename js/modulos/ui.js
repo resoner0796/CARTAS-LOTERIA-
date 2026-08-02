@@ -80,16 +80,22 @@ export function mostrarAlerta(mensaje, titulo = "Aviso del Sistema", prueba = nu
     const zonaCarta = document.getElementById("modalCartaGanadora");
     if (zonaCarta) {
         zonaCarta.innerHTML = "";
-        if (prueba && prueba.barajas) {
+        // Se pinta si hay una carta que enseñar, o una sola baraja suelta —que
+        // es el caso de «se te pasó»: ahí no interesa la carta entera, solo
+        // cuál era la que había que cazar.
+        if (prueba && (prueba.barajas || prueba.barajaFinal)) {
+            const soloBaraja = !prueba.barajas;
+
             const rotulo = document.createElement("p");
             rotulo.className = "prueba-titulo";
-            rotulo.textContent = "Carta ganadora:";
+            rotulo.textContent = soloBaraja ? "Era esta:" : "Carta ganadora:";
 
             const marco = document.createElement("div");
             marco.className = "prueba-tabla";
 
             // La carta ganadora viaja con sus 16 barajas, puestas por el
-            // servidor, y aquí se pinta la rejilla.
+            // servidor, y aquí se pinta la rejilla. Cuando solo hay una baraja
+            // suelta, este bloque se salta entero.
             //
             // Se construye a mano en vez de llamar a tablasPropias.js a
             // propósito: este módulo no importa nada del juego, y hacerlo por
@@ -124,21 +130,26 @@ export function mostrarAlerta(mensaje, titulo = "Aviso del Sistema", prueba = nu
                 rejilla.appendChild(ficha);
             });
 
-            marco.appendChild(rejilla);
+            // Sin carta que enseñar no hay marco: en «se te pasó» solo se pinta
+            // la baraja suelta de más abajo.
+            if (!soloBaraja) {
+                marco.appendChild(rejilla);
+                zonaCarta.appendChild(rotulo);
+                zonaCarta.appendChild(marco);
+            } else {
+                zonaCarta.appendChild(rotulo);
+            }
 
-            zonaCarta.appendChild(rotulo);
-            zonaCarta.appendChild(marco);
-
-            // Con qué baraja se cerró. La calcula el servidor: de las de la
-            // figura, la que salió más tarde. Se enseña grande y aparte porque
-            // es lo que la gente cuenta después — «gané con el gallo».
+            // La baraja: con la que se cerró si se ganó, o con la que se debió
+            // gritar si se pasó. Se enseña grande porque es lo que la gente
+            // cuenta después — «gané con el gallo», «se me fue el gallo».
             if (prueba.barajaFinal) {
                 const cierre = document.createElement("div");
                 cierre.className = "prueba-cierre";
 
                 const texto = document.createElement("p");
                 texto.className = "prueba-titulo";
-                texto.textContent = "Cerró con:";
+                texto.textContent = soloBaraja ? "" : "Cerró con:";
 
                 const baraja = document.createElement("img");
                 baraja.src = `assets/imagenes/barajas/${String(prueba.barajaFinal).padStart(2, '0')}.png`;

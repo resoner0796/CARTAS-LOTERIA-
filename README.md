@@ -315,7 +315,7 @@ propósito.
       `config.js` y en el backend)
 - [x] **Bots** con tres niveles, que el anfitrión añade a su sala
 - [x] Regla del tiempo: hay que gritar con la baraja que cierra la figura
-- [x] Modo **Doble**, contador de barajas cantadas y cartas de cristal
+- [x] Modo **Doble** y contador de barajas cantadas
 - [ ] Sacar el estado de las salas a Redis — es lo que bloquea todo lo demás:
       hoy un reinicio de Render tumba las partidas en curso
 - [ ] Salas de bots permanentes (necesita lo de arriba)
