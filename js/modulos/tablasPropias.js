@@ -68,6 +68,10 @@ let misTablas = [];
 let alElegir = null;
 export function alElegirCartaPropia(fn) { alElegir = fn; }
 
+/** Qué hacer al darle a Continuar: montar la mesa y pasar a la pantalla de juego. */
+let alContinuar = null;
+export function alContinuarConCartas(fn) { alContinuar = fn; }
+
 export function tablasGuardadas() { return misTablas; }
 
 /**
@@ -184,6 +188,8 @@ function renderizarMisCartas() {
         return 0;
     });
 
+    let hayElegibles = false;
+
     orden.forEach(tipo => {
         const info = MODOS_TABLA.find(m => m.id === tipo);
         const sirveAqui = !tipoUtil || tipo === tipoUtil;
@@ -209,29 +215,72 @@ function renderizarMisCartas() {
                 caja.appendChild(marca);
             }
 
-            // Dentro de una sala y si sirve para ese modo, se puede elegir para
-            // jugar. Fuera de la sala «Mis Cartas» es solo una galería.
+            // Dentro de una sala y si sirve para ese modo, se elige tocándola,
+            // igual que en la pantalla de selección: mismo gesto, misma insignia
+            // con el orden. Fuera de la sala «Mis Cartas» es solo una galería.
             if (partida.sala && sirveAqui && typeof alElegir === 'function') {
                 const id = PREFIJO_PROPIA + tabla.id;
-                const elegida = partida.seleccionadas.includes(id);
+                const lugar = partida.seleccionadas.indexOf(id);
 
                 caja.classList.add('mi-tabla-elegible');
-                if (elegida) caja.classList.add('mi-tabla-elegida');
+                if (lugar !== -1) caja.classList.add('mi-tabla-elegida');
 
-                const boton = document.createElement('button');
-                boton.className = 'btn-elegir-tabla';
-                boton.textContent = elegida ? '✓ En juego' : 'Usar esta';
-                boton.onclick = () => {
+                // El número dice en qué orden se acomodarán en la mesa, igual
+                // que las de siempre.
+                const insignia = document.createElement('span');
+                insignia.className = 'orden-mi-tabla';
+                insignia.textContent = lugar === -1 ? '' : String(lugar + 1);
+                caja.appendChild(insignia);
+
+                caja.onclick = () => {
                     alElegir(id, tabla);
                     renderizarMisCartas();
                 };
-                caja.appendChild(boton);
             }
 
             fila.appendChild(caja);
         });
         zona.appendChild(fila);
+        if (partida.sala && sirveAqui) hayElegibles = true;
     });
+
+    actualizarPieMisCartas(hayElegibles);
+}
+
+/**
+ * El pie del modal: dentro de una sala lleva a la mesa; fuera solo cierra.
+ *
+ * Se pasa directo a la pantalla de juego en vez de devolver a la de selección,
+ * porque quien entra aquí a elegir ya sabe con qué quiere jugar: hacerle volver
+ * atrás para pulsar otro botón sería un paso de más.
+ */
+function actualizarPieMisCartas(hayElegibles) {
+    const boton = document.getElementById('btnPieMisCartas');
+    if (!boton) return;
+
+    const elegidas = partida.seleccionadas.length;
+
+    if (partida.sala && hayElegibles) {
+        boton.textContent = elegidas > 0
+            ? `CONTINUAR — ${elegidas} ${elegidas === 1 ? 'carta' : 'cartas'}`
+            : 'Elige al menos una carta';
+        boton.disabled = elegidas === 0;
+        boton.dataset.accion = 'continuar-mis-cartas';
+        boton.className = 'btn-buy';
+    } else {
+        boton.textContent = 'Volver';
+        boton.disabled = false;
+        boton.dataset.accion = 'cerrar-mis-cartas';
+        boton.className = '';
+        boton.style.background = '#444';
+    }
+}
+
+/** Cierra «Mis Cartas» y lleva a la mesa con lo elegido. */
+export function continuarConMisCartas() {
+    if (partida.seleccionadas.length === 0) return;
+    cerrarMisCartas();
+    if (typeof alContinuar === 'function') alContinuar();
 }
 
 // ==================== COMPRAR UN PACK ====================

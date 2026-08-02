@@ -438,7 +438,9 @@
         </div>
         <p id="avisoMisCartas" class="aviso-mis-cartas"></p>
         <div id="gridMisCartas" class="grid-mis-cartas"></div>
-        <button data-accion="cerrar-mis-cartas" style="background: #444; margin-top: 12px;">Volver</button>
+        <!-- Dentro de una sala este botón lleva a la mesa; fuera, solo cierra.
+             Lo decide actualizarPieMisCartas() en tablasPropias.js -->
+        <button id="btnPieMisCartas" data-accion="cerrar-mis-cartas" style="margin-top: 12px;">Volver</button>
     </div>
 </div>
 

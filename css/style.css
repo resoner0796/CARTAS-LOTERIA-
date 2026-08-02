@@ -2338,20 +2338,35 @@ textarea::placeholder { color: rgba(255,255,255,0.6); }
     margin: 0 0 8px;
 }
 
-/* --- Elegir una carta propia para jugar --- */
-.mi-tabla-elegible { cursor: pointer; }
-.btn-elegir-tabla {
-    width: 100%;
-    margin: 4px 0 0;
-    padding: 5px;
-    font-size: 0.7rem;
-    background: var(--azul-cielo, #4dd0e1);
-    color: #003333;
-    border-radius: 8px;
-}
-.mi-tabla-elegida .tabla-generada { border-color: var(--verde-limon, #76ff03); box-shadow: 0 0 10px rgba(118,255,3,0.5); }
-.mi-tabla-elegida .btn-elegir-tabla { background: var(--verde-limon, #76ff03); }
-
 /* Una carta propia en la mesa ocupa el mismo sitio que una de las de siempre.
    La rejilla se estira a su contenedor y las fichas se ponen encima igual. */
 .carta-juego-propia .tabla-generada { width: 100%; height: 100%; border-width: 2px; }
+
+/* --- Elegir cartas propias al tacto ---
+   Mismo gesto que en la pantalla de selección: se toca la carta y aparece el
+   número del orden en que se acomodará en la mesa. Los botones «Usar esta» que
+   había antes rompían esa costumbre y añadían un paso. */
+
+.mi-tabla-elegible { cursor: pointer; }
+.mi-tabla-elegible .tabla-generada { transition: border-color 0.15s, box-shadow 0.15s; }
+.mi-tabla-elegida .tabla-generada {
+    border-color: var(--verde-limon, #76ff03);
+    box-shadow: 0 0 12px rgba(118, 255, 3, 0.55);
+}
+
+/* La insignia con el orden, igual que .orden-carta de la pantalla de selección. */
+.orden-mi-tabla {
+    position: absolute;
+    top: -6px; left: -6px;
+    min-width: 22px; height: 22px;
+    display: none;
+    align-items: center; justify-content: center;
+    background: var(--verde-limon, #76ff03);
+    color: #0f3d0f;
+    border-radius: 50%;
+    font-weight: 900;
+    font-size: 0.8rem;
+    border: 2px solid #0f3d0f;
+    z-index: 5;
+}
+.mi-tabla-elegida .orden-mi-tabla { display: flex; }

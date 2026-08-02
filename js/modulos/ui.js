@@ -88,10 +88,35 @@ export function mostrarAlerta(mensaje, titulo = "Aviso del Sistema", prueba = nu
             const marco = document.createElement("div");
             marco.className = "prueba-tabla";
 
-            const img = document.createElement("img");
-            img.src = `${prueba.ruta || 'assets/imagenes/cartas/'}${prueba.tabla}.jpg`;
-            img.alt = "";
-            marco.appendChild(img);
+            if (prueba.barajas) {
+                // Carta propia: viaja con sus 16 barajas porque nadie más de la
+                // sala la tiene. Se pinta la rejilla en lugar de una imagen.
+                //
+                // Se construye aquí a mano en vez de llamar a tablasPropias.js
+                // a propósito: este módulo no importa nada del juego, y hacerlo
+                // por una rejilla de 16 casillas lo ataría a media aplicación.
+                const rejilla = document.createElement("div");
+                rejilla.className = "tabla-generada";
+                prueba.barajas.forEach(baraja => {
+                    const casilla = document.createElement("div");
+                    casilla.className = "casilla-tabla";
+                    if (baraja === null || baraja === undefined) {
+                        casilla.classList.add("casilla-vacia");
+                    } else {
+                        const b = document.createElement("img");
+                        b.src = `assets/imagenes/barajas/${String(baraja).padStart(2, '0')}.png`;
+                        b.alt = "";
+                        casilla.appendChild(b);
+                    }
+                    rejilla.appendChild(casilla);
+                });
+                marco.appendChild(rejilla);
+            } else {
+                const img = document.createElement("img");
+                img.src = `${prueba.ruta || 'assets/imagenes/cartas/'}${prueba.tabla}.jpg`;
+                img.alt = "";
+                marco.appendChild(img);
+            }
 
             (prueba.fichas || []).forEach(pos => {
                 const ficha = document.createElement("img");

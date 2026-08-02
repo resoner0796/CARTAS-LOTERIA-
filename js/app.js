@@ -19,7 +19,8 @@ import { guardarSetFavorito, cargarSetFavorito } from './modulos/favoritos.js';
 import {
     abrirGeneradorTienda, comprarPack, abrirMisCartas, cerrarMisCartas, pedirMisTablas,
     abrirCreador, cerrarCreador, cambiarModoCreador, cerrarElectorBaraja,
-    guardarTablaPersonalizada, alElegirCartaPropia
+    guardarTablaPersonalizada, alElegirCartaPropia, alContinuarConCartas,
+    continuarConMisCartas
 } from './modulos/tablasPropias.js';
 import {
     generarCartas, renumerarSeleccion, seleccionarCarta,
@@ -107,6 +108,14 @@ iniciarModales();
 // El tablero sabe elegir cartas propias, y «Mis Cartas» sabe enseñarlas: se
 // enganchan aquí para que ninguno de los dos módulos importe del otro.
 alElegirCartaPropia(alternarCartaPropia);
+
+// Al darle a Continuar en «Mis Cartas» se monta la mesa y se pasa a jugar, lo
+// mismo que hace el botón de Iniciar de la pantalla de selección.
+alContinuarConCartas(() => {
+    cambiarPantalla("juego");
+    montarMesa();
+    renderizarSonidosJuego(sesion.usuario, partida.sala);
+});
 
 
 // ======================================================
@@ -716,6 +725,7 @@ const ACCIONES = {
     'guardar-tabla':          () => guardarTablaPersonalizada(),
     'abrir-mis-cartas':       () => abrirMisCartas(),
     'cerrar-mis-cartas':      () => cerrarMisCartas(),
+    'continuar-mis-cartas':   () => continuarConMisCartas(),
     'comprar-item':           (el) => comprarItem(el.dataset.item, Number(el.dataset.precio), sesion.usuario, emitirCompraItem),
     'usar-ficha':             (el) => usarFicha(el.dataset.img, sesion.usuario),
     'oir-sonido':             (el) => previewSonido(el.dataset.archivo),
