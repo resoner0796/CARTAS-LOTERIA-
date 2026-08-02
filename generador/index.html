@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fábrica de Lotería V9 (Vectorial)</title>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+
+    <style>
+        /* --- ESTILOS --- */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1e1e1e 0%, #2b2b2b 100%);
+            color: white;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            min-height: 100vh; margin: 0; padding: 20px;
+        }
+
+        h1 { 
+            font-weight: 300; letter-spacing: 4px; margin-bottom: 25px; 
+            color: #fff; text-transform: uppercase; font-size: 1.8rem; 
+            border-bottom: 1px solid #00d2ff; padding-bottom: 10px;
+        }
+
+        .layout-maestro {
+            display: flex; flex-direction: row; align-items: flex-start; justify-content: center;
+            gap: 40px; width: 100%; max-width: 1250px;
+        }
+
+        .panel-controles {
+            background: #252525; padding: 25px; border-radius: 12px; border: 1px solid #444;
+            display: flex; flex-direction: column; gap: 15px; width: 290px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+        }
+
+        .seccion-titulo { color: #00d2ff; font-size: 0.8rem; margin-bottom: -8px; text-transform: uppercase; letter-spacing: 1px; font-weight: bold; }
+
+        .input-pro, .select-pro {
+            background: #333; border: 1px solid #555; padding: 10px; border-radius: 6px; 
+            color: white; font-size: 1rem; width: 100%; box-sizing: border-box; outline: none; text-align: center;
+        }
+        .select-pro { cursor: pointer; text-align-last: center; }
+        .input-pro:focus, .select-pro:focus { border-color: #00d2ff; background: #3a3a3a; }
+
+        .btn {
+            padding: 12px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 0.95rem;
+            transition: all 0.2s; color: white; display: flex; justify-content: center; align-items: center; gap: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.2); width: 100%;
+        }
+        .btn:hover { filter: brightness(1.1); transform: translateY(-1px); }
+        .btn:active { transform: scale(0.98); }
+
+        .btn-aleatorio { background: #007bff; }
+        .btn-jpg { background: #28a745; }
+        .btn-pdf { background: #e74c3c; }
+        .btn-zip { background: #f1c40f; color: #222; }
+        .btn-deck { background: #9b59b6; }
+        .btn-limpiar { background: #555; margin-top: 10px; }
+
+        .grupo-cantidad { display: flex; gap: 10px; align-items: center; background: #333; padding: 5px 10px; border-radius: 6px; }
+
+        #barra-progreso-container {
+            width: 100%; background-color: #111; border-radius: 50px; height: 8px;
+            margin-top: 10px; overflow: hidden; display: none;
+        }
+        #barra-progreso { height: 100%; width: 0%; background: #00d2ff; transition: width 0.3s; }
+        #texto-estado { font-size: 0.75rem; color: #bbb; text-align: center; margin-top: 5px; min-height: 15px;}
+
+        #hoja-loteria {
+            background-color: #ffffff;
+            width: 450px; aspect-ratio: 5 / 8;
+            border: 8px solid #1a1a1a; padding: 15px; box-sizing: border-box;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+            display: flex; flex-direction: column;
+            position: relative;
+        }
+
+        .titulo-loteria {
+            color: #000; font-family: 'Georgia', serif; text-align: center;
+            font-size: 2.2rem; font-weight: 900; margin: 5px 0 15px 0;
+            text-transform: uppercase; letter-spacing: 2px;
+            border-bottom: 2px solid #000; padding-bottom: 5px;
+        }
+
+        .grid-cartas {
+            display: grid; grid-template-columns: repeat(4, 1fr); grid-template-rows: repeat(4, 1fr);
+            gap: 8px; flex-grow: 1;
+        }
+        
+        .carta-slot {
+            position: relative; border: 2px solid #333; cursor: pointer; overflow: hidden;
+            background-color: #f4f4f4; display: flex; align-items: center; justify-content: center;
+        }
+        .carta-vacia { border: none !important; background: transparent !important; cursor: default; }
+        .carta-img { width: 100%; height: 100%; object-fit: fill; pointer-events: none; }
+
+        .folio-carta {
+            position: absolute; bottom: 3px; right: 10px;
+            color: #444; font-size: 0.7rem; font-family: 'Courier New', monospace; font-weight: bold;
+            opacity: 0.8; letter-spacing: 1px;
+        }
+
+        /* MODALES */
+        .modal { display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.9); justify-content: center; align-items: center; }
+        .modal-content { background-color: #222; padding: 20px; border-radius: 12px; width: 90%; max-width: 800px; max-height: 80vh; overflow-y: auto; text-align: center; border: 1px solid #444; }
+        .barajas-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(70px, 1fr)); gap: 10px; margin-top: 20px; }
+        .opcion-baraja { width: 100%; cursor: pointer; border-radius: 4px; transition: transform 0.2s; }
+        .opcion-baraja:hover { transform: scale(1.1); border: 2px solid #00d2ff; }
+        .close-btn { color: #aaa; font-size: 30px; float: right; cursor: pointer; }
+
+        .modal-confirm-box { background-color: #252525; padding: 30px; border-radius: 15px; text-align: center; border: 1px solid #555; max-width: 350px; color: white; }
+        .modal-confirm-actions { display: flex; justify-content: space-around; margin-top: 20px; gap: 10px; }
+        .btn-modal { padding: 10px 20px; border-radius: 5px; border: none; cursor: pointer; font-weight: bold; flex: 1; color: white;}
+        .btn-yes { background-color: #dc3545; } .btn-no { background-color: #6c757d; }
+
+        @media (max-width: 900px) {
+            .layout-maestro { flex-direction: column-reverse; }
+            #hoja-loteria, .panel-controles { width: 100%; max-width: 400px; }
+        }
+    </style>
+</head>
+<body>
+
+    <h1>🏭 Fábrica de Lotería V9</h1>
+
+    <div class="layout-maestro">
+        
+        <div class="panel-controles">
+            
+            <div class="seccion-titulo">1. Configuración</div>
+            <input type="text" id="input-titulo" class="input-pro" value="LA LOTERIA" placeholder="Título" oninput="actualizarTitulo()">
+            
+            <select id="modo-juego" class="select-pro" onchange="limpiarTablero(false)">
+                <option value="normal">Modo: Normal (16 Cartas)</option>
+                <option value="dobles">Modo: Dobles (6 y 7)</option>
+                <option value="esquinas">Modo: 4 Esquinas + Centro</option>
+            </select>
+
+            <div class="seccion-titulo">2. Diseño & Prueba</div>
+            <button class="btn btn-aleatorio" onclick="generarAleatoria()">🎲 Generar Una</button>
+            <button class="btn btn-jpg" onclick="descargarJPG()">📸 Guardar JPG</button>
+
+            <hr style="width:100%; border:0; border-top:1px solid rgba(255,255,255,0.1); margin: 5px 0;">
+
+            <div class="seccion-titulo">3. Producción Masiva</div>
+            <div class="grupo-cantidad">
+                <span style="font-size:0.9rem">Cant:</span>
+                <input type="number" id="input-cantidad" class="input-pro" value="10" min="2" max="100">
+            </div>
+            
+            <button class="btn btn-pdf" id="btn-pack-pdf" onclick="generarPackPDF()">📄 Tablas PDF (con Guías)</button>
+            <button class="btn btn-deck" id="btn-mazo-pdf" onclick="generarMazoPDF()">🎴 Pack Baraja (Mazo + Reverso)</button>
+            <button class="btn btn-zip" id="btn-pack-zip" onclick="generarPackZIP()">📦 Pack ZIP (JPGs)</button>
+
+            <div id="texto-estado"></div>
+            <div id="barra-progreso-container">
+                <div id="barra-progreso"></div>
+            </div>
+
+            <button class="btn btn-limpiar" onclick="pedirConfirmacionLimpiar()">🗑️ Limpiar Todo</button>
+        </div>
+
+        <div id="hoja-loteria">
+            <div class="titulo-loteria" id="titulo-carta">LA LOTERIA</div>
+            <div class="grid-cartas" id="grid-container"></div>
+            <div class="folio-carta" id="folio-carta">No. 001</div>
+        </div>
+    </div>
+
+    <div id="modal-seleccion" class="modal">
+        <div class="modal-content">
+            <span class="close-btn" onclick="cerrarModalSeleccion()">&times;</span>
+            <div class="barajas-grid" id="contenedor-barajas"></div>
+        </div>
+    </div>
+
+    <div id="modal-confirm" class="modal">
+        <div class="modal-confirm-box">
+            <h3 style="margin-top:0;">¿Limpiar Tablero?</h3>
+            <p style="color:#bbb;">Se borrarán todas las cartas actuales.</p>
+            <div class="modal-confirm-actions">
+                <button class="btn-modal btn-no" onclick="cerrarModalConfirm()">Cancelar</button>
+                <button class="btn-modal btn-yes" onclick="ejecutarLimpieza()">Sí, Borrar</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const { jsPDF } = window.jspdf;
+        const totalSlots = 16;
+        const totalBarajas = 54;
+        const rutaBarajas = './barajas/';
+        let slotActual = null;
+        let historialGenerados = [];
+        let poolDobles = [];
+
+        window.onload = () => {
+            generarSlotsVacios();
+            cargarBarajasEnModal();
+        };
+
+        function obtenerDobleUnico() {
+            if (poolDobles.length === 0) {
+                for(let i = 1; i <= totalBarajas; i++) poolDobles.push(i);
+                poolDobles.sort(() => Math.random() - 0.5);
+            }
+            return poolDobles.pop();
+        }
+
+        function generarAleatoria(esMasiva = false, folioNum = 1) {
+            const modo = document.getElementById('modo-juego').value;
+            let intentos = 0;
+            let esUnica = false;
+            let resultado = [];
+
+            if(esMasiva) {
+                document.getElementById('folio-carta').innerText = "Tabla No. " + folioNum.toString().padStart(3, '0');
+            }
+
+            while (!esUnica && intentos < 200) { 
+                resultado = crearCombinacionSegunModo(modo, esMasiva);
+                const firma = resultado.filter(n => n !== null).join('-');
+                
+                if (esMasiva) {
+                    if (!historialGenerados.includes(firma)) {
+                        historialGenerados.push(firma);
+                        esUnica = true;
+                    }
+                } else {
+                    esUnica = true;
+                }
+                intentos++;
+            }
+            pintarTablero(resultado);
+        }
+
+        function crearCombinacionSegunModo(modo, esMasiva) {
+            let barajas = obtenerBarajasMezcladas();
+            let combinacion = new Array(16).fill(null);
+
+            if (modo === 'normal') {
+                return barajas.slice(0, 16);
+            } 
+            else if (modo === 'dobles') {
+                let cartaDoble = esMasiva ? obtenerDobleUnico() : barajas[0];
+                let resto = barajas.filter(c => c !== cartaDoble);
+                combinacion[5] = cartaDoble; 
+                combinacion[6] = cartaDoble; 
+                let contadorResto = 0;
+                for (let i = 0; i < 16; i++) {
+                    if (i !== 5 && i !== 6) {
+                        combinacion[i] = resto[contadorResto];
+                        contadorResto++;
+                    }
+                }
+                return combinacion;
+            }
+            else if (modo === 'esquinas') {
+                let cartas = barajas.slice(0, 8);
+                const indicesActivos = [0, 3, 5, 6, 9, 10, 12, 15];
+                indicesActivos.forEach((idx, i) => combinacion[idx] = cartas[i]);
+                return combinacion;
+            }
+        }
+
+        function pintarTablero(valores) {
+            const slots = document.querySelectorAll('.carta-slot');
+            slots.forEach((slot, index) => {
+                const valor = valores[index];
+                slot.innerHTML = '';
+                slot.className = 'carta-slot'; 
+                slot.style.border = "2px solid #333"; 
+
+                if (valor === null) {
+                    slot.classList.add('carta-vacia'); 
+                } else {
+                    let numero = valor.toString().padStart(2, '0');
+                    let src = `${rutaBarajas}${numero}.png`;
+                    slot.innerHTML = `<img src="${src}" class="carta-img">`;
+                }
+            });
+        }
+
+        function obtenerBarajasMezcladas() {
+            let barajas = [];
+            for(let i = 1; i <= totalBarajas; i++) barajas.push(i);
+            return barajas.sort(() => Math.random() - 0.5);
+        }
+
+        async function generarPackPDF() {
+            const cantidad = parseInt(document.getElementById('input-cantidad').value);
+            iniciarProceso("Generando Tablas con Guías...");
+            poolDobles = []; historialGenerados = []; 
+            
+            const pdf = new jsPDF('l', 'mm', 'letter');
+            const pageWidth = pdf.internal.pageSize.getWidth();
+            const pageHeight = pdf.internal.pageSize.getHeight();
+
+            const imgWidth = 120; 
+            const imgHeight = 192; 
+            const y = (pageHeight - imgHeight) / 2;
+            const x1 = (pageWidth / 4) - (imgWidth / 2);
+            const x2 = (pageWidth * 0.75) - (imgWidth / 2);
+
+            for (let i = 0; i < cantidad; i++) {
+                actualizarProgreso(i, cantidad);
+                generarAleatoria(true, i + 1);
+                await new Promise(r => setTimeout(r, 80));
+                
+                const canvas = await html2canvas(document.getElementById('hoja-loteria'), { scale: 2 });
+                const imgData = canvas.toDataURL('image/jpeg', 0.80);
+
+                let currentX = (i % 2 === 0) ? x1 : x2;
+                if (i % 2 === 0 && i > 0) pdf.addPage();
+
+                pdf.addImage(imgData, 'JPEG', currentX, y, imgWidth, imgHeight);
+                dibujarGuiasCorte(pdf, currentX, y, imgWidth, imgHeight);
+            }
+            finalizarProceso();
+            pdf.save(`Pack_Tablas_Guias_${cantidad}.pdf`);
+        }
+
+        function dibujarGuiasCorte(pdf, x, y, w, h) {
+            pdf.setDrawColor(150);
+            pdf.setLineWidth(0.1);
+            const len = 5; 
+            pdf.line(x - len, y, x, y); 
+            pdf.line(x, y - len, x, y); 
+            pdf.line(x + w, y, x + w + len, y); 
+            pdf.line(x + w, y - len, x + w, y);
+            pdf.line(x - len, y + h, x, y + h); 
+            pdf.line(x, y + h, x, y + h + len);
+            pdf.line(x + w, y + h, x + w + len, y + h);
+            pdf.line(x + w, y + h, x + w, y + h + len);
+        }
+
+        // --- PACK MAZO VECTORIAL (SIN IMAGEN DE FONDO) ---
+        async function generarMazoPDF() {
+            iniciarProceso("Generando Mazo (Vectorial)...");
+            
+            const pdf = new jsPDF('p', 'mm', 'letter'); 
+            const pageWidth = pdf.internal.pageSize.getWidth(); 
+            const pageHeight = pdf.internal.pageSize.getHeight(); 
+
+            const cardW = 60; 
+            const cardH = 85; 
+            const gapX = 5; 
+            const gapY = 5;
+            const marginX = (pageWidth - (cardW * 3 + gapX * 2)) / 2;
+            const marginY = (pageHeight - (cardH * 3 + gapY * 2)) / 2;
+
+            let cardsPerPage = 9;
+            let currentCard = 0;
+
+            for (let i = 1; i <= totalBarajas; i++) {
+                actualizarProgreso(i - 1, totalBarajas);
+
+                if (currentCard === cardsPerPage) {
+                    pdf.addPage();
+                    currentCard = 0;
+                }
+
+                let col = currentCard % 3;
+                let row = Math.floor(currentCard / 3);
+                let x = marginX + (col * (cardW + gapX));
+                let y = marginY + (row * (cardH + gapY));
+
+                let numero = i.toString().padStart(2, '0');
+                
+                try {
+                    let img = await cargarImagenOptimizada(`${rutaBarajas}${numero}.png`);
+
+                    // BORDE MÁS GRUESO (0.8)
+                    pdf.setDrawColor(180); 
+                    pdf.setLineWidth(0.8); 
+                    pdf.rect(x, y, cardW, cardH);
+
+                    let marginImg = 3; 
+                    pdf.addImage(img, 'JPEG', x + marginImg, y + marginImg, cardW - (marginImg*2), cardH - (marginImg*2));
+                } catch (error) {
+                    console.error("Error cargando imagen " + numero, error);
+                }
+
+                currentCard++;
+            }
+
+            // --- GENERACIÓN DEL REVERSO (VECTORIAL) ---
+            pdf.addPage();
+            // Generamos el patrón geométrico (Tartan) con código en un Canvas
+            let reversoBase64 = crearReversoVectorial(); 
+            // Lo ponemos en toda la página
+            pdf.addImage(reversoBase64, 'JPEG', 0, 0, pageWidth, pageHeight);
+
+            finalizarProceso();
+            pdf.save(`Mazo_Baraja_54_Cartas_Reverso.pdf`);
+        }
+
+        // FUNCIÓN QUE DIBUJA EL PATRÓN DE RAYAS (TARTAN)
+        function crearReversoVectorial() {
+            const canvas = document.createElement('canvas');
+            // Tamaño carta alta resolución
+            canvas.width = 1000; 
+            canvas.height = 1300; 
+            const ctx = canvas.getContext('2d');
+
+            // 1. Fondo Azul Clásico
+            ctx.fillStyle = "#004080"; 
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // 2. Dibujar Rayas Diagonales (Patrón Escocés)
+            ctx.strokeStyle = "rgba(0, 0, 0, 0.4)"; // Negro semi-transparente
+            ctx.lineWidth = 4;
+
+            // Diagonales /
+            for (let i = -canvas.height; i < canvas.width; i += 20) {
+                ctx.beginPath();
+                ctx.moveTo(i, 0);
+                ctx.lineTo(i + canvas.height, canvas.height);
+                ctx.stroke();
+            }
+
+            // Diagonales \ (Cruzado)
+            for (let i = 0; i < canvas.width + canvas.height; i += 20) {
+                ctx.beginPath();
+                ctx.moveTo(i, 0);
+                ctx.lineTo(i - canvas.height, canvas.height);
+                ctx.stroke();
+            }
+            
+            // Retornamos la imagen generada
+            return canvas.toDataURL("image/jpeg", 0.8);
+        }
+
+        function cargarImagenOptimizada(url) {
+            return new Promise((resolve, reject) => {
+                let img = new Image();
+                img.crossOrigin = "Anonymous";
+                img.src = url;
+                img.onload = () => {
+                    let canvas = document.createElement("canvas");
+                    let scale = 1;
+                    const maxSize = 800;
+                    if (img.width > maxSize || img.height > maxSize) {
+                        scale = Math.min(maxSize / img.width, maxSize / img.height);
+                    }
+                    canvas.width = img.width * scale;
+                    canvas.height = img.height * scale;
+                    let ctx = canvas.getContext("2d");
+                    ctx.fillStyle = "#FFFFFF";
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                    resolve(canvas.toDataURL("image/jpeg", 0.8));
+                };
+                img.onerror = reject;
+            });
+        }
+
+        async function generarPackZIP() {
+            const cantidad = parseInt(document.getElementById('input-cantidad').value);
+            iniciarProceso("Creando ZIP...");
+            poolDobles = []; historialGenerados = [];
+            const zip = new JSZip();
+            const carpeta = zip.folder("Cartas_JPG");
+
+            for (let i = 0; i < cantidad; i++) {
+                actualizarProgreso(i, cantidad);
+                generarAleatoria(true, i + 1);
+                await new Promise(r => setTimeout(r, 80));
+                const canvas = await html2canvas(document.getElementById('hoja-loteria'), { scale: 2 });
+                const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.9));
+                carpeta.file(`tabla_${(i+1).toString().padStart(3,'0')}.jpg`, blob);
+            }
+            saveAs(await zip.generateAsync({type:"blob"}), `Pack_JPG_${cantidad}.zip`);
+            finalizarProceso();
+        }
+
+        function iniciarProceso(msg) {
+            ['btn-pack-pdf', 'btn-pack-zip', 'btn-mazo-pdf'].forEach(id => document.getElementById(id).disabled = true);
+            document.getElementById('barra-progreso-container').style.display = 'block';
+            document.getElementById('texto-estado').innerText = msg;
+        }
+        function actualizarProgreso(i, total) {
+            document.getElementById('barra-progreso').style.width = Math.round(((i) / total) * 100) + '%';
+        }
+        function finalizarProceso() {
+            document.getElementById('barra-progreso').style.width = '100%';
+            document.getElementById('texto-estado').innerText = "¡Listo!";
+            setTimeout(() => {
+                ['btn-pack-pdf', 'btn-pack-zip', 'btn-mazo-pdf'].forEach(id => document.getElementById(id).disabled = false);
+                document.getElementById('barra-progreso-container').style.display = 'none';
+                document.getElementById('texto-estado').innerText = "";
+            }, 2000);
+        }
+        function actualizarTitulo() {
+            document.getElementById('titulo-carta').innerText = document.getElementById('input-titulo').value || "LA LOTERIA";
+        }
+        function generarSlotsVacios() {
+            const grid = document.getElementById('grid-container');
+            grid.innerHTML = '';
+            for (let i = 0; i < totalSlots; i++) {
+                let div = document.createElement('div');
+                div.classList.add('carta-slot');
+                div.onclick = () => abrirModalSeleccion(div);
+                grid.appendChild(div);
+            }
+        }
+        function cargarBarajasEnModal() {
+            const contenedor = document.getElementById('contenedor-barajas');
+            for (let i = 1; i <= totalBarajas; i++) {
+                let numero = i.toString().padStart(2, '0');
+                let img = document.createElement('img');
+                img.src = `${rutaBarajas}${numero}.png`;
+                img.classList.add('opcion-baraja');
+                img.onclick = () => { if(slotActual) {
+                    slotActual.innerHTML = `<img src="${img.src}" class="carta-img">`;
+                    slotActual.style.border = "2px solid #333";
+                    slotActual.classList.remove('carta-vacia');
+                } cerrarModalSeleccion(); };
+                contenedor.appendChild(img);
+            }
+        }
+        function descargarJPG() {
+            html2canvas(document.getElementById('hoja-loteria'), { scale: 3 }).then(c => {
+                let a = document.createElement('a'); a.download = 'Loteria.jpg'; a.href = c.toDataURL(); a.click();
+            });
+        }
+        
+        function pedirConfirmacionLimpiar() {
+            document.getElementById('modal-confirm').style.display = 'flex';
+        }
+        function cerrarModalConfirm() {
+            document.getElementById('modal-confirm').style.display = 'none';
+        }
+        function ejecutarLimpieza() {
+            generarSlotsVacios();
+            document.getElementById('folio-carta').innerText = "No. 001";
+            cerrarModalConfirm();
+        }
+
+        function limpiarTablero(confirmar) { 
+            if(confirmar) {
+                pedirConfirmacionLimpiar();
+            } else {
+                generarSlotsVacios();
+                document.getElementById('folio-carta').innerText = "No. 001";
+            }
+        }
+
+        function abrirModalSeleccion(div) { slotActual = div; document.getElementById('modal-seleccion').style.display = 'flex'; }
+        function cerrarModalSeleccion() { document.getElementById('modal-seleccion').style.display = 'none'; }
+        window.onclick = (e) => { 
+            if (e.target == document.getElementById('modal-seleccion')) cerrarModalSeleccion(); 
+            if (e.target == document.getElementById('modal-confirm')) cerrarModalConfirm();
+        }
+    </script>
+</body>
+</html>

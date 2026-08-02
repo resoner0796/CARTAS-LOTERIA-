@@ -1,0 +1,7 @@
+# La herramienta de generar tablas para imprimir. Es interna y no forma parte
+# del juego: si se publicara se vería rota, porque busca sus imágenes en
+# ./barajas/ y ahí no hay ninguna.
+#
+# Su algoritmo es lo que interesa, y ese acabará en el BACKEND. Ver la sección
+# "Cartas generadas" de CLAUDE.md.
+generador/

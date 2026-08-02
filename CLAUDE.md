@@ -395,27 +395,68 @@ Firestore no cambia la regla: el backend lo lee de ahí y cobra lo que diga; el
 cliente solo pinta. Si en algún momento el precio vuelve a viajar en la
 petición, se reabre el agujero que costó cerrar seis veces.
 
-**2. Generador de cartas.** Vender packs de 4 tablas por 20 monedas, que el
-jugador genera y luego ve en un botón «Mis Cartas» de la pantalla de selección.
-Hay un repo aparte, `generador-de-cartas`, con la lógica.
+**2. Cartas generadas.** Vender packs de 4 tablas por 20 monedas, que el jugador
+ve luego en un botón «Mis Cartas» de la pantalla de selección.
 
-⚠️ **La generación tiene que ocurrir en el SERVIDOR.** Es el punto que decide si
-esto se puede hacer o no. Hoy la validación de un ganador es visual: el anfitrión
-mira la tabla y decide. Si las tablas las genera el cliente Y el sistema pasa a
-validar solo —que es la gracia de tener tablas con barajas conocidas— entonces
-quien controle su navegador puede fabricarse una tabla con las cartas que acaban
-de salir. Sería el mismo patrón de siempre: una decisión de dinero tomada en el
-cliente.
+La herramienta está en `generador/index.html`, ya analizada. **No se publica**
+(está en `.vercelignore`): busca sus imágenes en `./barajas/`, que ahí no
+existe, y además es una herramienta para imprimir, no parte del juego.
 
-La forma sana: el servidor genera las tablas, las guarda por usuario en
-Firestore, y el cliente solo las pide y las pinta. El repo del generador puede
-servir de base, pero su lógica acaba en el backend.
+### Lo que sirve del generador, y lo que no
 
-**3. Y entonces se abre lo bueno.** Con las tablas guardadas y sus barajas
-conocidas, el servidor puede comprobar una lotería sin que nadie mire: ya sabe
-qué cartas cantó y qué lleva cada tabla. Eso quitaría la parte más incómoda del
-juego —el anfitrión validándose a sí mismo— pero es un cambio grande y conviene
-hacerlo después, no a la vez.
+De sus 560 líneas, **el algoritmo son unas 40**. El resto es interfaz para sacar
+PDF y ZIP con jsPDF, html2canvas y JSZip — nada de eso hace falta aquí, y
+además esas librerías vienen por CDN, que la CSP del proyecto bloquea.
+
+Lo que interesa:
+
+| Modo | Qué hace | Encaja con |
+|---|---|---|
+| `normal` | 16 barajas distintas en una rejilla 4×4 | Tradicional y Llena |
+| `dobles` | una carta repetida en el centro (posiciones 5 y 6) | — (modo nuevo) |
+| `esquinas` | solo 8 casillas, en los índices 0,3,5,6,9,10,12,15 | Pozo |
+
+Usa las barajas 1–54 con ceros (`01.png`), igual que
+`assets/imagenes/barajas/` de este proyecto: los datos son compatibles tal cual.
+
+### Tres cosas que hay que arreglar al portarlo
+
+**1. El barajado está sesgado.** Usa `sort(() => Math.random() - 0.5)`, que es un
+error clásico: no da permutaciones uniformes. Medido con 10 cartas y 60.000
+vueltas, la primera carta sale en primera posición un **90% más** de lo que
+debería y la novena un **39% menos**. Para tablas que se imprimen da igual; para
+tablas que se venden y deciden quién gana, no. Hay que usar Fisher-Yates con
+`crypto.randomInt`, que el backend ya usa en otros sitios.
+
+**2. La firma de deduplicación depende del orden.** Compara `numeros.join('-')`,
+así que dos tablas con las MISMAS 16 cartas colocadas distinto se consideran
+diferentes. Puede estar bien —la posición importa al marcar— pero conviene
+decidirlo a propósito y no heredarlo sin querer.
+
+**3. Una tabla deja de ser una imagen.** Es el cambio de fondo. Hoy una tabla es
+un JPG entero (`cartas/01.jpg`) y el tablero pinta esa imagen. Una tabla generada
+es una LISTA DE 16 NÚMEROS, y el tablero tendría que pintar una rejilla de 16
+barajas. Son dos modelos distintos conviviendo, y eso toca `tablero.js`,
+`validacion.js` y el `boardState` que viaja al anfitrión.
+
+⚠️ **La generación tiene que ocurrir en el SERVIDOR.** Hoy la validación es
+visual: el anfitrión mira y decide. Si las tablas las genera el cliente Y el
+sistema pasa a validar solo, quien controle su navegador puede fabricarse una
+tabla con las cartas que acaban de salir. Es el mismo patrón que costó cerrar
+seis veces. El servidor genera, guarda por usuario en Firestore, y el cliente
+solo pide y pinta.
+
+**3. Y entonces se abre lo bueno.** Con las tablas como datos, el servidor sabe
+qué lleva cada una y puede:
+
+- **Validar una lotería sin que nadie mire.** Se acabó el anfitrión
+  validándose a sí mismo, que es la parte más incómoda del juego.
+- **Poner un bot.** Si el servidor elige tablas y las marca solo, se puede jugar
+  sin sala llena — y Serpientes ya tiene modo contra CPU, así que el ecosistema
+  ya sabe hacerlo.
+
+Conviene hacerlo por partes: primero generar y guardar, después «Mis Cartas»,
+y la validación automática al final. Cada paso se puede soltar por separado.
 
 Infra:
 - Render (plan free) duerme a los 15 min. Se mantiene despierto con UptimeRobot.
