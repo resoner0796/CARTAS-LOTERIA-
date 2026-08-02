@@ -318,19 +318,27 @@ y ahora se llama una sola vez, al cerrar la ventana de empates.
 en el cliente: es lógica pura, determinista, y un fallo no se ve en pantalla —
 se ve en el saldo de alguien.
 
-## La barra del historial
+## El historial fijo: se probó y se descartó
 
-Va fija arriba (`position: sticky`) y **se encoge al bajar**: entera mide 110px,
-que en un móvil son el 13% de la pantalla ocupados para siempre, justo donde más
-falta hace el sitio. Al hacer scroll las barajas pasan de 92 a 53px de alto.
+Se intentó dejar la barra del historial fija arriba (`position: sticky`) para no
+tener que subir a comprobar qué baraja se cantó. **No funcionó, y se revirtió.**
+Queda anotado para que nadie lo vuelva a intentar por el mismo camino:
 
-- La clase `encogida` la pone `tablero.js` mirando el scroll **del body**, no de
-  `window` — ver la nota de arriba, es el error fácil.
-- El fondo tiene que ser **opaco**. El primer intento fue un degradado que se
-  desvanecía en el tercio de abajo y por ahí se veían pasar las cartas de la
-  mesa: parecía que la barra estaba rota.
-- Se anima el alto de las barajas, no el de la barra: así no hay saltos de
-  layout mientras se hace scroll.
+- **Con franja opaca de lado a lado**: tapaba el fondo de la sala y se leía como
+  una barra negra pegada arriba. Feo sobre cualquier fondo con textura.
+- **Sin franja, solo el contenedor flotando**: su `backdrop-filter` sobre las
+  barajas de colores deja un borrón, y hacerlo opaco lo convierte en una píldora
+  que tapa parte de la mesa.
+- **El temblor**: al encogerse la barra el documento se acorta, el navegador
+  retrocede el scroll para compensar, eso vuelve a cruzar el umbral hacia arriba
+  y la barra se despliega — varias veces por segundo. Se arregla con dos
+  umbrales (histeresis) y sin transiciones de altura, pero eso solo quitaba el
+  síntoma.
+
+El problema de fondo es que en esa pantalla lo que hay debajo es **muy denso**
+—cuatro cartas llenas de dibujos— y cualquier cosa flotando encima compite. Si
+se retoma, la vía sería que la MESA tuviera su propio scroll y la barra quedara
+fuera de él, no encima.
 
 ## Bots
 

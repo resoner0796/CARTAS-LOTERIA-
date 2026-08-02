@@ -1670,67 +1670,15 @@ textarea::placeholder { color: rgba(255,255,255,0.6); }
     font-variant-numeric: tabular-nums;   /* que no baile al cambiar de cifra */
 }
 
-/* ── LA BARRA DEL HISTORIAL, FIJA ARRIBA ──────────────────────────────────
-   Durante la partida se hace lo mismo todo el rato: cantan una baraja, bajas a
-   buscarla en tus cartas, y si dudas subes a comprobar cuál era. Fija, ese
-   último viaje desaparece.
-
-   El problema es el alto: la barra mide 110px, que en un móvil son el 13% de la
-   pantalla ocupados para siempre, justo donde más falta hace el sitio. Por eso
-   se ENCOGE en cuanto se baja: arriba del todo se ve entera, y al hacer scroll
-   se queda una franja fina con las últimas cantadas. La clase la pone
-   tablero.js mirando el scroll. */
-#barraHistorial {
-    position: sticky;
-    top: 0;
-    z-index: 40;
-    width: 100%;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    /* Fondo OPACO. El primer intento fue un degradado que se desvanecía en el
-       tercio de abajo, y por ahí se veían pasar las cartas de la mesa: parecía
-       que la barra estaba rota. Se desvanece solo en los últimos píxeles, lo
-       justo para que el corte no sea una línea dura. */
-    background: linear-gradient(to bottom,
-        #0a0a0c 0%,
-        #0a0a0c 88%,
-        rgba(10, 10, 12, 0) 100%);
-    padding: 6px 0 10px;
-    /* Una sombra debajo, para que se lea como una capa por encima de la mesa y
-       no como parte de ella. */
-    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.55);
-}
-
-/* La barra encogida. Se anima el alto de las barajas, no el de la barra: así no
-   hay saltos de layout mientras se hace scroll. */
-#barraHistorial .historial-container {
-    transition: min-height 0.18s ease, padding 0.18s ease;
-}
-#barraHistorial #historial img {
-    transition: width 0.18s ease, height 0.18s ease;
-}
-
-#barraHistorial.encogida .historial-container {
-    min-height: 0;
-    padding: 5px 10px !important;
-    margin-bottom: 6px;
-}
-#barraHistorial.encogida #historial img { width: 34px; height: 51px; }
-#barraHistorial.encogida #historial { gap: 6px; }
-
-/* El contador se va al lado en cuanto la barra se encoge: ahí una línea propia
-   cuesta más de lo que aporta. */
-#barraHistorial.encogida .contador-barajas {
-    padding: 0 6px 2px;
-    font-size: 0.72rem;
-}
-
-/* Quien haya pedido menos movimiento no ve la barra cambiar de tamaño. */
-@media (prefers-reduced-motion: reduce) {
-    #barraHistorial .historial-container,
-    #barraHistorial #historial img { transition: none; }
-}
+/* El historial NO va fijo, y se intentó dos veces.
+   Con franja opaca de lado a lado tapaba el fondo de la sala y se veía como una
+   barra negra pegada arriba. Sin franja, el contenedor flotaba solo encima de
+   las cartas: el `blur` sobre barajas de colores deja un borrón, y hacerlo
+   opaco lo convierte en una píldora que tapa parte de la mesa.
+   El problema de fondo es que en esta pantalla lo que hay debajo es MUY denso
+   —cuatro cartas llenas de dibujos— y cualquier cosa flotando encima compite.
+   Si se retoma, la vía sería que la mesa tuviera su propio scroll y la barra
+   quedara fuera de él, no encima. */
 
 /* Varias cartas ganadoras, cuando hay empate.
    En fila y con scroll lateral: apiladas obligarían a bajar para ver la

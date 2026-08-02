@@ -557,37 +557,6 @@ module.exports = async function cartas(navegador, url) {
         laFicha > 0 && laFicha <= 100);
     r.cierto('y se ve, no es un punto', laFicha >= 60);
 
-    // ── La barra del historial se queda fija y se encoge ─────────────────────
-    const barra = await pagina.evaluate(async () => {
-        const b = document.getElementById('barraHistorial');
-        const img = () => document.querySelector('#historial img')?.getBoundingClientRect().height || 0;
-
-        const arriba = { pegajosa: getComputedStyle(b).position, alto: img(), clase: b.className };
-
-        // El scroll es del BODY, no de window: el CSS le pone altura 100% y
-        // `overflow-x: hidden`, que convierte el otro eje en `auto`.
-        document.body.scrollTop = 400;
-        await new Promise(r => setTimeout(r, 500));
-        const abajo = {
-            clase: b.className,
-            alto: img(),
-            // Sigue a la vista: es todo el sentido de que sea fija.
-            arribaDeTodo: Math.round(b.getBoundingClientRect().top)
-        };
-
-        document.body.scrollTop = 0;
-        await new Promise(r => setTimeout(r, 500));
-        return { arriba, abajo, vuelta: b.className };
-    });
-
-    r.igual('la barra del historial es fija', barra.arriba.pegajosa, 'sticky');
-    r.falso('arriba del todo se ve entera', barra.arriba.clase.includes('encogida'));
-    r.cierto('al bajar se encoge', barra.abajo.clase.includes('encogida'));
-    r.cierto(`y las barajas se hacen chicas (${Math.round(barra.arriba.alto)}px → ${Math.round(barra.abajo.alto)}px)`,
-        barra.abajo.alto > 0 && barra.abajo.alto < barra.arriba.alto);
-    r.cierto('sin perderse de vista', barra.abajo.arribaDeTodo <= 1);
-    r.falso('y al volver arriba se despliega otra vez', barra.vuelta.includes('encogida'));
-
     r.cierto('sin errores de JS', errores.length === 0);
     if (errores.length) console.log('       ' + errores.join('\n       '));
 
