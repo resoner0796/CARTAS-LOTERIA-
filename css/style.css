@@ -2140,12 +2140,15 @@ textarea::placeholder { color: rgba(255,255,255,0.6); }
 }
 
 .casilla-tabla {
-    background: #f4f4f4;
-    border-radius: 2px;
+    background: #fff;
     overflow: hidden;
     display: flex;
     align-items: center;
     justify-content: center;
+    /* El filete negro alrededor de cada baraja es lo que le da el aire de tabla
+       impresa. Sin él las cartas se funden unas con otras y parece un collage. */
+    border: 1px solid #111;
+    box-sizing: border-box;
 }
 .casilla-tabla img {
     width: 100%;
@@ -2154,8 +2157,9 @@ textarea::placeholder { color: rgba(255,255,255,0.6); }
     display: block;
 }
 
-/* Las vacías solo salen en el modo `esquinas`, que es el del Pozo. */
-.casilla-vacia { background: repeating-linear-gradient(45deg, #eee, #eee 4px, #e0e0e0 4px, #e0e0e0 8px); }
+/* Las vacías solo salen en el modo `esquinas`, que es el del Pozo. Van en
+   blanco, como el papel: con trama gris parecían casillas rotas. */
+.casilla-vacia { background: #fff; }
 
 /* --- «Mis Cartas» --- */
 .grid-mis-cartas {
@@ -2203,3 +2207,57 @@ textarea::placeholder { color: rgba(255,255,255,0.6); }
     font-size: 0.8rem;
     margin: 0;
 }
+
+/* --- Armar una tabla a mano --- */
+/* Es el flujo del generador original: 16 casillas, se toca una y se elige la
+   baraja. Reutiliza .tabla-generada para que lo que se arma se vea EXACTAMENTE
+   igual que lo que quedará guardado. */
+
+.tabla-editable { max-width: 300px; margin: 0 auto; }
+
+.casilla-editable { cursor: pointer; transition: background 0.15s; }
+.casilla-editable:hover { background: #fff8dc; }
+
+/* Vacía y a la espera: el signo invita a tocarla. */
+.casilla-libre {
+    color: #bbb;
+    font-size: 1.4rem;
+    font-weight: 300;
+    background: #fafafa;
+}
+
+/* En el modo esquinas, las que no se usan ni se tocan. */
+.casilla-bloqueada {
+    background: #fff;
+    cursor: default;
+    opacity: 0.45;
+}
+
+.aviso-crear {
+    text-align: center;
+    font-size: 0.8rem;
+    color: var(--amarillo-maiz, gold);
+    margin: 10px 0;
+    min-height: 1.2em;
+}
+
+/* El elector: las 54 barajas para llenar la casilla que se tocó. */
+.grid-barajas {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(58px, 1fr));
+    gap: 6px;
+    overflow-y: auto;
+    padding: 4px;
+}
+.opcion-baraja {
+    width: 100%;
+    border-radius: 4px;
+    border: 2px solid transparent;
+    cursor: pointer;
+    display: block;
+    transition: transform 0.12s, border-color 0.12s;
+}
+.opcion-baraja:hover { transform: scale(1.06); border-color: var(--amarillo-maiz, gold); }
+
+/* Las que ya están puestas en la tabla, para no repetirlas sin darse cuenta. */
+.baraja-usada { opacity: 0.3; filter: grayscale(1); }

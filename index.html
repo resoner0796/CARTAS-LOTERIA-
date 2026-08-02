@@ -390,6 +390,43 @@
   </div>
 </div>
 
+<!-- Armar una tabla eligiendo carta por carta. Es el flujo del generador
+     original: 16 casillas, se toca una y se elige la baraja. -->
+<div id="modalCrearTabla" class="modal">
+    <div class="modal-content" style="max-height: 90vh; display: flex; flex-direction: column;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+            <h2 style="color: gold; margin: 0; font-size: 1.1rem;">Arma tu tabla</h2>
+            <button data-accion="cerrar-creador" style="background:none; border:none; font-size:1.5rem; color:white;">✕</button>
+        </div>
+
+        <label class="pack-modo">
+            <span>Tipo:</span>
+            <select id="selectModoCrear">
+                <option value="normal">Normal — 16 cartas</option>
+                <option value="esquinas">Esquinas — 8 cartas</option>
+                <option value="dobles">Dobles — repetida al centro</option>
+            </select>
+        </label>
+
+        <div id="rejillaCrear" class="tabla-generada tabla-editable"></div>
+        <p id="avisoCrear" class="aviso-crear"></p>
+
+        <button id="btnGuardarTabla" data-accion="guardar-tabla" class="btn-buy" disabled>CREAR — $25</button>
+        <button data-accion="cerrar-creador" style="background:#444; margin-top:8px;">Cancelar</button>
+    </div>
+</div>
+
+<!-- El elector de baraja: las 54, para llenar la casilla que se tocó. -->
+<div id="modalElegirBaraja" class="modal">
+    <div class="modal-content" style="max-height: 85vh; display: flex; flex-direction: column;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+            <h2 style="color: gold; margin: 0; font-size: 1.1rem;">Elige la carta</h2>
+            <button data-accion="cerrar-elector" style="background:none; border:none; font-size:1.5rem; color:white;">✕</button>
+        </div>
+        <div id="gridBarajas" class="grid-barajas"></div>
+    </div>
+</div>
+
 <!-- Las tablas propias del jugador. A diferencia de las 53 de siempre, que son
      imágenes enteras, estas son datos: 16 números que se pintan en rejilla. -->
 <div id="modalMisCartas" class="modal">

@@ -17,7 +17,9 @@ import { sesion, partida } from './modulos/estado.js';
 import { pintarMonedas, pintarSaldo, volarDesdeSaldo, TOPE_MONEDAS_POZO } from './modulos/monedas.js';
 import { guardarSetFavorito, cargarSetFavorito } from './modulos/favoritos.js';
 import {
-    abrirGeneradorTienda, comprarPack, abrirMisCartas, cerrarMisCartas, pedirMisTablas
+    abrirGeneradorTienda, comprarPack, abrirMisCartas, cerrarMisCartas, pedirMisTablas,
+    abrirCreador, cerrarCreador, cambiarModoCreador, cerrarElectorBaraja,
+    guardarTablaPersonalizada
 } from './modulos/tablasPropias.js';
 import {
     generarCartas, renumerarSeleccion, seleccionarCarta,
@@ -703,6 +705,11 @@ const ACCIONES = {
     'cerrar-tienda-detalle':  () => cerrarModalTiendaDetalle(),
     'abrir-generador':        () => abrirGeneradorTienda(),
     'comprar-pack':           () => comprarPack(),
+    'abrir-creador':          () => abrirCreador(),
+    'cerrar-creador':         () => cerrarCreador(),
+
+    'cerrar-elector':         () => cerrarElectorBaraja(),
+    'guardar-tabla':          () => guardarTablaPersonalizada(),
     'abrir-mis-cartas':       () => abrirMisCartas(),
     'cerrar-mis-cartas':      () => cerrarMisCartas(),
     'comprar-item':           (el) => comprarItem(el.dataset.item, Number(el.dataset.precio), sesion.usuario, emitirCompraItem),

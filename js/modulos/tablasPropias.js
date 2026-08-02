@@ -15,12 +15,23 @@
 
 import { socket } from './socket.js';
 import { mostrarAlerta } from './ui.js';
+import { cerrarModalTiendaDetalle } from './tienda.js';
 
 /** Casillas de una tabla: rejilla de 4×4. */
 const CASILLAS = 16;
 
-/** Lo que cuesta un pack y cuántas trae. Solo para PINTARLO: cobra el servidor. */
+/** Precios, solo para PINTARLOS. Quien cobra es el servidor, con los suyos. */
 export const PACK = { precio: 20, cuantas: 4 };
+export const PERSONALIZADA = { precio: 25 };
+
+/** Dónde van las cartas en el modo esquinas. Igual que en el servidor. */
+const CASILLAS_ESQUINAS = [0, 3, 5, 6, 9, 10, 12, 15];
+
+/** En dobles, la carta repetida ocupa estas dos del centro. */
+const CASILLAS_DOBLE = [5, 6];
+
+/** La baraja completa. */
+const TOTAL_BARAJAS = 54;
 
 /** Los modos que se venden, con su nombre y de qué van. */
 export const MODOS_TABLA = [
@@ -143,7 +154,14 @@ export function abrirGeneradorTienda() {
                 <span>Tipo:</span>
                 <select id="selectModoTabla">${opciones}</select>
             </label>
-            <button class="btn-buy" data-accion="comprar-pack">COMPRAR</button>
+            <button class="btn-buy" data-accion="comprar-pack">COMPRAR AL AZAR</button>
+        </div>
+
+        <div class="pack-tablas">
+            <p class="pack-titulo">Arma la tuya</p>
+            <p class="pack-precio">$${PERSONALIZADA.precio} monedas</p>
+            <p class="pack-nota">Eliges tú carta por carta, las 16 casillas.</p>
+            <button class="btn-use" data-accion="abrir-creador">CREAR A MI GUSTO</button>
         </div>
     `;
 }
@@ -180,11 +198,212 @@ socket.on('mis-tablas', (tablas) => {
 socket.on('pack-comprado', ({ cuantas }) => {
     const boton = document.querySelector('[data-accion="comprar-pack"]');
     if (boton) { boton.disabled = false; boton.textContent = 'COMPRAR'; }
+
+    // El mostrador se cierra ANTES del aviso. Si se queda abierto, al dar
+    // «Entendido» reaparece detrás con su botón de Volver y parece que la compra
+    // no terminó: la persona ve un modal que no pidió.
+    cerrarModalTiendaDetalle();
+
     mostrarAlerta(`Se añadieron ${cuantas} tablas nuevas a «Mis Cartas».`, '¡Listo! 🎴');
 });
 
 socket.on('error-pack', (mensaje) => {
     const boton = document.querySelector('[data-accion="comprar-pack"]');
     if (boton) { boton.disabled = false; boton.textContent = 'COMPRAR'; }
+    const guardar = document.getElementById('btnGuardarTabla');
+    if (guardar) { guardar.disabled = false; guardar.textContent = `CREAR — $${PERSONALIZADA.precio}`; }
     mostrarAlerta(mensaje || 'No se pudo comprar el pack', 'Ups');
+});
+
+
+// ==================== ARMAR UNA TABLA A MANO ====================
+// El flujo del generador original: 16 casillas, se toca una y se elige la
+// baraja. Aquí se avisa de lo que no cuadra mientras se arma, pero **quien
+// decide es el servidor**: validarTablaManual() vuelve a mirarlo todo. Esto es
+// para que la persona no pierda el tiempo, no para impedir trampas.
+
+/** Lo que se lleva armado: 16 casillas, null donde no hay nada. */
+let enConstruccion = new Array(16).fill(null);
+let modoEnConstruccion = 'normal';
+let casillaElegida = null;
+
+/** ¿Qué casillas se pueden llenar en este modo? */
+function casillasDelModo(modo) {
+    return modo === 'esquinas' ? CASILLAS_ESQUINAS : [...Array(16).keys()];
+}
+
+export function abrirCreador() {
+    const modal = document.getElementById('modalCrearTabla');
+    if (!modal) return;
+
+    // El selector va por `change`, no por la tabla de acciones: esa escucha
+    // clics, y un <select> se puede cambiar con el teclado sin llegar a picarlo.
+    const select = document.getElementById('selectModoCrear');
+    if (select && !select.dataset.enganchado) {
+        select.addEventListener('change', cambiarModoCreador);
+        select.dataset.enganchado = '1';
+    }
+
+    modoEnConstruccion = 'normal';
+    enConstruccion = new Array(16).fill(null);
+    if (select) select.value = 'normal';
+    modal.classList.add('active');
+    pintarCreador();
+}
+
+export function cerrarCreador() {
+    const modal = document.getElementById('modalCrearTabla');
+    if (modal) modal.classList.remove('active');
+}
+
+/** Al cambiar de tipo se vacía: las casillas válidas ya no son las mismas. */
+export function cambiarModoCreador() {
+    const select = document.getElementById('selectModoCrear');
+    modoEnConstruccion = select ? select.value : 'normal';
+    enConstruccion = new Array(16).fill(null);
+    pintarCreador();
+}
+
+function pintarCreador() {
+    const rejilla = document.getElementById('rejillaCrear');
+    if (!rejilla) return;
+
+    rejilla.innerHTML = '';
+    const validas = casillasDelModo(modoEnConstruccion);
+
+    for (let i = 0; i < 16; i++) {
+        const casilla = document.createElement('div');
+        casilla.className = 'casilla-tabla casilla-editable';
+
+        if (!validas.includes(i)) {
+            // En esquinas, las que no se usan no se pueden tocar.
+            casilla.classList.add('casilla-bloqueada');
+        } else {
+            casilla.onclick = () => abrirElectorBaraja(i);
+            const carta = enConstruccion[i];
+            if (carta === null) {
+                casilla.classList.add('casilla-libre');
+                casilla.textContent = '+';
+            } else {
+                const img = document.createElement('img');
+                img.src = `assets/imagenes/barajas/${String(carta).padStart(2, '0')}.png`;
+                img.alt = '';
+                casilla.appendChild(img);
+            }
+        }
+        rejilla.appendChild(casilla);
+    }
+    actualizarEstadoCreador();
+}
+
+/** Dice qué falta y habilita el botón solo cuando la tabla está lista. */
+function actualizarEstadoCreador() {
+    const aviso = document.getElementById('avisoCrear');
+    const boton = document.getElementById('btnGuardarTabla');
+    const revision = revisarEnConstruccion();
+
+    if (aviso) aviso.textContent = revision.ok
+        ? '¡Lista! Puedes guardarla.'
+        : revision.motivo;
+    if (boton) boton.disabled = !revision.ok;
+}
+
+/**
+ * La misma revisión que hace el servidor, para avisar mientras se arma.
+ *
+ * ⚠️ Que esté aquí NO sustituye a la del servidor. Si algún día se quita allí
+ * porque «ya se comprueba en el cliente», cualquiera se armará la tabla que
+ * quiera desde la consola.
+ */
+function revisarEnConstruccion() {
+    const validas = casillasDelModo(modoEnConstruccion);
+    const puestas = validas.map(i => enConstruccion[i]).filter(c => c !== null);
+
+    if (puestas.length < validas.length) {
+        return { ok: false, motivo: `Faltan ${validas.length - puestas.length} cartas por elegir` };
+    }
+    if (modoEnConstruccion === 'dobles') {
+        const [a, b] = CASILLAS_DOBLE;
+        if (enConstruccion[a] !== enConstruccion[b]) {
+            return { ok: false, motivo: 'Las dos del centro tienen que ser la misma carta' };
+        }
+        const sinLaSegunda = enConstruccion.filter((_, i) => i !== b);
+        if (new Set(sinLaSegunda).size !== sinLaSegunda.length) {
+            return { ok: false, motivo: 'Solo puede repetirse la carta del centro' };
+        }
+        return { ok: true };
+    }
+    if (new Set(puestas).size !== puestas.length) {
+        return { ok: false, motivo: 'Hay una carta repetida' };
+    }
+    return { ok: true };
+}
+
+// --- El elector de baraja ---
+
+function abrirElectorBaraja(casilla) {
+    casillaElegida = casilla;
+    const modal = document.getElementById('modalElegirBaraja');
+    const zona = document.getElementById('gridBarajas');
+    if (!modal || !zona) return;
+
+    zona.innerHTML = '';
+    for (let n = 1; n <= TOTAL_BARAJAS; n++) {
+        const img = document.createElement('img');
+        img.src = `assets/imagenes/barajas/${String(n).padStart(2, '0')}.png`;
+        img.className = 'opcion-baraja';
+        img.alt = '';
+
+        // Las que ya están puestas se marcan, para no elegirlas dos veces sin
+        // darse cuenta. En dobles se permite: el centro va repetido a propósito.
+        const yaPuesta = enConstruccion.includes(n);
+        if (yaPuesta && modoEnConstruccion !== 'dobles') img.classList.add('baraja-usada');
+
+        img.onclick = () => elegirBaraja(n);
+        zona.appendChild(img);
+    }
+    modal.classList.add('active');
+}
+
+export function cerrarElectorBaraja() {
+    const modal = document.getElementById('modalElegirBaraja');
+    if (modal) modal.classList.remove('active');
+    casillaElegida = null;
+}
+
+function elegirBaraja(numero) {
+    if (casillaElegida === null) return;
+
+    // En dobles, poner la carta del centro la pone en las DOS casillas: es lo
+    // que define el modo, y hacerlo a mano dos veces sería absurdo.
+    if (modoEnConstruccion === 'dobles' && CASILLAS_DOBLE.includes(casillaElegida)) {
+        CASILLAS_DOBLE.forEach(c => { enConstruccion[c] = numero; });
+    } else {
+        enConstruccion[casillaElegida] = numero;
+    }
+
+    cerrarElectorBaraja();
+    pintarCreador();
+}
+
+/** Manda la tabla al servidor, que la revisa otra vez y cobra. */
+export function guardarTablaPersonalizada() {
+    const revision = revisarEnConstruccion();
+    if (!revision.ok) return mostrarAlerta(revision.motivo, 'Falta algo');
+
+    const boton = document.getElementById('btnGuardarTabla');
+    if (boton) { boton.disabled = true; boton.textContent = 'Guardando...'; }
+
+    socket.emit('comprar-tabla-personalizada', {
+        cartas: enConstruccion,
+        modo: modoEnConstruccion
+    });
+}
+
+socket.on('tabla-personalizada-creada', () => {
+    const boton = document.getElementById('btnGuardarTabla');
+    if (boton) { boton.disabled = false; boton.textContent = `CREAR — $${PERSONALIZADA.precio}`; }
+    cerrarCreador();
+    cerrarModalTiendaDetalle();
+    mostrarAlerta('Tu tabla quedó guardada en «Mis Cartas».', '¡Listo! 🎴');
 });

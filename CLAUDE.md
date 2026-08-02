@@ -168,7 +168,7 @@ después de cada movimiento; de 2.030 líneas en un archivo a **18 módulos**.
 | `audio.js` | Sonidos que dispara **el juego** |
 | `animaciones.js` | Gestos y decoración. Puro DOM |
 | `monedas.js` | Las torres del bote y del pozo: una moneda por peso |
-| `tablasPropias.js` | Tablas compradas: el generador de la tienda y «Mis Cartas» |
+| `tablasPropias.js` | Tablas compradas: comprarlas al azar o armarlas a mano, y «Mis Cartas» |
 | `app.js` | Arranque, login/registro, y los eventos de socket de la partida |
 
 ### Las cinco reglas del cliente
