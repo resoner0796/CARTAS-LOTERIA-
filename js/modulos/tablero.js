@@ -16,6 +16,7 @@ import { socket } from './socket.js';
 import { partida } from './estado.js';
 import { cambiarPantalla, mostrarConfirmacion } from './ui.js';
 import { fichaEnUso } from './tienda.js';
+import { esPropia, tablaPorId, pintarTabla } from './tablasPropias.js';
 
 /** Cuántas tablas se ofrecen para elegir, según el modo. */
 const TABLAS_POR_MODO = { pozo: 20, porDefecto: 53 };
@@ -151,7 +152,14 @@ export function actualizarTextoBotonApuesta() {
 
 // ==================== LA MESA ====================
 
-/** Pone en la mesa las tablas elegidas, listas para marcar. */
+/**
+ * Pone en la mesa las cartas elegidas, listas para marcar.
+ *
+ * Conviven dos clases de carta y se pintan distinto: las 53 de siempre son una
+ * imagen entera, y una carta propia es una rejilla de 16 barajas construida al
+ * vuelo. A partir de aquí las dos se comportan igual —se marcan con fichas y
+ * viajan al anfitrión— así que la diferencia se acaba en esta función.
+ */
 export function montarMesa() {
     const mesa = $("juegoCartas");
     if (!mesa) return;
@@ -161,10 +169,44 @@ export function montarMesa() {
         const contenedor = document.createElement("div");
         contenedor.classList.add("carta-juego");
         contenedor.dataset.id = id;
-        contenedor.innerHTML = `<img src="${partida.rutaCartas}${id}.jpg" class="carta-img seleccionada">`;
+
+        const propia = tablaPorId(id);
+        if (propia) {
+            contenedor.classList.add("carta-juego-propia");
+            contenedor.appendChild(pintarTabla(propia));
+        } else {
+            contenedor.innerHTML = `<img src="${partida.rutaCartas}${id}.jpg" class="carta-img seleccionada">`;
+        }
+
         contenedor.onclick = e => marcarFicha(e, contenedor);
         mesa.appendChild(contenedor);
     });
+}
+
+/**
+ * Elige o suelta una carta propia.
+ *
+ * A diferencia de las 53, estas NO se avisan al servidor para que las bloquee:
+ * son únicas de cada persona, nadie más puede elegirlas. Sí cuentan para el
+ * tope de cuatro y para lo que se apuesta.
+ */
+export function alternarCartaPropia(id) {
+    const yaEsta = partida.seleccionadas.includes(id);
+
+    if (yaEsta) {
+        partida.seleccionadas = partida.seleccionadas.filter(c => c !== id);
+    } else {
+        if (partida.seleccionadas.length >= MAXIMO_TABLAS) return;
+        partida.seleccionadas.push(id);
+    }
+
+    const btnIniciar = $("btnIniciar");
+    if (btnIniciar) {
+        btnIniciar.style.display =
+            partida.seleccionadas.length >= MINIMO_PARA_INICIAR ? "block" : "none";
+    }
+    actualizarTextoBotonApuesta();
+    renumerarSeleccion();
 }
 
 /**
@@ -180,10 +222,13 @@ export function marcarFicha(e, contenedor) {
         return;
     }
 
-    const img = contenedor.querySelector("img.carta-img");
-    if (!img) return;
+    // En una carta propia no hay una imagen única: se mide la rejilla entera,
+    // que es lo que ocupa el mismo sitio que la imagen en las de siempre.
+    const referencia = contenedor.querySelector("img.carta-img")
+                    || contenedor.querySelector(".tabla-generada");
+    if (!referencia) return;
 
-    const marco = img.getBoundingClientRect();
+    const marco = referencia.getBoundingClientRect();
     const px = ((e.clientX - marco.left) / marco.width) * 100;
     const py = ((e.clientY - marco.top) / marco.height) * 100;
 

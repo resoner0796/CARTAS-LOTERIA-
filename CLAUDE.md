@@ -235,9 +235,15 @@ Definidos en el backend (`MODOS_JUEGO`), el front los recibe en el evento `info-
 | `pozo` | 2 | 20 (set especial) |
 
 ⚠️ **No confundir los dos conjuntos**, es la trampa más fácil de este proyecto:
-- **Tabla** = lo que elige el jugador. `assets/imagenes/cartas/`, hay **53** (`01`–`53`).
-- **Carta** = lo que se canta. `assets/imagenes/barajas/`, hay **54** (`01`–`54`),
-  con una voz por cada una en `assets/audios/NN.mp3`.
+- **Carta** = lo que elige el jugador, la rejilla de 4×4. En
+  `assets/imagenes/cartas/` hay **53** (`01`–`53`), y además cada quien puede
+  comprar las suyas.
+- **Baraja** = cada una de las que se cantan. `assets/imagenes/barajas/`, hay
+  **54** (`01`–`54`), con una voz por cada una en `assets/audios/NN.mp3`.
+
+Esos son los nombres que se usan **en la interfaz**, porque son los que usa la
+gente que juega. En el código hay sitios donde «tabla» significa lo mismo que
+«carta» —quedó de antes— pero lo que ve el jugador dice siempre carta y baraja.
 
 Que `generarCartas()` pinte 53 es **correcto**. La baraja que se canta siempre es
 de 54, sin importar el modo.

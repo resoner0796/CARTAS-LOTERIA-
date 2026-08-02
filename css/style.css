@@ -2135,7 +2135,7 @@ textarea::placeholder { color: rgba(255,255,255,0.6); }
     padding: 4px;
     border-radius: 6px;
     border: 2px solid var(--amarillo-maiz, gold);
-    aspect-ratio: 4 / 5.2;      /* la proporción de una tabla de lotería */
+    aspect-ratio: 4 / 6.35;     /* 4 columnas × 4 casillas de 1:1.587 */
     width: 100%;
 }
 
@@ -2279,10 +2279,14 @@ textarea::placeholder { color: rgba(255,255,255,0.6); }
    barajas salían estiradas: el grid repartía el alto según el contenido. */
 .tabla-generada { grid-template-rows: repeat(4, 1fr); }
 
-/* Cada casilla manda sobre su propia proporción, para que la baraja no se
-   deforme al entrar. */
-.casilla-tabla { aspect-ratio: 1 / 1.32; min-height: 0; min-width: 0; }
-.casilla-tabla img { object-fit: contain; }
+/* La casilla tiene la MISMA proporción que una baraja (252×400 = 1:1.587). Con
+   cualquier otra, la imagen o se deforma o deja franjas blancas: estaba en
+   1:1.32 y sobraba a los lados.
+
+   Con la proporción correcta, `cover` llena la casilla entera sin recortar nada
+   apreciable, que es como se ve una tabla impresa de verdad. */
+.casilla-tabla { aspect-ratio: 252 / 400; min-height: 0; min-width: 0; }
+.casilla-tabla img { object-fit: cover; }
 
 /* En esquinas, el hueco vacío no lleva ni contorno: se busca que parezca papel
    en blanco, y un recuadro alrededor de la nada llama la atención sobre lo que
@@ -2333,3 +2337,21 @@ textarea::placeholder { color: rgba(255,255,255,0.6); }
     color: #aaa;
     margin: 0 0 8px;
 }
+
+/* --- Elegir una carta propia para jugar --- */
+.mi-tabla-elegible { cursor: pointer; }
+.btn-elegir-tabla {
+    width: 100%;
+    margin: 4px 0 0;
+    padding: 5px;
+    font-size: 0.7rem;
+    background: var(--azul-cielo, #4dd0e1);
+    color: #003333;
+    border-radius: 8px;
+}
+.mi-tabla-elegida .tabla-generada { border-color: var(--verde-limon, #76ff03); box-shadow: 0 0 10px rgba(118,255,3,0.5); }
+.mi-tabla-elegida .btn-elegir-tabla { background: var(--verde-limon, #76ff03); }
+
+/* Una carta propia en la mesa ocupa el mismo sitio que una de las de siempre.
+   La rejilla se estira a su contenedor y las fichas se ponen encima igual. */
+.carta-juego-propia .tabla-generada { width: 100%; height: 100%; border-width: 2px; }

@@ -395,16 +395,16 @@
 <div id="modalCrearTabla" class="modal">
     <div class="modal-content" style="max-height: 90vh; display: flex; flex-direction: column;">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-            <h2 style="color: gold; margin: 0; font-size: 1.1rem;">Arma tu tabla</h2>
+            <h2 style="color: gold; margin: 0; font-size: 1.1rem;">Arma tu carta</h2>
             <button data-accion="cerrar-creador" style="background:none; border:none; font-size:1.5rem; color:white;">✕</button>
         </div>
 
         <label class="pack-modo">
             <span>Tipo:</span>
             <select id="selectModoCrear">
-                <option value="normal">Normal — 16 cartas</option>
-                <option value="esquinas">Esquinas — 8 cartas</option>
-                <option value="dobles">Dobles — repetida al centro</option>
+                <option value="normal">Normal — 16 barajas</option>
+                <option value="esquinas">Esquinas — 8 barajas</option>
+                <option value="dobles">Dobles — una repetida al centro</option>
             </select>
         </label>
 
@@ -412,7 +412,7 @@
         <div id="rejillaCrear" class="tabla-generada tabla-editable"></div>
         <p id="avisoCrear" class="aviso-crear"></p>
 
-        <button id="btnGuardarTabla" data-accion="guardar-tabla" class="btn-buy" disabled>SIGUIENTE TABLA →</button>
+        <button id="btnGuardarTabla" data-accion="guardar-tabla" class="btn-buy" disabled>SIGUIENTE CARTA →</button>
         <button data-accion="cerrar-creador" style="background:#444; margin-top:8px;">Cancelar</button>
     </div>
 </div>
@@ -421,7 +421,7 @@
 <div id="modalElegirBaraja" class="modal">
     <div class="modal-content" style="max-height: 85vh; display: flex; flex-direction: column;">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-            <h2 style="color: gold; margin: 0; font-size: 1.1rem;">Elige la carta</h2>
+            <h2 style="color: gold; margin: 0; font-size: 1.1rem;">Elige la baraja</h2>
             <button data-accion="cerrar-elector" style="background:none; border:none; font-size:1.5rem; color:white;">✕</button>
         </div>
         <div id="gridBarajas" class="grid-barajas"></div>

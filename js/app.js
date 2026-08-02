@@ -19,11 +19,11 @@ import { guardarSetFavorito, cargarSetFavorito } from './modulos/favoritos.js';
 import {
     abrirGeneradorTienda, comprarPack, abrirMisCartas, cerrarMisCartas, pedirMisTablas,
     abrirCreador, cerrarCreador, cambiarModoCreador, cerrarElectorBaraja,
-    guardarTablaPersonalizada
+    guardarTablaPersonalizada, alElegirCartaPropia
 } from './modulos/tablasPropias.js';
 import {
     generarCartas, renumerarSeleccion, seleccionarCarta,
-    montarMesa, limpiarFichas, cambiarCartas,
+    montarMesa, limpiarFichas, cambiarCartas, alternarCartaPropia,
     restaurarSeleccionVisual, resetearTablero, limpiarHistorialCantadas
 } from './modulos/tablero.js';
 import {
@@ -103,6 +103,10 @@ verificarSSO(configurarMenu, ocultarSplashGlobal);
 
 // Los modales y la navegación entre pantallas viven en modulos/ui.js.
 iniciarModales();
+
+// El tablero sabe elegir cartas propias, y «Mis Cartas» sabe enseñarlas: se
+// enganchan aquí para que ninguno de los dos módulos importe del otro.
+alElegirCartaPropia(alternarCartaPropia);
 
 
 // ======================================================

@@ -58,7 +58,39 @@ export const MODOS_TABLA = [
 /** Las tablas de esta persona, tal como las mandó el servidor. */
 let misTablas = [];
 
+/**
+ * Qué hacer cuando se elige una carta propia para jugar.
+ *
+ * Lo pone app.js con la función del tablero. Se pasa como argumento en vez de
+ * importar el tablero aquí, porque el tablero ya importa de este módulo para
+ * pintar las cartas propias en la mesa: importarnos mutuamente sería un ciclo.
+ */
+let alElegir = null;
+export function alElegirCartaPropia(fn) { alElegir = fn; }
+
 export function tablasGuardadas() { return misTablas; }
+
+/**
+ * Prefijo que distingue una carta propia de las 53 de siempre.
+ *
+ * Las de siempre se identifican por su número ("01", "02"…) y son las MISMAS
+ * para todos, por eso el servidor las bloquea cuando alguien las elige. Una
+ * carta propia es solo tuya, así que no hay nada que bloquear: nadie más la
+ * tiene. El prefijo es lo que permite distinguir los dos casos en todo el
+ * camino, desde la selección hasta la validación del ganador.
+ */
+export const PREFIJO_PROPIA = 'propia:';
+
+export function esPropia(id) {
+    return typeof id === 'string' && id.startsWith(PREFIJO_PROPIA);
+}
+
+/** La carta propia con ese id, o null. Se usa para pintarla en la mesa. */
+export function tablaPorId(id) {
+    if (!esPropia(id)) return null;
+    const soloId = id.slice(PREFIJO_PROPIA.length);
+    return misTablas.find(t => t.id === soloId) || null;
+}
 
 /** Pide las tablas al servidor. Se llama al entrar y tras comprar. */
 export function pedirMisTablas() {
@@ -169,12 +201,33 @@ function renderizarMisCartas() {
             const caja = document.createElement('div');
             caja.className = 'mi-tabla';
             caja.appendChild(pintarTabla(tabla));
+
             if (tabla.personalizada) {
                 const marca = document.createElement('span');
                 marca.className = 'marca-personalizada';
                 marca.textContent = '✎ tuya';
                 caja.appendChild(marca);
             }
+
+            // Dentro de una sala y si sirve para ese modo, se puede elegir para
+            // jugar. Fuera de la sala «Mis Cartas» es solo una galería.
+            if (partida.sala && sirveAqui && typeof alElegir === 'function') {
+                const id = PREFIJO_PROPIA + tabla.id;
+                const elegida = partida.seleccionadas.includes(id);
+
+                caja.classList.add('mi-tabla-elegible');
+                if (elegida) caja.classList.add('mi-tabla-elegida');
+
+                const boton = document.createElement('button');
+                boton.className = 'btn-elegir-tabla';
+                boton.textContent = elegida ? '✓ En juego' : 'Usar esta';
+                boton.onclick = () => {
+                    alElegir(id, tabla);
+                    renderizarMisCartas();
+                };
+                caja.appendChild(boton);
+            }
+
             fila.appendChild(caja);
         });
         zona.appendChild(fila);
@@ -198,9 +251,9 @@ export function abrirGeneradorTienda() {
 
     zona.innerHTML = `
         <div class="pack-tablas">
-            <p class="pack-titulo">Pack de ${PACK.cuantas} tablas</p>
+            <p class="pack-titulo">Pack de ${PACK.cuantas} cartas</p>
             <p class="pack-precio">$${PACK.precio} monedas</p>
-            <p class="pack-nota">Tablas tuyas, distintas a las de todos. Las verás en «Mis Cartas».</p>
+            <p class="pack-nota">Cartas tuyas, distintas a las de todos. Las verás en «Mis Cartas».</p>
             <label class="pack-modo">
                 <span>Tipo:</span>
                 <select id="selectModoTabla">${opciones}</select>
@@ -211,7 +264,7 @@ export function abrirGeneradorTienda() {
         <div class="pack-tablas">
             <p class="pack-titulo">Arma las tuyas</p>
             <p class="pack-precio">$${PERSONALIZADA.precio} monedas</p>
-            <p class="pack-nota">Armas ${PERSONALIZADA.cuantas} tablas eligiendo carta por carta.</p>
+            <p class="pack-nota">Armas ${PERSONALIZADA.cuantas} cartas eligiendo baraja por baraja.</p>
             <button class="btn-use" data-accion="abrir-creador">CREAR A MI GUSTO</button>
         </div>
     `;
@@ -255,7 +308,7 @@ socket.on('pack-comprado', ({ cuantas }) => {
     // no terminó: la persona ve un modal que no pidió.
     cerrarModalTiendaDetalle();
 
-    mostrarAlerta(`Se añadieron ${cuantas} tablas nuevas a «Mis Cartas».`, '¡Listo! 🎴');
+    mostrarAlerta(`Se añadieron ${cuantas} cartas nuevas a «Mis Cartas».`, '¡Listo! 🎴');
 });
 
 socket.on('error-pack', (mensaje) => {
@@ -371,7 +424,7 @@ function actualizarEstadoCreador() {
     const vaPor = tablasTerminadas.length + 1;
     const esLaUltima = vaPor === PERSONALIZADA.cuantas;
 
-    if (paso) paso.textContent = `Tabla ${vaPor} de ${PERSONALIZADA.cuantas}`;
+    if (paso) paso.textContent = `Carta ${vaPor} de ${PERSONALIZADA.cuantas}`;
 
     if (aviso) aviso.textContent = revision.ok
         ? (esLaUltima ? '¡Listas! Se guardan las dos.' : 'Lista. Ahora la siguiente.')
@@ -381,7 +434,7 @@ function actualizarEstadoCreador() {
         boton.disabled = !revision.ok;
         boton.textContent = esLaUltima
             ? `GUARDAR LAS ${PERSONALIZADA.cuantas} — $${PERSONALIZADA.precio}`
-            : 'SIGUIENTE TABLA →';
+            : 'SIGUIENTE CARTA →';
     }
 }
 
@@ -397,21 +450,21 @@ function revisarEnConstruccion() {
     const puestas = validas.map(i => enConstruccion[i]).filter(c => c !== null);
 
     if (puestas.length < validas.length) {
-        return { ok: false, motivo: `Faltan ${validas.length - puestas.length} cartas por elegir` };
+        return { ok: false, motivo: `Faltan ${validas.length - puestas.length} barajas por elegir` };
     }
     if (modoEnConstruccion === 'dobles') {
         const [a, b] = CASILLAS_DOBLE;
         if (enConstruccion[a] !== enConstruccion[b]) {
-            return { ok: false, motivo: 'Las dos del centro tienen que ser la misma carta' };
+            return { ok: false, motivo: 'Las dos del centro tienen que ser la misma baraja' };
         }
         const sinLaSegunda = enConstruccion.filter((_, i) => i !== b);
         if (new Set(sinLaSegunda).size !== sinLaSegunda.length) {
-            return { ok: false, motivo: 'Solo puede repetirse la carta del centro' };
+            return { ok: false, motivo: 'Solo puede repetirse la baraja del centro' };
         }
         return { ok: true };
     }
     if (new Set(puestas).size !== puestas.length) {
-        return { ok: false, motivo: 'Hay una carta repetida' };
+        return { ok: false, motivo: 'Hay una baraja repetida' };
     }
     return { ok: true };
 }
@@ -431,12 +484,17 @@ function abrirElectorBaraja(casilla) {
         img.className = 'opcion-baraja';
         img.alt = '';
 
-        // Las que ya están puestas se marcan, para no elegirlas dos veces sin
-        // darse cuenta. En dobles se permite: el centro va repetido a propósito.
+        // Las que ya están puestas se apagan y no se pueden volver a elegir.
+        // También en dobles: ahí la carta del centro ya ocupa SUS DOS casillas
+        // al ponerla, así que si además se pudiera poner en otro sitio saldría
+        // tres veces y la tabla dejaría de ser válida.
         const yaPuesta = enConstruccion.includes(n);
-        if (yaPuesta && modoEnConstruccion !== 'dobles') img.classList.add('baraja-usada');
-
-        img.onclick = () => elegirBaraja(n);
+        if (yaPuesta) {
+            img.classList.add('baraja-usada');
+            img.title = 'Ya la tienes en la carta';
+        } else {
+            img.onclick = () => elegirBaraja(n);
+        }
         zona.appendChild(img);
     }
     modal.classList.add('active');
@@ -477,7 +535,7 @@ export function guardarTablaPersonalizada() {
     // Que la segunda no sea igual que la primera: se llenarían a la vez.
     const firma = [...enConstruccion].filter(c => c !== null).sort((a, b) => a - b).join('-');
     if (tablasTerminadas.some(t => t.firma === firma)) {
-        return mostrarAlerta('Esa tabla es igual que la anterior. Cambia alguna carta.', 'Repetida');
+        return mostrarAlerta('Esa carta es igual que la anterior. Cambia alguna baraja.', 'Repetida');
     }
 
     tablasTerminadas.push({ cartas: [...enConstruccion], firma });
@@ -501,5 +559,5 @@ socket.on('tablas-personalizadas-creadas', ({ cuantas }) => {
     tablasTerminadas = [];
     cerrarCreador();
     cerrarModalTiendaDetalle();
-    mostrarAlerta(`Tus ${cuantas} tablas quedaron guardadas en «Mis Cartas».`, '¡Listo! 🎴');
+    mostrarAlerta(`Tus ${cuantas} cartas quedaron guardadas en «Mis Cartas».`, '¡Listo! 🎴');
 });

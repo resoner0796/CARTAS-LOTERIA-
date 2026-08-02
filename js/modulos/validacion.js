@@ -18,6 +18,7 @@ import { sesion, partida } from './estado.js';
 import { mostrarAlerta } from './ui.js';
 import { escaparHtml } from './utiles.js';
 import { fichaEnUso } from './tienda.js';
+import { tablaPorId, pintarTabla } from './tablasPropias.js';
 import { FICHA_POR_DEFECTO } from './config.js';
 import { sonidos } from './audio.js';
 
@@ -43,8 +44,17 @@ export function emitirLoteria() {
     const boardState = {
         cards: partida.seleccionadas,
         chips: {},
-        skin: fichaEnUso()
+        skin: fichaEnUso(),
+        // Las cartas PROPIAS viajan con sus 16 barajas dentro. El anfitrión no
+        // las tiene —son de quien las compró— así que sin esto vería un hueco
+        // justo cuando tiene que decidir si alguien ganó.
+        propias: {}
     };
+
+    partida.seleccionadas.forEach(id => {
+        const propia = tablaPorId(id);
+        if (propia) boardState.propias[id] = propia.cartas;
+    });
 
     document.querySelectorAll('#juegoCartas .carta-juego').forEach(contenedor => {
         const fichas = [...contenedor.querySelectorAll('.ficha')]
@@ -109,12 +119,20 @@ function abrirModalValidacionHost(candidato, numero, total) {
         contenedor.dataset.tabla = tablaId;
         contenedor.onclick = () => elegirTablaGanadora(tablaId);
 
-        const img = document.createElement('img');
-        // Ruta dinámica: en modo Pozo las tablas salen de otra carpeta.
-        img.src = `${partida.rutaCartas}${tablaId}.jpg`;
-        img.className = 'carta-img seleccionada';
-        img.style.pointerEvents = "none";
-        contenedor.appendChild(img);
+        // Si es una carta propia, viene con sus barajas dentro y se reconstruye
+        // aquí: el anfitrión no la tiene guardada, es de quien la compró.
+        const barajasPropias = tablero.propias && tablero.propias[tablaId];
+        if (barajasPropias) {
+            contenedor.classList.add('carta-juego-propia');
+            contenedor.appendChild(pintarTabla({ cartas: barajasPropias }));
+        } else {
+            const img = document.createElement('img');
+            // Ruta dinámica: en modo Pozo las tablas salen de otra carpeta.
+            img.src = `${partida.rutaCartas}${tablaId}.jpg`;
+            img.className = 'carta-img seleccionada';
+            img.style.pointerEvents = "none";
+            contenedor.appendChild(img);
+        }
 
         (tablero.chips?.[tablaId] || []).forEach(pos => {
             const ficha = document.createElement("img");
