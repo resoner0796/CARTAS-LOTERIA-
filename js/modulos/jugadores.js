@@ -11,6 +11,7 @@ import { sesion, partida } from './estado.js';
 import { guardarUsuario } from './sesion.js';
 import { mostrarAlerta } from './ui.js';
 import { escaparHtml, actualizarValor } from './utiles.js';
+import { pintarSaldo } from './monedas.js';
 
 const $ = id => document.getElementById(id);
 
@@ -73,6 +74,9 @@ export function iniciarJugadores(alCambiarSaldo) {
         const mios = Object.values(jugadores).find(j => j.email === sesion.usuario?.email);
         if (mios && sesion.usuario) {
             actualizarValor($("monedas-valor"), mios.monedas);
+            // Las monedas del saldo, una por peso: es la cifra del servidor, así
+            // que aquí es donde la cuadrícula queda con lo que de verdad hay.
+            pintarSaldo($("saldoMonedas"), mios.monedas);
             partida.haApostado = mios.apostado;
             sesion.usuario.monedas = mios.monedas;
             guardarUsuario(sesion.usuario);

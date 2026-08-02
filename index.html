@@ -285,23 +285,9 @@
         <div class="panel-seccion" id="seccionApuestas">
             <div id="apuestasUI">
               <div class="saldo-jugador">
-                <div class="monedas-torres">
-                    <div class="monedas-apiladas">
-                        <img src="assets/imagenes/ui/peso.png" alt="" class="moneda-stack">
-                        <img src="assets/imagenes/ui/peso.png" alt="" class="moneda-stack">
-                        <img src="assets/imagenes/ui/peso.png" alt="" class="moneda-stack">
-                    </div>
-                    <div class="monedas-apiladas">
-                        <img src="assets/imagenes/ui/peso.png" alt="" class="moneda-stack">
-                        <img src="assets/imagenes/ui/peso.png" alt="" class="moneda-stack">
-                        <img src="assets/imagenes/ui/peso.png" alt="" class="moneda-stack">
-                    </div>
-                    <div class="monedas-apiladas">
-                        <img src="assets/imagenes/ui/peso.png" alt="" class="moneda-stack">
-                        <img src="assets/imagenes/ui/peso.png" alt="" class="moneda-stack">
-                        <img src="assets/imagenes/ui/peso.png" alt="" class="moneda-stack">
-                    </div>
-                </div>
+                <!-- Las monedas del saldo las pinta modulos/monedas.js:
+                     hasta 4 filas de 10, según lo que tenga el jugador -->
+                <div class="monedas-torres" id="saldoMonedas"></div>
                 <strong id="monedas-valor">0</strong>
                 <button class="btn-recargar-verde" data-accion="abrir-recarga">Recargar ➕</button>
               </div>

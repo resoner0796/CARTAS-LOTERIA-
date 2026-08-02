@@ -14,7 +14,7 @@ import { emitirLoteria, iniciarValidacion } from './modulos/validacion.js';
 import { verificarSSO } from './modulos/sso.js';
 import { iniciarJugadores, alternarSilencio } from './modulos/jugadores.js';
 import { sesion, partida } from './modulos/estado.js';
-import { pintarMonedas, TOPE_MONEDAS_POZO } from './modulos/monedas.js';
+import { pintarMonedas, pintarSaldo, TOPE_MONEDAS_POZO } from './modulos/monedas.js';
 import { guardarSetFavorito, cargarSetFavorito } from './modulos/favoritos.js';
 import {
     generarCartas, renumerarSeleccion, seleccionarCarta,
@@ -421,6 +421,7 @@ socket.on('estado-sala-restaurado', (estado) => {
         sesion.usuario.monedas = estado.monedas;
         configurarMenu();
         actualizarValor(document.getElementById("monedas-valor"), estado.monedas);
+        pintarSaldo(document.getElementById("saldoMonedas"), estado.monedas);
     }
 });
 
@@ -563,8 +564,8 @@ socket.on('usuario-actualizado', (datosFrescos) => {
     }
 
     // 3. Juego
-    const gameMonedas = document.getElementById("monedas-valor");
-    actualizarValor(gameMonedas, datosFrescos.monedas);
+    actualizarValor(document.getElementById("monedas-valor"), datosFrescos.monedas);
+    pintarSaldo(document.getElementById("saldoMonedas"), datosFrescos.monedas);
 
     // 4. Soundboard
     const menuSonidos = document.getElementById("menuSonidosDesplegable");

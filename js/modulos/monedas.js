@@ -110,8 +110,9 @@ export function pintarMonedas(contenedor, cantidad, tope = TOPE_POR_DEFECTO) {
     const radioDisponible = caja.width > 0 ? (caja.width / 2) - 3 : RADIO_DE_RESERVA;
 
     // Con pocas monedas el montón queda chico y se cuentan de un vistazo; a
-    // partir de unas cuantas se abre del todo y empiezan a solaparse.
-    const radio = Math.min(radioDisponible, 5.2 * Math.sqrt(cuantas));
+    // partir de unas cuantas se abre del todo y empiezan a solaparse. El
+    // multiplicador manda cuánto se despegan: subirlo las separa más.
+    const radio = Math.min(radioDisponible, 6.4 * Math.sqrt(cuantas));
 
     for (let i = 0; i < cuantas; i++) {
         const moneda = document.createElement('img');
@@ -134,5 +135,76 @@ export function pintarMonedas(contenedor, cantidad, tope = TOPE_POR_DEFECTO) {
         moneda.style.transform =
             `translate(calc(-50% + ${x.toFixed(1)}px), calc(-50% + ${y.toFixed(1)}px)) rotate(${(i * 47) % 360}deg)`;
         contenedor.appendChild(moneda);
+    }
+}
+
+
+// ======================================================
+// LAS MONEDAS DEL SALDO
+// ======================================================
+
+/** Diez por fila, cuatro filas: cuarenta monedas es lo que cabe sin apelmazarse. */
+const POR_FILA = 10;
+const FILAS = 4;
+
+/**
+ * Tope de monedas que se enseñan del saldo.
+ *
+ * No es un tope del dinero: alguien con 70 ve cuarenta, y cuando gasta treinta
+ * y le quedan cuarenta las sigue viendo todas. Al bajar de cuarenta, la
+ * cuadrícula empieza a vaciarse de verdad. Así el montón significa algo en el
+ * tramo donde se juega, en vez de crecer sin parar hasta llenar la pantalla.
+ */
+export const TOPE_MONEDAS_SALDO = POR_FILA * FILAS;
+
+/**
+ * Pinta el saldo del jugador como una cuadrícula de monedas.
+ *
+ * Se llenan filas completas de izquierda a derecha: 35 monedas son tres filas de
+ * diez y una de cinco. Las de una misma fila se solapan un poco, como monedas
+ * puestas en línea sobre la mesa.
+ */
+export function pintarSaldo(contenedor, cantidad) {
+    if (!contenedor) return;
+
+    const valor = Math.max(0, Math.floor(Number(cantidad) || 0));
+    const cuantas = Math.min(valor, TOPE_MONEDAS_SALDO);
+
+    if (contenedor.dataset.saldo === String(cuantas)) return;
+    const antes = Number(contenedor.dataset.saldo || 0);
+    contenedor.dataset.saldo = String(cuantas);
+
+    contenedor.innerHTML = '';
+    if (cuantas === 0) return;
+
+    for (let fila = 0; fila < FILAS; fila++) {
+        const enEstaFila = Math.min(POR_FILA, cuantas - fila * POR_FILA);
+        if (enEstaFila <= 0) break;
+
+        const linea = document.createElement('div');
+        linea.className = 'fila-monedas';
+
+        for (let i = 0; i < enEstaFila; i++) {
+            const moneda = document.createElement('img');
+            moneda.src = IMAGEN;
+            moneda.alt = '';
+            moneda.className = 'moneda-saldo';
+            // Las de la derecha por encima: así la fila se lee como un abanico
+            // apoyado, no como piezas sueltas.
+            moneda.style.zIndex = String(i + 1);
+            // El brillo recorre la fila en vez de encenderse a la vez.
+            moneda.style.animationDelay = `${(fila * POR_FILA + i) * 0.06}s`;
+            linea.appendChild(moneda);
+        }
+        contenedor.appendChild(linea);
+    }
+
+    // Al cobrar algo, la cuadrícula da un golpecito. Al gastar no: ahí ya hay
+    // monedas volando hacia el bote y dos animaciones a la vez es ruido.
+    if (cuantas > antes) {
+        contenedor.classList.remove('saldo-sube');
+        void contenedor.offsetWidth;
+        contenedor.classList.add('saldo-sube');
+        setTimeout(() => contenedor.classList.remove('saldo-sube'), 450);
     }
 }
