@@ -9,17 +9,14 @@
 // app.js. Cada módulo se ocupa de lo suyo.
 //
 // ⚠️ No confundir los dos conjuntos, que es la trampa más fácil del proyecto:
-//   TABLA  = lo que elige el jugador. 53 (o 20 en modo Pozo).
-//   CARTA  = lo que se canta. Siempre 54, salga el modo que salga.
+//   CARTA  = la rejilla de 4×4 que elige el jugador. Las manda el servidor.
+//   BARAJA = cada una de las que se cantan. Siempre 54, salga el modo que salga.
 
 import { socket } from './socket.js';
 import { partida } from './estado.js';
 import { cambiarPantalla, mostrarConfirmacion } from './ui.js';
 import { fichaEnUso } from './tienda.js';
 import { esPropia, tablaPorId, pintarTabla } from './tablasPropias.js';
-
-/** Cuántas tablas se ofrecen para elegir, según el modo. */
-const TABLAS_POR_MODO = { pozo: 20, porDefecto: 53 };
 
 /** Tope de tablas por jugador. Más no caben en la mesa. */
 const MAXIMO_TABLAS = 4;
@@ -34,42 +31,40 @@ const $ = id => document.getElementById(id);
 // ==================== ELEGIR TABLAS ====================
 
 /**
- * Pinta todas las tablas disponibles para elegir.
+ * Pinta todas las cartas disponibles para elegir.
  *
- * Los nombres de archivo cambian con el modo: Pozo usa un set aparte SIN ceros
- * (`1.jpg`) y el resto va con ceros (`01.jpg`). Equivocarse aquí no da error:
- * pinta tablas rotas o que no son.
+ * Las manda el servidor en `info-sala`, ya equilibradas y con las que le tocan
+ * al modo: en el Pozo son veinte de ocho casillas y en el resto sesenta llenas.
+ * Aquí no se decide ni cuántas hay ni qué llevan.
+ *
+ * Antes cada carta era un JPG y esta función contaba hasta 53 componiendo
+ * nombres de archivo. Ahora una carta son sus dieciséis barajas y se pinta como
+ * una rejilla, igual que las compradas.
  */
 export function generarCartas() {
     const contenedor = $("contenedorCartas");
     if (!contenedor) return;
     contenedor.innerHTML = "";
 
-    const total = partida.modo === 'pozo' ? TABLAS_POR_MODO.pozo : TABLAS_POR_MODO.porDefecto;
-
-    for (let i = 1; i <= total; i++) {
-        const id = partida.modo === 'pozo' ? String(i) : String(i).padStart(2, '0');
-
-        const img = document.createElement("img");
-        img.src = `${partida.rutaCartas}${id}.jpg`;
-        img.classList.add("carta-img");
-        img.dataset.id = id;
-        img.onclick = () => {
-            seleccionarCarta(img);
+    partida.cartasSistema.forEach(carta => {
+        const rejilla = pintarTabla(carta, { className: 'carta-img', perezoso: true });
+        rejilla.dataset.id = carta.id;
+        rejilla.onclick = () => {
+            seleccionarCarta(rejilla);
             actualizarTextoBotonApuesta();
         };
 
-        // La tabla va envuelta para poder colgarle encima el número de orden:
-        // un <img> no admite ::before ni ::after.
+        // La carta va envuelta para poder colgarle encima el número de orden:
+        // la insignia se posiciona contra la envoltura, no contra la rejilla.
         const envoltura = document.createElement("div");
         envoltura.className = "carta-seleccion";
         const insignia = document.createElement("span");
         insignia.className = "orden-carta";
 
-        envoltura.appendChild(img);
+        envoltura.appendChild(rejilla);
         envoltura.appendChild(insignia);
         contenedor.appendChild(envoltura);
-    }
+    });
 }
 
 /**
@@ -159,10 +154,9 @@ export function actualizarTextoBotonApuesta() {
 /**
  * Pone en la mesa las cartas elegidas, listas para marcar.
  *
- * Conviven dos clases de carta y se pintan distinto: las 53 de siempre son una
- * imagen entera, y una carta propia es una rejilla de 16 barajas construida al
- * vuelo. A partir de aquí las dos se comportan igual —se marcan con fichas y
- * viajan al anfitrión— así que la diferencia se acaba en esta función.
+ * Las del sistema y las compradas se pintan exactamente igual: las dos son una
+ * lista de barajas, y `tablaPorId()` resuelve el id venga de donde venga. Antes
+ * había dos ramas aquí, una para el JPG y otra para la rejilla.
  */
 export function montarMesa() {
     const mesa = $("juegoCartas");
@@ -174,13 +168,10 @@ export function montarMesa() {
         contenedor.classList.add("carta-juego");
         contenedor.dataset.id = id;
 
-        const propia = tablaPorId(id);
-        if (propia) {
-            contenedor.classList.add("carta-juego-propia");
-            contenedor.appendChild(pintarTabla(propia));
-        } else {
-            contenedor.innerHTML = `<img src="${partida.rutaCartas}${id}.jpg" class="carta-img seleccionada">`;
-        }
+        const carta = tablaPorId(id);
+        if (!carta) return;          // id que no existe: mejor nada que un hueco roto
+        contenedor.classList.add("carta-juego-rejilla");
+        contenedor.appendChild(pintarTabla(carta));
 
         contenedor.onclick = e => marcarFicha(e, contenedor);
         mesa.appendChild(contenedor);

@@ -45,15 +45,16 @@ export function emitirLoteria() {
         cards: partida.seleccionadas,
         chips: {},
         skin: fichaEnUso(),
-        // Las cartas PROPIAS viajan con sus 16 barajas dentro. El anfitrión no
-        // las tiene —son de quien las compró— así que sin esto vería un hueco
-        // justo cuando tiene que decidir si alguien ganó.
+        // Cada carta viaja con sus 16 barajas dentro, para que el anfitrión
+        // pueda pintarla. El SERVIDOR las reemplaza por las suyas antes de que
+        // nadie las vea: lo que se manda desde aquí sirve para dibujar, nunca
+        // para decidir quién gana.
         propias: {}
     };
 
     partida.seleccionadas.forEach(id => {
-        const propia = tablaPorId(id);
-        if (propia) boardState.propias[id] = propia.cartas;
+        const carta = tablaPorId(id);
+        if (carta) boardState.propias[id] = carta.cartas;
     });
 
     document.querySelectorAll('#juegoCartas .carta-juego').forEach(contenedor => {
@@ -119,20 +120,14 @@ function abrirModalValidacionHost(candidato, numero, total) {
         contenedor.dataset.tabla = tablaId;
         contenedor.onclick = () => elegirTablaGanadora(tablaId);
 
-        // Si es una carta propia, viene con sus barajas dentro y se reconstruye
-        // aquí: el anfitrión no la tiene guardada, es de quien la compró.
-        const barajasPropias = tablero.propias && tablero.propias[tablaId];
-        if (barajasPropias) {
-            contenedor.classList.add('carta-juego-propia');
-            contenedor.appendChild(pintarTabla({ cartas: barajasPropias }));
-        } else {
-            const img = document.createElement('img');
-            // Ruta dinámica: en modo Pozo las tablas salen de otra carpeta.
-            img.src = `${partida.rutaCartas}${tablaId}.jpg`;
-            img.className = 'carta-img seleccionada';
-            img.style.pointerEvents = "none";
-            contenedor.appendChild(img);
-        }
+        // Las barajas de cada carta las pone el SERVIDOR en `propias`, sea del
+        // sistema o comprada. Es a propósito que no se lean de aquí: el
+        // anfitrión valida con lo que dice el servidor, no con lo que le mande
+        // el navegador del reclamante.
+        const barajas = tablero.propias && tablero.propias[tablaId];
+        if (!barajas) return;
+        contenedor.classList.add('carta-juego-rejilla');
+        contenedor.appendChild(pintarTabla({ cartas: barajas }));
 
         (tablero.chips?.[tablaId] || []).forEach(pos => {
             const ficha = document.createElement("img");
@@ -268,7 +263,9 @@ socket.on("ganadores-multiples", ({ ganadores, premio, prueba, pozoGanado, ganad
     // La ruta viaja DENTRO de la prueba porque el modal vive en ui.js y no
     // conoce el estado de la partida. En modo Pozo las tablas salen de otra
     // carpeta, así que sin esto la tabla ganadora saldría rota.
-    mostrarAlerta(msg, "¡RESULTADO FINAL!", prueba && { ...prueba, ruta: partida.rutaCartas });
+    // La prueba llega del servidor con las barajas de la carta ganadora dentro,
+    // así que ya no hace falta pasarle una carpeta de dónde sacar la imagen.
+    mostrarAlerta(msg, "¡RESULTADO FINAL!", prueba);
 
     sonidos.aplausos();
     lanzarConfeti();

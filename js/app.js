@@ -390,19 +390,14 @@ socket.on("rol-asignado", ({ host }) => {
 socket.on('info-sala', (data) => {
     partida.modo = data.modo;
     partida.costoCarta = data.costo;
+    // Las cartas del modo, con sus barajas. Vienen equilibradas del servidor y
+    // se reemplazan enteras: las de un modo no valen para otro —el Pozo usa
+    // cartas de ocho casillas— y arrastrar las anteriores pintaría lo que no es.
+    partida.cartasSistema = data.cartas || [];
 
     // Actualizar Título
     document.getElementById("tituloSalaActual").innerHTML = 
         `Sala: ${escaparHtml(partida.sala)} <br><span style="font-size:0.8rem; color:gold;">${escaparHtml(partida.modo).toUpperCase()} ($${partida.costoCarta})</span>`;
-
-    // --- LÓGICA DE RUTAS ---
-    if (partida.modo === 'pozo') {
-        // Si es Pozo, usamos la carpeta especial y solo 20 cartas
-        partida.rutaCartas = 'assets/imagenes/cartas/cuatro/'; 
-    } else {
-        // Si es otro, usamos la carpeta normal
-        partida.rutaCartas = 'assets/imagenes/cartas/'; 
-    }
 
     if(btnApostar && partida.seleccionadas.length === 0) {
         btnApostar.innerText = "Selecciona cartas";

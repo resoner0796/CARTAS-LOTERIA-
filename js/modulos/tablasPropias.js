@@ -89,11 +89,22 @@ export function esPropia(id) {
     return typeof id === 'string' && id.startsWith(PREFIJO_PROPIA);
 }
 
-/** La carta propia con ese id, o null. Se usa para pintarla en la mesa. */
+/**
+ * Las barajas de una carta, sea de quien sea.
+ *
+ * Devuelve `{ id, cartas: [16] }` o null. Es el único sitio donde se resuelve un
+ * id a sus barajas, y por eso lo llaman la mesa, la validación y la prueba de
+ * victoria sin tener que saber de dónde salió la carta.
+ *
+ * Las compradas llevan prefijo y están en memoria; las del sistema llegaron en
+ * `info-sala` y son las mismas para todos.
+ */
 export function tablaPorId(id) {
-    if (!esPropia(id)) return null;
-    const soloId = id.slice(PREFIJO_PROPIA.length);
-    return misTablas.find(t => t.id === soloId) || null;
+    if (esPropia(id)) {
+        const soloId = id.slice(PREFIJO_PROPIA.length);
+        return misTablas.find(t => t.id === soloId) || null;
+    }
+    return partida.cartasSistema.find(t => t.id === String(id)) || null;
 }
 
 /** Pide las tablas al servidor. Se llama al entrar y tras comprar. */
@@ -127,6 +138,12 @@ export function pintarTabla(tabla, opciones = {}) {
             // Con ceros: las barajas van de 01 a 54, como las que se cantan.
             img.src = `assets/imagenes/barajas/${String(carta).padStart(2, '0')}.png`;
             img.alt = '';
+            // La pantalla de selección pinta 60 cartas de 16 casillas: son 960
+            // imágenes de golpe. Son solo 54 archivos distintos —el navegador
+            // los reutiliza— pero decodificarlos todos a la vez atasca el móvil
+            // varios segundos. Perezosas, solo se decodifica lo que se ve.
+            // En la mesa NO se usa: ahí son cuatro cartas y tienen que estar.
+            if (opciones.perezoso) img.loading = 'lazy';
             casilla.appendChild(img);
         }
         rejilla.appendChild(casilla);

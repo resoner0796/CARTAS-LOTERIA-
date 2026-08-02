@@ -55,12 +55,16 @@ export const partida = {
     /** Lo que cuesta cada tabla en este modo. */
     costoCarta: 1,
     /**
-     * Carpeta de donde salen las tablas del jugador.
+     * Las cartas que ofrece el sistema en este modo, con sus barajas.
      *
-     * ⚠️ El modo Pozo usa un set distinto (`cartas/cuatro/`, sin ceros en el
-     * nombre). Leer la ruta equivocada no da error: pinta tablas que no son.
+     * Llegan en `info-sala`, generadas y equilibradas por el servidor. Cada una
+     * es `{ id, cartas: [16 números o null] }`, no una imagen: aquí se pintan
+     * como una rejilla de barajas.
+     *
+     * ⚠️ Cada modo trae las suyas y no son intercambiables — el Pozo usa cartas
+     * de ocho casillas. La lista se reemplaza entera al entrar en una sala.
      */
-    rutaCartas: 'assets/imagenes/cartas/',
+    cartasSistema: [],
     /** Si ya se pagó la apuesta de esta ronda. */
     haApostado: false,
     /** Bote aparte del modo Pozo, que persiste entre partidas. */

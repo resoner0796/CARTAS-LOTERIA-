@@ -64,11 +64,11 @@ function refsModal() {
 /**
  * Aviso de un solo botón.
  *
- * `prueba` es opcional y sirve para enseñar la tabla ganadora con sus fichas
+ * `prueba` es opcional y sirve para enseñar la carta ganadora con sus fichas
  * encima, para que cualquiera pueda compararla con el historial. Trae
- * `{ tabla, fichas, skin, ruta }`; la RUTA viaja dentro del objeto en vez de
- * leerse de una global, que es lo que mantiene a este módulo independiente del
- * estado de la partida (en modo Pozo las tablas salen de otra carpeta).
+ * `{ barajas, fichas, skin }`: las BARAJAS viajan dentro del objeto, puestas por
+ * el servidor, que es lo que mantiene a este módulo independiente del estado de
+ * la partida.
  */
 export function mostrarAlerta(mensaje, titulo = "Aviso del Sistema", prueba = null) {
     const m = refsModal();
@@ -80,7 +80,7 @@ export function mostrarAlerta(mensaje, titulo = "Aviso del Sistema", prueba = nu
     const zonaCarta = document.getElementById("modalCartaGanadora");
     if (zonaCarta) {
         zonaCarta.innerHTML = "";
-        if (prueba && prueba.tabla) {
+        if (prueba && prueba.barajas) {
             const rotulo = document.createElement("p");
             rotulo.className = "prueba-titulo";
             rotulo.textContent = "Tabla ganadora:";
@@ -88,35 +88,28 @@ export function mostrarAlerta(mensaje, titulo = "Aviso del Sistema", prueba = nu
             const marco = document.createElement("div");
             marco.className = "prueba-tabla";
 
-            if (prueba.barajas) {
-                // Carta propia: viaja con sus 16 barajas porque nadie más de la
-                // sala la tiene. Se pinta la rejilla en lugar de una imagen.
-                //
-                // Se construye aquí a mano en vez de llamar a tablasPropias.js
-                // a propósito: este módulo no importa nada del juego, y hacerlo
-                // por una rejilla de 16 casillas lo ataría a media aplicación.
-                const rejilla = document.createElement("div");
-                rejilla.className = "tabla-generada";
-                prueba.barajas.forEach(baraja => {
-                    const casilla = document.createElement("div");
-                    casilla.className = "casilla-tabla";
-                    if (baraja === null || baraja === undefined) {
-                        casilla.classList.add("casilla-vacia");
-                    } else {
-                        const b = document.createElement("img");
-                        b.src = `assets/imagenes/barajas/${String(baraja).padStart(2, '0')}.png`;
-                        b.alt = "";
-                        casilla.appendChild(b);
-                    }
-                    rejilla.appendChild(casilla);
-                });
-                marco.appendChild(rejilla);
-            } else {
-                const img = document.createElement("img");
-                img.src = `${prueba.ruta || 'assets/imagenes/cartas/'}${prueba.tabla}.jpg`;
-                img.alt = "";
-                marco.appendChild(img);
-            }
+            // La carta ganadora viaja con sus 16 barajas, puestas por el
+            // servidor, y aquí se pinta la rejilla.
+            //
+            // Se construye a mano en vez de llamar a tablasPropias.js a
+            // propósito: este módulo no importa nada del juego, y hacerlo por
+            // una rejilla de 16 casillas lo ataría a media aplicación.
+            const rejilla = document.createElement("div");
+            rejilla.className = "tabla-generada";
+            (prueba.barajas || []).forEach(baraja => {
+                const casilla = document.createElement("div");
+                casilla.className = "casilla-tabla";
+                if (baraja === null || baraja === undefined) {
+                    casilla.classList.add("casilla-vacia");
+                } else {
+                    const b = document.createElement("img");
+                    b.src = `assets/imagenes/barajas/${String(baraja).padStart(2, '0')}.png`;
+                    b.alt = "";
+                    casilla.appendChild(b);
+                }
+                rejilla.appendChild(casilla);
+            });
+            marco.appendChild(rejilla);
 
             (prueba.fichas || []).forEach(pos => {
                 const ficha = document.createElement("img");
