@@ -287,6 +287,13 @@ los de la sala, y la sesión vive en `localStorage`.
   el CSS va con el código.
   ⚠️ Al cambiar algo que ya esté cacheado, **sube `CACHE_NAME`**: es lo que hace
   que la caché anterior se borre en la siguiente visita.
+- **Una carta propia también hay que avisarla al servidor.** Al añadirlas se
+  pensó que no hacía falta, porque no se apartan para nadie: son de una sola
+  persona. Pero el servidor cuenta `jugador.cartas` para saber cuánto cobrar en
+  la apuesta, y ese array se llena justo con ese aviso. Sin él veía cero cartas
+  y salía **en silencio**, sin cobrar, sin sumar al bote y sin dejar rastro en la
+  consola. Lo que cambia con las propias no es si se avisan, sino si se
+  DIFUNDEN: las 53 se apartan para que nadie repita, y las propias no.
 - **El guión de Socket.IO se sirve desde el backend.** Si está dormido, `io` no
   existe y la excepción se llevaba por delante todo `app.js`. Hay una guarda.
 - **…y esa guarda escondió que el juego arrancaba sin conexión.** Al pasar

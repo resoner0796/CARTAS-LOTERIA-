@@ -482,7 +482,25 @@ socket.on("corre", () => sonidos.corre());
 
 socket.on("juego-detenido", () => {
     if (partida.soyHost) sonidos.pararCorre();
+    ponerBotonPausa(true);
 });
+
+socket.on("juego-reanudado", () => ponerBotonPausa(false));
+socket.on("juego-iniciado", () => ponerBotonPausa(false));
+
+/**
+ * El botón del anfitrión alterna entre Pausa y Reanudar.
+ *
+ * Antes solo decía «Detener» y cortaba el canto sin vuelta atrás: para seguir
+ * había que reiniciar la partida entera, y con ella la baraja y el historial.
+ */
+function ponerBotonPausa(enPausa) {
+    const btn = document.getElementById("btnDetenerJuego");
+    if (!btn) return;
+    btn.textContent = enPausa ? "Reanudar" : "Pausa";
+    btn.dataset.accion = enPausa ? "reanudar-juego" : "detener-juego";
+    btn.classList.toggle("btn-reanudar", enPausa);
+}
 
 // ======================================================
 // LOTERÍA (GANADORES)
@@ -693,6 +711,7 @@ const ACCIONES = {
     'barajear':               () => socket.emit('barajear', partida.sala),
     'iniciar-juego':          () => iniciarJuegoConVelocidad(),
     'detener-juego':          () => socket.emit('detener-juego', partida.sala),
+    'reanudar-juego':         () => socket.emit('reanudar-juego', partida.sala),
     'cambiar-cartas':         () => cambiarCartas(),
     'gritar-loteria':         () => emitirLoteria(),
     'alternar-sonidos':       () => toggleMenuSonidos(sesion.usuario, partida.sala),

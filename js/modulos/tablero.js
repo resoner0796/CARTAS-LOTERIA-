@@ -199,9 +199,16 @@ export function alternarCartaPropia(id) {
 
     if (yaEsta) {
         partida.seleccionadas = partida.seleccionadas.filter(c => c !== id);
+        socket.emit("deseleccionar-carta", { carta: id, sala: partida.sala });
     } else {
         if (partida.seleccionadas.length >= MAXIMO_TABLAS) return;
         partida.seleccionadas.push(id);
+        // Hay que avisar igual que con las de siempre. El servidor NO las aparta
+        // para los demás —son de una sola persona— pero necesita saber que las
+        // tienes: es lo que cuenta para cobrar la apuesta. Sin este aviso el
+        // servidor veía cero cartas y salía en silencio, sin cobrar ni sumar al
+        // bote y sin dejar rastro en la consola.
+        socket.emit("seleccionar-carta", { carta: id, sala: partida.sala });
     }
 
     const btnIniciar = $("btnIniciar");
@@ -326,6 +333,27 @@ export function resetearTablero() {
 
 // ==================== LO QUE MANDA EL SERVIDOR ====================
 
+/**
+ * Enciende en la mesa las barajas iguales a la que acaban de cantar.
+ *
+ * Solo vale para las cartas PROPIAS: en esas cada casilla es una imagen suelta
+ * con su número, así que se puede señalar. Las 53 de siempre son una imagen
+ * entera y ahí no hay nada que buscar — el jugador la localiza a ojo, como en
+ * la mesa de verdad.
+ *
+ * Se resalta, NO se marca: poner la ficha sigue siendo cosa de quien juega. Si
+ * se marcara solo, no habría partida.
+ */
+function resaltarBarajaCantada(numeroConCeros) {
+    document.querySelectorAll('#juegoCartas .casilla-tabla img').forEach(img => {
+        if (!img.src.endsWith(`/${numeroConCeros}.png`)) return;
+        const casilla = img.parentElement;
+        casilla.classList.remove('baraja-cantada');
+        void casilla.offsetWidth;          // reinicia la animación
+        casilla.classList.add('baraja-cantada');
+    });
+}
+
 socket.on("carta-cantada", (cartaId) => {
     // Las cartas cantadas SIEMPRE llevan ceros y salen de barajas/, sin importar
     // el modo. Es el conjunto de 54, distinto del de las tablas.
@@ -341,6 +369,8 @@ socket.on("carta-cantada", (cartaId) => {
     partida.historialIds.unshift(id);
 
     new Audio(`assets/audios/${id}.mp3`).play().catch(() => {});
+
+    resaltarBarajaCantada(id);
 });
 
 socket.on("cartas-desactivadas", ids => {

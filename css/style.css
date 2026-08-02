@@ -2370,3 +2370,31 @@ textarea::placeholder { color: rgba(255,255,255,0.6); }
     z-index: 5;
 }
 .mi-tabla-elegida .orden-mi-tabla { display: flex; }
+
+/* --- La baraja que acaban de cantar, si la tienes ---
+   Solo funciona en las cartas propias: ahí cada casilla es una imagen con su
+   número y se puede señalar. En las 53 de siempre la carta es una imagen entera
+   y no hay nada que buscar dentro.
+
+   Se RESALTA, no se marca: poner la ficha sigue siendo cosa de quien juega. */
+
+@keyframes avisoBaraja {
+    0%   { box-shadow: inset 0 0 0 3px rgba(255, 235, 59, 0);   transform: scale(1); }
+    25%  { box-shadow: inset 0 0 0 3px rgba(255, 235, 59, 1);   transform: scale(1.06); }
+    100% { box-shadow: inset 0 0 0 3px rgba(255, 235, 59, 0);   transform: scale(1); }
+}
+.casilla-tabla.baraja-cantada {
+    animation: avisoBaraja 2.2s ease-out;
+    position: relative;
+    z-index: 3;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .casilla-tabla.baraja-cantada { animation: none; box-shadow: inset 0 0 0 3px rgba(255,235,59,0.9); }
+}
+
+/* El botón del anfitrión cambia de color al pasar a Reanudar, para que se note
+   de un vistazo que la partida está parada. */
+#btnDetenerJuego.btn-reanudar {
+    background: linear-gradient(to bottom, #66bb6a, #2e7d32) !important;
+}
