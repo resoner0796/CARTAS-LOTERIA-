@@ -511,6 +511,14 @@ los de la sala, y la sesión vive en `localStorage`.
   y no contra el borde exterior, porque es sobre el padding box donde el
   navegador resuelve un `left:%` — medido, la ficha cae a menos de 1px de donde
   se picó.
+- **El `aspect-ratio` de la carta separaba las filas.** `.tabla-generada` tenía
+  `aspect-ratio: 4/6.35` y las filas en `1fr`. Ese ratio pedía más altura de la
+  que necesitan cuatro casillas, y las filas se repartían el sobrante: el hueco
+  declarado era de 3px y el real entre filas medía **8,4px**, mientras que entre
+  columnas sí eran 3. De lado se veía bien y en el cruce no, que es exactamente
+  el síntoma que se notaba. Sin `aspect-ratio` y con las filas en `auto`, la
+  altura la pone el contenido —cada casilla ya sabe su proporción— y el hueco es
+  igual en las dos direcciones. Hay una prueba que lo mide.
 - **A `.tabla-generada` le faltaba `box-sizing: border-box`.** Su margen blanco
   (9px×2) y su filo (2px×2) se sumaban al `width:100%` y desbordaban el hueco
   22px. En el tablero del móvil, con cuatro cartas, el espacio entre ellas medía

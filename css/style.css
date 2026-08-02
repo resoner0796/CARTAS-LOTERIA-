@@ -2263,7 +2263,9 @@ textarea::placeholder { color: rgba(255,255,255,0.6); }
        menos de 12px el efecto queda escondido detrás de las barajas y la carta
        parece la de antes con otro color. */
     padding: 12px;
-    border-radius: 16px;
+    /* Sin esquinas redondeadas: una carta de lotería es un rectángulo, y el
+       redondeo la hacía parecer una tarjeta de aplicación. */
+    border-radius: 0;
     /* Filo BLANCO, no dorado. El dorado competía con las barajas, que ya son
        amarillas y rojas; en blanco las deja ser a ellas el color de la carta. */
     border: 3px solid rgba(255, 255, 255, 0.9);
@@ -2279,7 +2281,14 @@ textarea::placeholder { color: rgba(255,255,255,0.6); }
            truco que le da volumen al canto del cristal. */
         inset 0 1px 0 rgba(255, 255, 255, 0.95),
         inset 0 -2px 5px rgba(90, 110, 140, 0.18);
-    aspect-ratio: 4 / 6.35;     /* 4 columnas × 4 casillas de 1:1.587 */
+    /* ⚠️ SIN `aspect-ratio`. Lo llevaba (4/6.35) y forzaba una altura mayor de
+       la que necesitan cuatro filas de casillas: como las filas eran `1fr` se
+       repartían ese sobrante, y aunque el hueco declarado es de 3px, el real
+       entre filas medía 8,4px. De lado se veía bien y en el cruce no, que es
+       justo el síntoma que se notaba.
+
+       Sin él, las filas toman el alto de su contenido —cada casilla ya sabe su
+       proporción— y el hueco es el mismo en las dos direcciones. */
     width: 100%;
     /* Las fichas cuelgan de aquí y se colocan en porcentaje: este es el
        elemento contra el que se mide, así que es el que tiene que anclarlas. */
@@ -2291,17 +2300,16 @@ textarea::placeholder { color: rgba(255,255,255,0.6); }
 }
 
 .casilla-tabla {
-    /* Sobre el marco esmerilado, la casilla va casi opaca: es donde vive la
-       baraja y tiene que leerse sin que el cristal la apague. */
-    background: rgba(255, 255, 255, 0.96);
-    border-radius: 3px;
+    background: #fff;
+    /* Ni esquinas redondeadas ni filete: los bordes son cosa de la carta, no de
+       cada baraja. Con filete negro en las 16 la carta parecía una cuadrícula
+       de recortes en vez de una carta impresa. */
+    border-radius: 0;
     overflow: hidden;
     display: flex;
     align-items: center;
     justify-content: center;
-    /* El filete negro alrededor de cada baraja es lo que le da el aire de tabla
-       impresa. Sin él las cartas se funden unas con otras y parece un collage. */
-    border: 1px solid #111;
+    border: 0;
     box-sizing: border-box;
 }
 .casilla-tabla img {
@@ -2431,7 +2439,8 @@ textarea::placeholder { color: rgba(255,255,255,0.6); }
 /* Las cuatro filas miden lo mismo, pase lo que pase dentro.
    Sin esto, una fila con imágenes crecía más que una con casillas vacías y las
    barajas salían estiradas: el grid repartía el alto según el contenido. */
-.tabla-generada { grid-template-rows: repeat(4, 1fr); }
+/* Filas al alto de su contenido, no repartidas: ver la nota del aspect-ratio. */
+.tabla-generada { grid-template-rows: repeat(4, auto); }
 
 /* La casilla tiene la MISMA proporción que una baraja (252×400 = 1:1.587). Con
    cualquier otra, la imagen o se deforma o deja franjas blancas: estaba en
@@ -2500,7 +2509,9 @@ textarea::placeholder { color: rgba(255,255,255,0.6); }
 
 /* Una carta propia en la mesa ocupa el mismo sitio que una de las de siempre.
    La rejilla se estira a su contenedor y las fichas se ponen encima igual. */
-.carta-juego-rejilla .tabla-generada { width: 100%; height: 100%; border-width: 2px; }
+/* Sin `height: 100%`: la altura la pone el contenido, que es lo que mantiene el
+   hueco entre filas igual al de entre columnas. */
+.carta-juego-rejilla .tabla-generada { width: 100%; border-width: 2px; }
 
 /* --- Elegir cartas propias al tacto ---
    Mismo gesto que en la pantalla de selección: se toca la carta y aparece el

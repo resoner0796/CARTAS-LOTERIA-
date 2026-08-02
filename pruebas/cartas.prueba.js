@@ -487,6 +487,20 @@ module.exports = async function cartas(navegador, url) {
         enMovil.horizontal >= 8);
     r.cierto('y espacio vertical también', enMovil.vertical >= 8);
 
+    // El hueco DENTRO de la carta tiene que ser el mismo en las dos
+    // direcciones. Con `aspect-ratio` en la rejilla y filas `1fr`, el sobrante
+    // de altura se repartía entre las filas: 3px de lado y 8,4px en el cruce.
+    const dentro = await pagina.evaluate(() => {
+        const c = [...document.querySelectorAll('#juegoCartas .tabla-generada .casilla-tabla')]
+            .slice(0, 5).map(x => x.getBoundingClientRect());
+        return {
+            columnas: Math.round(c[1].left - (c[0].left + c[0].width)),
+            filas: Math.round(c[4].top - (c[0].top + c[0].height))
+        };
+    });
+    r.igual('dentro de la carta, el hueco entre columnas', dentro.columnas, 3);
+    r.igual('es el mismo que entre filas', dentro.filas, dentro.columnas);
+
     r.cierto('sin errores de JS', errores.length === 0);
     if (errores.length) console.log('       ' + errores.join('\n       '));
 
