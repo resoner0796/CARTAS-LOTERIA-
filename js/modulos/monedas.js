@@ -143,9 +143,15 @@ export function pintarMonedas(contenedor, cantidad, tope = TOPE_POR_DEFECTO) {
 // LAS MONEDAS DEL SALDO
 // ======================================================
 
-/** Diez por fila, cuatro filas: cuarenta monedas es lo que cabe sin apelmazarse. */
-const POR_FILA = 10;
-const FILAS = 4;
+/**
+ * Diez por columna, cuatro columnas.
+ *
+ * Las monedas se apilan HACIA ARRIBA dentro de cada columna, como pilas puestas
+ * en la mesa una al lado de otra. Se probó en filas horizontales y no servía:
+ * cuarenta monedas en fila ocupaban demasiado ancho y no se leían como dinero.
+ */
+const POR_COLUMNA = 10;
+const COLUMNAS = 4;
 
 /**
  * Tope de monedas que se enseñan del saldo.
@@ -155,14 +161,17 @@ const FILAS = 4;
  * cuadrícula empieza a vaciarse de verdad. Así el montón significa algo en el
  * tramo donde se juega, en vez de crecer sin parar hasta llenar la pantalla.
  */
-export const TOPE_MONEDAS_SALDO = POR_FILA * FILAS;
+export const TOPE_MONEDAS_SALDO = POR_COLUMNA * COLUMNAS;
+
+/** Tope de monedas que vuelan a la vez. Más que esto no se distinguen. */
+const MAXIMO_VOLANDO_SALDO = 8;
 
 /**
- * Pinta el saldo del jugador como una cuadrícula de monedas.
+ * Pinta el saldo del jugador como pilas de monedas.
  *
- * Se llenan filas completas de izquierda a derecha: 35 monedas son tres filas de
- * diez y una de cinco. Las de una misma fila se solapan un poco, como monedas
- * puestas en línea sobre la mesa.
+ * Se llenan columnas completas de izquierda a derecha: 35 monedas son tres pilas
+ * de diez y una de cinco. Dentro de cada pila se solapan, como monedas de verdad
+ * una encima de otra.
  */
 export function pintarSaldo(contenedor, cantidad) {
     if (!contenedor) return;
@@ -177,26 +186,26 @@ export function pintarSaldo(contenedor, cantidad) {
     contenedor.innerHTML = '';
     if (cuantas === 0) return;
 
-    for (let fila = 0; fila < FILAS; fila++) {
-        const enEstaFila = Math.min(POR_FILA, cuantas - fila * POR_FILA);
-        if (enEstaFila <= 0) break;
+    for (let col = 0; col < COLUMNAS; col++) {
+        const enEstaPila = Math.min(POR_COLUMNA, cuantas - col * POR_COLUMNA);
+        if (enEstaPila <= 0) break;
 
-        const linea = document.createElement('div');
-        linea.className = 'fila-monedas';
+        const pila = document.createElement('div');
+        pila.className = 'pila-monedas';
 
-        for (let i = 0; i < enEstaFila; i++) {
+        for (let i = 0; i < enEstaPila; i++) {
             const moneda = document.createElement('img');
             moneda.src = IMAGEN;
             moneda.alt = '';
             moneda.className = 'moneda-saldo';
-            // Las de la derecha por encima: así la fila se lee como un abanico
-            // apoyado, no como piezas sueltas.
-            moneda.style.zIndex = String(i + 1);
-            // El brillo recorre la fila en vez de encenderse a la vez.
-            moneda.style.animationDelay = `${(fila * POR_FILA + i) * 0.06}s`;
-            linea.appendChild(moneda);
+            // Las de abajo por encima: es como se ve una pila apoyada, con la
+            // última puesta tapando el canto de la anterior.
+            moneda.style.zIndex = String(POR_COLUMNA - i);
+            // El brillo recorre las pilas en vez de encenderse todas a la vez.
+            moneda.style.animationDelay = `${(col * POR_COLUMNA + i) * 0.05}s`;
+            pila.appendChild(moneda);
         }
-        contenedor.appendChild(linea);
+        contenedor.appendChild(pila);
     }
 
     // Al cobrar algo, la cuadrícula da un golpecito. Al gastar no: ahí ya hay
@@ -207,4 +216,62 @@ export function pintarSaldo(contenedor, cantidad) {
         contenedor.classList.add('saldo-sube');
         setTimeout(() => contenedor.classList.remove('saldo-sube'), 450);
     }
+}
+
+/**
+ * Manda volando al bote las últimas monedas de la pila del saldo.
+ *
+ * Antes las monedas salían del NÚMERO del saldo, que era lo único que había.
+ * Ahora que el saldo son monedas de verdad, salen de las de arriba de las pilas
+ * y esas desaparecen: se ve de dónde sale el dinero, no aparece de la nada.
+ *
+ * Las que vuelan son clones colocados encima; la original se esconde en el acto
+ * para que la pila baje ya, sin esperar a que termine el viaje. El saldo bueno
+ * lo manda el servidor un momento después y vuelve a pintar la cuadrícula.
+ *
+ * @param contenedor  el #saldoMonedas con las pilas
+ * @param cuantas     cuántas monedas se apuestan
+ * @param destinoId   a dónde van (el bote o el pozo)
+ */
+export function volarDesdeSaldo(contenedor, cuantas, destinoId = 'boteMonedas') {
+    if (!contenedor) return;
+    const destino = document.getElementById(destinoId);
+    if (!destino) return;
+
+    // De arriba de las pilas hacia abajo: las últimas puestas son las primeras
+    // en salir, como quien coge del montón.
+    const disponibles = [...contenedor.querySelectorAll('.moneda-saldo')]
+        .filter(m => m.style.visibility !== 'hidden')
+        .reverse()
+        .slice(0, Math.max(1, Math.min(Math.floor(cuantas) || 1, MAXIMO_VOLANDO_SALDO)));
+
+    if (disponibles.length === 0) return;
+
+    const caja = destino.getBoundingClientRect();
+
+    disponibles.forEach((original, i) => {
+        const desde = original.getBoundingClientRect();
+        // La original se va en el acto: la pila baja mientras el clon viaja.
+        original.style.visibility = 'hidden';
+
+        const clon = document.createElement('img');
+        clon.src = IMAGEN;
+        clon.alt = '';
+        clon.className = 'moneda-volando';
+        clon.style.left = `${desde.left}px`;
+        clon.style.top = `${desde.top}px`;
+        clon.style.width = `${desde.width}px`;
+        clon.style.height = `${desde.height}px`;
+        document.body.appendChild(clon);
+
+        // Escalonadas, para que se vea un chorrito y no un salto de todas.
+        setTimeout(() => {
+            clon.style.left = `${caja.left + caja.width / 2 - desde.width / 2}px`;
+            clon.style.top = `${caja.top + caja.height / 2 - desde.height / 2}px`;
+            clon.style.transform = 'scale(0.55) rotate(300deg)';
+            clon.style.opacity = '0';
+        }, 30 + i * 70);
+
+        setTimeout(() => clon.remove(), 1100 + i * 70);
+    });
 }

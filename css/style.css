@@ -1551,23 +1551,24 @@ textarea::placeholder { color: rgba(255,255,255,0.6); }
    cuando el saldo baja de ahí, que es el tramo donde se juega.               */
 .monedas-torres {
     display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: flex-end;
-    gap: 1px;
+    align-items: flex-end;
+    justify-content: center;
+    gap: 2px;
 }
 
-/* Las de una fila se solapan: puestas de lado a lado ocupaban demasiado y la
-   fila se salía del monedero. Solapadas se leen igual y caben diez. */
-.fila-monedas { display: flex; justify-content: center; }
+/* Cada columna es una pila que crece hacia arriba. `column-reverse` pone la
+   primera moneda abajo del todo, que es donde se apoya. */
+.pila-monedas { display: flex; flex-direction: column-reverse; align-items: center; }
+
 .moneda-saldo {
-    width: 21px;
-    height: 21px;
-    margin-right: -9px;
+    width: 26px;
+    height: 26px;
+    margin-bottom: -17px;            /* el solape que hace que sea una pila */
     filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.55));
     animation: brilloMoneda 3.2s ease-in-out infinite;
 }
-.moneda-saldo:last-child { margin-right: 0; }
+/* La de más abajo se apoya entera, sin morder a ninguna. */
+.pila-monedas .moneda-saldo:first-child { margin-bottom: 0; }
 
 /* Al cobrar, la cuadrícula da un golpecito. */
 @keyframes saldoSube {
@@ -2098,4 +2099,21 @@ textarea::placeholder { color: rgba(255,255,255,0.6); }
         animation: none;
         filter: drop-shadow(0 0 8px rgba(255, 200, 0, 0.8));
     }
+}
+
+/* Las monedas que viajan del saldo al bote. Son clones sueltos sobre la página:
+   la original se esconde en el acto para que la pila baje ya, sin esperar a que
+   termine el viaje. */
+.moneda-volando {
+    position: fixed;
+    z-index: 9999;
+    pointer-events: none;
+    filter: drop-shadow(0 3px 5px rgba(0, 0, 0, 0.6));
+    transition: left 0.75s cubic-bezier(0.4, 0, 0.35, 1),
+                top 0.75s cubic-bezier(0.5, -0.35, 0.6, 1),
+                transform 0.75s ease-in,
+                opacity 0.75s ease-in;
+}
+@media (prefers-reduced-motion: reduce) {
+    .moneda-volando { display: none; }
 }

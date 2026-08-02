@@ -71,53 +71,9 @@ export function iniciarBotonArrastrable() {
     document.addEventListener('mouseup', soltar);
 }
 
-/** Cuántas monedas vuelan como mucho. Más que esto no se distinguen y saturan. */
-const MAXIMO_VOLANDO = 8;
-
-/**
- * Manda monedas volando del saldo al bote. Solo decoración.
- *
- * `cuantas` sale de lo que se apuesta, así que apostar cuatro tablas se ve
- * distinto de apostar una. La torre de destino no se toca aquí: crece por su
- * cuenta cuando el servidor confirma, y al crecer da un rebote. Los dos efectos
- * se encadenan solos, sin tener que sincronizar la animación con la red —que es
- * lo que se rompería el día que Render tarde en contestar.
- */
-export function animarVueloMonedas(destinoId = "boteMonedas", cuantas = 5) {
-    const origen = document.getElementById("monedas-valor");
-    const destino = document.getElementById(destinoId);
-    if (!origen || !destino) return;
-
-    const desde = origen.getBoundingClientRect();
-    const hasta = destino.getBoundingClientRect();
-    const total = Math.max(1, Math.min(Math.floor(cuantas) || 1, MAXIMO_VOLANDO));
-
-    for (let i = 0; i < total; i++) {
-        setTimeout(() => {
-            const moneda = document.createElement("img");
-            moneda.src = "assets/imagenes/ui/peso.png";
-            moneda.className = "flying-coin";
-
-            // Un poco de azar para que no salgan todas del mismo píxel.
-            moneda.style.left = (desde.left + 10 + (Math.random() * 20 - 10)) + "px";
-            moneda.style.top = (desde.top + (Math.random() * 20 - 10)) + "px";
-            document.body.appendChild(moneda);
-
-            // El segundo cuadro: sin esperar, el navegador no ve el cambio de
-            // posición como una transición y la moneda aparece ya en el destino.
-            setTimeout(() => {
-                // Al centro del destino, no a su esquina: así parece que caen
-                // sobre la pila y no al lado.
-                moneda.style.left = (hasta.left + hasta.width / 2 - 10) + "px";
-                moneda.style.top = (hasta.top + hasta.height / 2 - 10) + "px";
-                moneda.style.transform = "scale(0.5) rotate(360deg)";
-                moneda.style.opacity = "0";
-            }, 50);
-
-            setTimeout(() => moneda.remove(), 900);   // 0.8s de transición + margen
-        }, i * 100);
-    }
-}
+// El vuelo de monedas se fue a modulos/monedas.js como volarDesdeSaldo(): ahora
+// las monedas salen de las PILAS del saldo y desaparecen de ahí, en vez de nacer
+// del número. Con el saldo pintado moneda a moneda, lo otro dejó de tener sentido.
 
 /** Aviso pequeño que sube y se desvanece, abajo a la izquierda. */
 export function mostrarNotificacionFlotante(texto) {

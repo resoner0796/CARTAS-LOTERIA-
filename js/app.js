@@ -14,7 +14,7 @@ import { emitirLoteria, iniciarValidacion } from './modulos/validacion.js';
 import { verificarSSO } from './modulos/sso.js';
 import { iniciarJugadores, alternarSilencio } from './modulos/jugadores.js';
 import { sesion, partida } from './modulos/estado.js';
-import { pintarMonedas, pintarSaldo, TOPE_MONEDAS_POZO } from './modulos/monedas.js';
+import { pintarMonedas, pintarSaldo, volarDesdeSaldo, TOPE_MONEDAS_POZO } from './modulos/monedas.js';
 import { guardarSetFavorito, cargarSetFavorito } from './modulos/favoritos.js';
 import {
     generarCartas, renumerarSeleccion, seleccionarCarta,
@@ -25,7 +25,7 @@ import {
     compartirSala, crearSalaPropia, unirseSalaExistente,
     unirseSalaDirecto, salirDeSalaEnJuego
 } from './modulos/sala.js';
-import { iniciarBotonArrastrable, animarVueloMonedas } from './modulos/animaciones.js';
+import { iniciarBotonArrastrable } from './modulos/animaciones.js';
 import { toggleMenuSonidos, renderizarSonidosJuego } from './modulos/efectos.js';
 import { cambiarPantalla, pantalla, iniciarModales, mostrarAlerta } from './modulos/ui.js';
 import { api, guardarToken, obtenerToken, borrarSesion } from './modulos/sesion.js';
@@ -480,10 +480,12 @@ if(btnApostar) btnApostar.addEventListener("click", () => {
   const chk = document.getElementById("chkPozo");
   const conPozo = !!(chk && chk.checked && pozoDisponible());
 
-  // Vuelan tantas monedas como tablas se apuestan (cada una vale $1), así que
-  // apostar cuatro se ve distinto de apostar una.
-  animarVueloMonedas("boteMonedas", cantidad);
-  if (conPozo) animarVueloMonedas("pozoMonedas", 1);   // el pozo siempre cuesta $1
+  // Las monedas salen de las PILAS del saldo, no del número: se ve de dónde
+  // sale el dinero. Vuelan tantas como tablas se apuestan, y las de la pila
+  // desaparecen en el acto para que el saldo baje a la vista.
+  const pilas = document.getElementById("saldoMonedas");
+  volarDesdeSaldo(pilas, cantidad, "boteMonedas");
+  if (conPozo) volarDesdeSaldo(pilas, 1, "pozoMonedas");   // el pozo cuesta $1
 
   socket.emit("apostar", {
       sala: partida.sala,
