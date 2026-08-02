@@ -158,6 +158,11 @@
                         <span style="font-size: 2rem;">🟣</span>
                         <span>Skins de Fichas</span>
                     </button>
+
+                    <button class="btn-categoria-tienda" data-accion="abrir-generador">
+                        <span style="font-size: 2rem;">🎴</span>
+                        <span>Generador de Cartas</span>
+                    </button>
                 </div>
             </div>
 
@@ -195,9 +200,12 @@
   <div id="pantallaSeleccion" class="pantalla">
     <h1>Selecciona tus cartas</h1>
     
-    <div style="display:flex; gap:10px; margin-bottom:10px;">
+    <div style="display:flex; gap:10px; margin-bottom:10px; flex-wrap:wrap; justify-content:center;">
         <button data-accion="cargar-favoritas" style="background:#4dd0e1; color:#003333; font-size:0.8rem; padding:8px;">📂 Cargar Favoritas</button>
         <button data-accion="guardar-favoritas" style="background:#aed581; color:#0f3d0f; font-size:0.8rem; padding:8px;">💾 Guardar Set</button>
+        <!-- Solo aparece si la persona tiene tablas propias; lo enseña
+             tablasPropias.js al recibir la lista del servidor. -->
+        <button id="btnMisCartas" data-accion="abrir-mis-cartas" style="display:none; background:#ffd54f; color:#3e2723; font-size:0.8rem; padding:8px;">🎴 Mis Cartas</button>
     </div>
 
     <div class="cartas-container" id="contenedorCartas"></div>
@@ -380,6 +388,20 @@
 
     <button data-accion="cerrar-historial" style="background: #444; margin-top: 15px;">Cerrar</button>
   </div>
+</div>
+
+<!-- Las tablas propias del jugador. A diferencia de las 53 de siempre, que son
+     imágenes enteras, estas son datos: 16 números que se pintan en rejilla. -->
+<div id="modalMisCartas" class="modal">
+    <div class="modal-content" style="max-height: 85vh; display: flex; flex-direction: column;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+            <h2 style="color: gold; margin: 0;">Mis Cartas 🎴</h2>
+            <button data-accion="cerrar-mis-cartas" style="background:none; border:none; font-size:1.5rem; color:white;">✕</button>
+        </div>
+        <p id="avisoMisCartas" class="aviso-mis-cartas"></p>
+        <div id="gridMisCartas" class="grid-mis-cartas"></div>
+        <button data-accion="cerrar-mis-cartas" style="background: #444; margin-top: 12px;">Volver</button>
+    </div>
 </div>
 
 <div id="modalTiendaDetalle" class="modal">

@@ -17,6 +17,9 @@ import { sesion, partida } from './modulos/estado.js';
 import { pintarMonedas, pintarSaldo, volarDesdeSaldo, TOPE_MONEDAS_POZO } from './modulos/monedas.js';
 import { guardarSetFavorito, cargarSetFavorito } from './modulos/favoritos.js';
 import {
+    abrirGeneradorTienda, comprarPack, abrirMisCartas, cerrarMisCartas, pedirMisTablas
+} from './modulos/tablasPropias.js';
+import {
     generarCartas, renumerarSeleccion, seleccionarCarta,
     montarMesa, limpiarFichas, cambiarCartas,
     restaurarSeleccionVisual, resetearTablero, limpiarHistorialCantadas
@@ -345,6 +348,10 @@ socket.on('connect', () => {
   if(sesion.usuario && partida.sala) {
       socket.emit('reconectar', { sala: partida.sala, email: sesion.usuario.email });
   }
+  // Las tablas propias, para saber si hay que enseñar el botón «Mis Cartas».
+  // Va en 'connect' y no en el arranque porque el handshake tiene que haber
+  // pasado ya: sin token, el servidor no sabe de quién son.
+  if (sesion.usuario) pedirMisTablas();
 });
 
 socket.on("rol-asignado", ({ host }) => {
@@ -694,6 +701,10 @@ const ACCIONES = {
     // --- Tienda ---
     'tienda-categoria':       (el) => abrirCategoriaTienda(el.dataset.categoria, sesion.usuario),
     'cerrar-tienda-detalle':  () => cerrarModalTiendaDetalle(),
+    'abrir-generador':        () => abrirGeneradorTienda(),
+    'comprar-pack':           () => comprarPack(),
+    'abrir-mis-cartas':       () => abrirMisCartas(),
+    'cerrar-mis-cartas':      () => cerrarMisCartas(),
     'comprar-item':           (el) => comprarItem(el.dataset.item, Number(el.dataset.precio), sesion.usuario, emitirCompraItem),
     'usar-ficha':             (el) => usarFicha(el.dataset.img, sesion.usuario),
     'oir-sonido':             (el) => previewSonido(el.dataset.archivo),
