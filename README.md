@@ -139,6 +139,11 @@ la **baraja** es cada una de las 54 que se cantan. Son conjuntos distintos.
 **Las figuras que dan lotería** son veinte: 4 líneas horizontales, 4 verticales,
 2 diagonales, las 4 esquinas y los 9 cuadros de 2×2.
 
+⚠️ **Hay que gritar CON la baraja que cierra.** La figura tiene que incluir la
+última cantada: si se te pasó el momento, ya no vale, como en la mesa de verdad.
+Sin esta regla se podía esperar a ver si caía algo mejor —el pozo, por ejemplo—
+y gritar cuando conviniera con una figura cerrada hacía cinco barajas.
+
 ```
  0  1  2  3      ●  ●  ●  ●      ●  ·  ·  ●      ·  ·  ·  ·
  4  5  6  7      ·  ·  ·  ·      ·  ·  ·  ·      ·  ●  ●  ·
@@ -167,8 +172,10 @@ Con eso, al gritar lotería:
 
 1. El cliente manda **qué casillas tapó** en cada carta.
 2. El servidor cruza esas casillas con **sus** barajas y **su** historial de lo
-   cantado, y busca alguna de las 20 figuras.
+   cantado, y busca alguna de las 20 figuras que incluya la última cantada.
 3. Si no hay figura, se lo dice **solo a quien gritó** y **la partida sigue**.
+   Distingue los dos casos: a quien la tenía y gritó tarde se le dice «se te
+   pasó», no «te faltan tres».
 4. Si la hay, se abre la pausa de empates y se reparte el bote.
 
 Lo que se gana:
@@ -178,7 +185,8 @@ Lo que se gana:
 - **Un grito de broma ya no congela la sala.** Antes bastaba con picar el botón
   para parar la partida hasta que el anfitrión resolviera.
 - **Nadie tiene que mirar.** Ni comparar barajas a ojo, ni fiarse.
-- Y ahora se sabe **con qué figura** se ganó, que antes no lo sabía nadie.
+- Y ahora se sabe **con qué figura** y **con qué baraja** se ganó, que antes no
+  lo sabía nadie: el anfitrión validaba de un vistazo y ahí se acababa.
 
 ⚠️ Lo que decide el dinero es que las barajas estén **cantadas**, y eso lo sabe
 el servidor: el historial es suyo y las barajas de la carta también. Las fichas
@@ -190,16 +198,29 @@ La lógica está en `victoria.js` del backend, con 55 pruebas propias. Ahí sí 
 pruebas unitarias, al revés que en el cliente: es lógica pura, determinista, y un
 fallo no se ve en pantalla — se ve en el saldo de alguien.
 
+### 📊 Durante la partida
+
+Encima del historial va el contador de barajas cantadas (`23/54`). Solo los
+números: se probó con «Baraja 23 · quedan 31» y las palabras ocupaban más que el
+dato, justo en la pantalla donde menos sitio hay.
+
+Las barajas que tienes **laten** cuando las cantan, y dejan de latir en cuanto
+les pones la ficha encima. El aviso está para ayudarte a encontrarlas, no para
+seguir llamando la atención sobre algo ya resuelto.
+
 ### 🤖 Bots
 
 Como el servidor ya sabe validar, sabe también cuándo un bot tendría lotería —
 es la misma función. El anfitrión pica un botón y se suma un jugador de la casa.
 
-| Nivel | Se da cuenta | Tarda en tapar |
-|---|---|---|
-| 🤖 Distraído | 55% | 1.4–3.6 s |
-| 🤖 Normal | 85% | 0.7–2.0 s |
-| 🤖 Experto | 97% | 0.3–0.9 s |
+| Nivel | Se da cuenta | Tapar + gritar | A 3 s por baraja |
+|---|---|---|---|
+| 🤖 Distraído | 55% | 1.4–3.6 s | se le pasa a menudo |
+| 🤖 Normal | 85% | 0.85–2.3 s | casi siempre llega |
+| 🤖 Experto | 97% | 0.45–1.25 s | siempre llega |
+
+Los dos retardos **se suman**, y con la regla de gritar a tiempo esa suma tiene
+que caber entre dos cantes: por eso un distraído pierde muchas.
 
 El distraído **no es un bot roto**: una sala donde todos juegan perfecto es una
 sala donde no ganas nunca. Que se les pasen barajas es lo que deja hueco.
@@ -293,7 +314,13 @@ propósito.
 - [ ] Tienda dinámica: mover el catálogo a Firestore (hoy está duplicado en
       `config.js` y en el backend)
 - [x] **Bots** con tres niveles, que el anfitrión añade a su sala
-- [ ] Salas de bots permanentes, abiertas para unirse
+- [x] Regla del tiempo: hay que gritar con la baraja que cierra la figura
+- [x] Modo **Doble**, contador de barajas cantadas y cartas de cristal
+- [ ] Sacar el estado de las salas a Redis — es lo que bloquea todo lo demás:
+      hoy un reinicio de Render tumba las partidas en curso
+- [ ] Salas de bots permanentes (necesita lo de arriba)
+- [ ] Historial de partida al terminar: cuántas barajas se cantaron, quién se
+      quedó a una. El servidor ya calcula ese dato para el aviso de rechazo
 - [ ] Modos nuevos que ahora salen casi gratis: figura anunciada por partida,
       contrarreloj, torneo por rondas
 

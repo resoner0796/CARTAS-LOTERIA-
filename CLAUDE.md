@@ -516,6 +516,16 @@ los de la sala, y la sesión vive en `localStorage`.
   22px. En el tablero del móvil, con cuatro cartas, el espacio entre ellas medía
   **-12px**: se solapaban. Se veía como «amontonadas», que es un síntoma que
   suena a falta de margen y era desbordamiento.
+- **El aviso de «se te pasó» lo tapaba otra carta.** `evaluarReclamo` recorre
+  las cartas y se quedaba con el motivo de la ÚLTIMA que miraba. Con cuatro en
+  la mesa, quien tenía la figura hecha y gritó tarde veía «te faltan tres» —el
+  motivo de otra carta que no tenía nada— en vez de «se te pasó». El motivo
+  ahora sale de la carta que estuvo más cerca de ganar.
+- **Rechazar la apuesta dejaba la casilla del pozo bloqueada.** El botón y el
+  `chkPozo` se cierran al picar, antes de saber si el servidor acepta, para que
+  nadie apueste dos veces. Cuando la apuesta se rechaza hay que DESHACERLO: si
+  no, el caso «no te alcanza por el peso del pozo» dejaba sin poder quitar el
+  pozo para apostar solo el bote.
 - **Apostar sin monedas no hacía nada, en silencio.** La condición
   `monedas >= costoTotal + costoPozo` simplemente no se cumplía y el evento
   moría ahí. Como el navegador hace volar las monedas ANTES de saber si se

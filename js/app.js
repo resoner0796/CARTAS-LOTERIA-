@@ -431,7 +431,17 @@ socket.on('info-sala', (data) => {
  * El saldo se recoloca solo con el `jugadores-actualizados` que viene detrás.
  */
 socket.on('apuesta-rechazada', ({ motivo }) => {
+    // Hay que DESHACER lo que se bloqueó al picar. El botón y la casilla del
+    // pozo se cierran en el acto para que nadie apueste dos veces, y eso está
+    // bien mientras la apuesta sale; cuando el servidor la rechaza, quedaban
+    // cerradas para siempre. El caso que lo destapó: no te alcanza por el peso
+    // del pozo, y no podías ni quitar el pozo para apostar solo el bote.
+    partida.haApostado = false;
     if (btnApostar) btnApostar.disabled = false;
+
+    const chk = document.getElementById("chkPozo");
+    if (chk) chk.disabled = false;
+
     mostrarAlerta(motivo || "No se pudo apostar.", "Sin apuesta 💸");
 });
 

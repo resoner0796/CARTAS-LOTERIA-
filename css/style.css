@@ -1686,8 +1686,17 @@ textarea::placeholder { color: rgba(255,255,255,0.6); }
    que las compradas. Conserva la clase .carta-img porque de ahí saca la sombra
    y el resalte, pero .tabla-generada lleva borde dorado SIEMPRE, y ese borde
    tapaba la única señal de cuáles están elegidas: se veían las 60 marcadas. */
-.tabla-generada.carta-img { border-color: rgba(0, 0, 0, 0.35); border-width: 3px; }
-.tabla-generada.carta-img.seleccionada { border-color: var(--amarillo-maiz); }
+/* En la selección el filo se apaga, y al elegir una se enciende en dorado: ahí
+   sí, porque es la única señal de cuáles llevas y tiene que gritar. */
+.tabla-generada.carta-img { border-color: rgba(255, 255, 255, 0.45); border-width: 3px; }
+.tabla-generada.carta-img.seleccionada {
+    border-color: var(--amarillo-maiz);
+    box-shadow:
+        0 2px 6px rgba(0, 0, 0, 0.35),
+        0 14px 34px rgba(0, 0, 0, 0.55),
+        0 0 26px rgba(255, 214, 0, 0.55),
+        inset 0 1px 0 rgba(255, 255, 255, 0.9);
+}
 
 
 /* =========================================================================
@@ -2241,30 +2250,36 @@ textarea::placeholder { color: rgba(255,255,255,0.6); }
     display: grid;
     grid-template-columns: repeat(4, 1fr);
     gap: 3px;
-    /* El marco de la carta, en cristal esmerilado como el resto de la interfaz.
-       Antes era blanco liso, que era lo que más desentonaba de la pantalla: la
-       barra del historial, el modal y el panel de apuestas ya son de cristal.
-       Se usan las MISMAS variables que ellos para que si algún día cambia el
-       tono, cambie en todo a la vez. */
+    /* Cristal ESMERILADO, no transparente. La diferencia está en la opacidad de
+       la capa blanca: por debajo de 0.5 se ve el fondo negro a través y las
+       cartas salen grises. Aquí el marco se lee como blanco y el desenfoque se
+       sigue notando en los cantos, que es donde se ve que hay cristal y no
+       papel. */
     background: linear-gradient(145deg,
-        rgba(255, 255, 255, 0.22),
-        rgba(255, 255, 255, 0.08));
-    backdrop-filter: blur(14px) saturate(140%);
-    -webkit-backdrop-filter: blur(14px) saturate(140%);
-    /* El margen alrededor de la rejilla es lo que hace que parezca una carta.
-       Con 4px las barajas de la orilla quedaban pegadas al borde. */
+        rgba(255, 255, 255, 0.82),
+        rgba(238, 244, 255, 0.66));
+    backdrop-filter: blur(18px) saturate(150%);
+    -webkit-backdrop-filter: blur(18px) saturate(150%);
     /* El marco tiene que verse: es la superficie donde ocurre el cristal. Con
        menos de 12px el efecto queda escondido detrás de las barajas y la carta
        parece la de antes con otro color. */
     padding: 12px;
     border-radius: 16px;
-    /* Dos filos: el dorado de fuera marca la carta, y el claro de dentro es lo
-       que da el brillo de cristal en el canto. */
-    border: 3px solid var(--amarillo-maiz, gold);
+    /* Filo BLANCO, no dorado. El dorado competía con las barajas, que ya son
+       amarillas y rojas; en blanco las deja ser a ellas el color de la carta. */
+    border: 3px solid rgba(255, 255, 255, 0.9);
     box-shadow:
-        0 8px 26px rgba(0, 0, 0, 0.45),
-        inset 0 1px 0 rgba(255, 255, 255, 0.45),
-        inset 0 -1px 0 rgba(0, 0, 0, 0.18);
+        /* Profundidad: dos sombras, una corta y pegada y otra larga y suave. Es
+           lo que hace que la carta parezca apoyada sobre la mesa en vez de
+           pegada al fondo — con una sola queda plana. */
+        0 2px 6px rgba(0, 0, 0, 0.38),
+        0 16px 38px rgba(0, 0, 0, 0.55),
+        /* El halo, que es lo que la despega del fondo negro. */
+        0 0 24px rgba(255, 255, 255, 0.30),
+        /* Y los filos internos: el claro de arriba y el oscuro de abajo son el
+           truco que le da volumen al canto del cristal. */
+        inset 0 1px 0 rgba(255, 255, 255, 0.95),
+        inset 0 -2px 5px rgba(90, 110, 140, 0.18);
     aspect-ratio: 4 / 6.35;     /* 4 columnas × 4 casillas de 1:1.587 */
     width: 100%;
     /* Las fichas cuelgan de aquí y se colocan en porcentaje: este es el
@@ -2277,9 +2292,9 @@ textarea::placeholder { color: rgba(255,255,255,0.6); }
 }
 
 .casilla-tabla {
-    /* Casi blanco, no blanco del todo: sobre el cristal, un blanco liso vuelve
-       a tapar el efecto y la carta parece otra vez de papel. */
-    background: rgba(255, 255, 255, 0.92);
+    /* Sobre el marco esmerilado, la casilla va casi opaca: es donde vive la
+       baraja y tiene que leerse sin que el cristal la apague. */
+    background: rgba(255, 255, 255, 0.96);
     border-radius: 3px;
     overflow: hidden;
     display: flex;
@@ -2434,9 +2449,10 @@ textarea::placeholder { color: rgba(255,255,255,0.6); }
 .casilla-vacia,
 .casilla-bloqueada {
     border-color: transparent;
-    /* Casi transparente: en el modo esquinas se ve el cristal por debajo, que
-       es lo que hace que el hueco parezca parte de la carta y no un agujero. */
-    background: rgba(255, 255, 255, 0.10);
+    /* Transparente del todo: en el modo esquinas se ve el marco esmerilado por
+       debajo, que es lo que hace que el hueco parezca parte de la carta y no un
+       agujero recortado. */
+    background: transparent;
 }
 
 /* --- «Mis Cartas» agrupadas por tipo ---
