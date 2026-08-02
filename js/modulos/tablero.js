@@ -135,8 +135,12 @@ export function actualizarTextoBotonApuesta() {
     const btn = $("btnApostar");
     if (!btn) return;
 
-    // Se cuenta lo que hay pintado, no el array: es lo que la persona ve.
-    const elegidas = document.querySelectorAll("#contenedorCartas .carta-img.seleccionada").length;
+    // Se cuenta `partida.seleccionadas`, no lo pintado en la pantalla de
+    // selección. Antes se miraba el DOM porque era el único sitio donde se
+    // elegía; con las cartas PROPIAS, que se eligen desde «Mis Cartas», ahí no
+    // aparece ninguna y el botón se quedaba en «Selecciona cartas» aunque
+    // hubiera cuatro elegidas: no se podía apostar con ellas.
+    const elegidas = partida.seleccionadas.length;
     const total = elegidas * partida.costoCarta;
 
     if (elegidas > 0) {
