@@ -482,6 +482,15 @@ los de la sala, y la sesión vive en `localStorage`.
   cartas**. Solo se mueven las exclusivas de cada una, y el script se niega a
   escribir el archivo si al final hay barajas repetidas dentro de una carta,
   cartas duplicadas o desequilibrio mayor que 1.
+- **La cuadrícula de monedas se vaciaba y no se recuperaba.** `pintarSaldo()` no
+  repinta si el número de monedas no cambió, y para saberlo mira
+  `dataset.saldo`. Pero `volarDesdeSaldo()` esconde monedas por debajo sin
+  tocarlo, así que la cuadrícula decía tener 40 mientras enseñaba 36 — y el
+  siguiente pintado, viendo 40 y 40, no hacía nada. **Solo pasaba por encima del
+  tope de 40**: ahí apostar no cambia «cuántas tocan», así que el saldo nuevo
+  nunca las reponía. Apuesta tras apuesta la cuadrícula bajaba a cero y al ganar
+  no volvían. Quien tocara `volarDesdeSaldo` tiene que dejar `dataset.saldo` con
+  lo que de verdad queda visible.
 - **Cachear respuestas parciales revienta la Cache API.** Los `<audio>` se piden
   por rangos y el servidor responde `206`; `cache.put()` solo admite respuestas
   completas y rechazaba con "Cache.put() encountered a network error". Como los

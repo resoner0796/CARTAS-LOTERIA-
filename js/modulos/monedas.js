@@ -274,4 +274,18 @@ export function volarDesdeSaldo(contenedor, cuantas, destinoId = 'boteMonedas') 
 
         setTimeout(() => clon.remove(), 1100 + i * 70);
     });
+
+    // ⚠️ Hay que contarle a la cuadrícula lo que le acabamos de quitar.
+    //
+    // `pintarSaldo()` no repinta si el número de monedas no ha cambiado, y para
+    // saberlo mira `dataset.saldo`. Esta función esconde monedas por debajo sin
+    // tocarlo, así que la cuadrícula se quedaba diciendo que tenía 40 mientras
+    // enseñaba 36 — y el siguiente pintado, viendo 40 y 40, no hacía nada.
+    //
+    // Con más de 40 monedas no se notaba al apostar (la cuadrícula está llena
+    // igualmente) pero sí al COBRAR: ganabas y las monedas no volvían. Apuesta
+    // tras apuesta la cuadrícula se vaciaba hasta cero sin recuperarse nunca.
+    const visibles = [...contenedor.querySelectorAll('.moneda-saldo')]
+        .filter(m => m.style.visibility !== 'hidden').length;
+    contenedor.dataset.saldo = String(visibles);
 }

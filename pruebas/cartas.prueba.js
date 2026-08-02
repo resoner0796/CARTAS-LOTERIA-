@@ -13,7 +13,7 @@
  * ruta no daría error visible: pintaría un hueco roto entre cartas buenas.
  */
 
-const { RUIDO, Resultados, abrirConSesion, esperar } = require('./arnes');
+const { RUIDO, Resultados, abrirConSesion, esperar, clic } = require('./arnes');
 
 /**
  * Deja preparada la captura del socket, ANTES de que se cargue nada.
@@ -102,6 +102,14 @@ module.exports = async function cartas(navegador, url) {
 
     await prepararCaptura(pagina);
     await abrirConSesion(pagina, url);
+
+    // Se entra a una sala de verdad. Hace falta para que el botón de apostar
+    // funcione: sin `partida.sala` sale por la primera guarda y no llega a
+    // tocar las monedas, que es justo lo que se quiere probar.
+    await pagina.evaluate(() => {
+        document.getElementById('inputUnirseSala').value = 'ArnesTest';
+    });
+    await clic(pagina, '[data-accion="unirse-sala"]', 600);
 
     // ── Modo normal ──────────────────────────────────────────────────────────
     const estado = await recibirDelServidor(pagina, 'info-sala', {
@@ -346,6 +354,52 @@ module.exports = async function cartas(navegador, url) {
     }));
     r.igual('quien no es anfitrión no ve los botones de bot', comoInvitado.zona, 'none');
     r.igual('ni puede sacarlos', comoInvitado.quitar, 0);
+
+    // ── Las monedas del saldo vuelven al cobrar ──────────────────────────────
+    // El bug: con más de 40 monedas la cuadrícula está llena, así que apostar
+    // no cambiaba «cuántas tocan» y el repintado se saltaba. Las monedas que
+    // volaron nunca regresaban, y apuesta tras apuesta la cuadrícula se vaciaba
+    // hasta cero sin recuperarse.
+    const cuadricula = () => pagina.evaluate(() =>
+        [...document.querySelectorAll('#saldoMonedas .moneda-saldo')]
+            .filter(m => m.style.visibility !== 'hidden').length);
+
+    const comoJugador = (monedas) => ({
+        'yo': { id: 'yo', nickname: 'Arnes', email: 'prueba@arnes.local', monedas, host: true }
+    });
+
+    await recibirDelServidor(pagina, 'jugadores-actualizados', comoJugador(70));
+    r.igual('con 70 monedas la cuadrícula se llena (tope 40)', await cuadricula(), 40);
+
+    // Se apuesta DE VERDAD, picando el botón: es el camino que esconde monedas
+    // sin avisar a la cuadrícula, y simularlo a mano no probaría el arreglo.
+    await pagina.evaluate(() => {
+        const b = document.getElementById('btnApostar');
+        b.disabled = false;
+        b.click();
+    });
+    await esperar(400);
+
+    const trasApostar = await cuadricula();
+    r.cierto('al apostar salen monedas volando de la cuadrícula',
+        trasApostar > 0 && trasApostar < 40);
+
+    // El servidor confirma el saldo: 66. Sigue por encima del tope, así que la
+    // cuadrícula tiene que volver a llenarse. ESTA es la comprobación del bug:
+    // sin el arreglo, `pintarSaldo` ve 40 y 40 y no repinta, así que se quedan
+    // las que hay.
+    await recibirDelServidor(pagina, 'jugadores-actualizados', comoJugador(66));
+    r.igual('y el saldo del servidor las repone', await cuadricula(), 40);
+
+    // Y al ganar, con el saldo más alto todavía, sigue llena.
+    await recibirDelServidor(pagina, 'jugadores-actualizados', comoJugador(106));
+    r.igual('al cobrar el premio sigue llena', await cuadricula(), 40);
+
+    // Por debajo del tope la cuadrícula refleja el número exacto.
+    await recibirDelServidor(pagina, 'jugadores-actualizados', comoJugador(12));
+    r.igual('con 12 monedas se ven 12', await cuadricula(), 12);
+    await recibirDelServidor(pagina, 'jugadores-actualizados', comoJugador(31));
+    r.igual('y al subir a 31 se ven 31', await cuadricula(), 31);
 
     // ── Que no quede rastro de los JPG ───────────────────────────────────────
     // Se mira todo lo que la página llegó a PEDIR por red, no lo que hay en el
