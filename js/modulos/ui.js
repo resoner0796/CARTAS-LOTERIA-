@@ -83,7 +83,7 @@ export function mostrarAlerta(mensaje, titulo = "Aviso del Sistema", prueba = nu
         if (prueba && prueba.barajas) {
             const rotulo = document.createElement("p");
             rotulo.className = "prueba-titulo";
-            rotulo.textContent = "Tabla ganadora:";
+            rotulo.textContent = "Carta ganadora:";
 
             const marco = document.createElement("div");
             marco.className = "prueba-tabla";
@@ -122,6 +122,27 @@ export function mostrarAlerta(mensaje, titulo = "Aviso del Sistema", prueba = nu
 
             zonaCarta.appendChild(rotulo);
             zonaCarta.appendChild(marco);
+
+            // Con qué baraja se cerró. La calcula el servidor: de las de la
+            // figura, la que salió más tarde. Se enseña grande y aparte porque
+            // es lo que la gente cuenta después — «gané con el gallo».
+            if (prueba.barajaFinal) {
+                const cierre = document.createElement("div");
+                cierre.className = "prueba-cierre";
+
+                const texto = document.createElement("p");
+                texto.className = "prueba-titulo";
+                texto.textContent = "Cerró con:";
+
+                const baraja = document.createElement("img");
+                baraja.src = `assets/imagenes/barajas/${String(prueba.barajaFinal).padStart(2, '0')}.png`;
+                baraja.alt = "";
+
+                cierre.appendChild(texto);
+                cierre.appendChild(baraja);
+                zonaCarta.appendChild(cierre);
+            }
+
             zonaCarta.style.display = "block";
         } else {
             zonaCarta.style.display = "none";

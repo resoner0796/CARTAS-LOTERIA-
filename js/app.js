@@ -12,7 +12,7 @@ import { socket } from './modulos/socket.js';
 import { sonidos, sonarApuesta } from './modulos/audio.js';
 import { emitirLoteria } from './modulos/validacion.js';
 import { verificarSSO } from './modulos/sso.js';
-import { iniciarJugadores, alternarSilencio } from './modulos/jugadores.js';
+import { iniciarJugadores, alternarSilencio, agregarBot, quitarBot } from './modulos/jugadores.js';
 import { sesion, partida } from './modulos/estado.js';
 import { pintarMonedas, pintarSaldo, volarDesdeSaldo, TOPE_MONEDAS_POZO } from './modulos/monedas.js';
 import { guardarSetFavorito, cargarSetFavorito } from './modulos/favoritos.js';
@@ -694,6 +694,8 @@ const ACCIONES = {
     'compartir-sala':         () => compartirSala(),
     'salir-sala':             () => salirDeSalaEnJuego(resetearTablero),
     'silenciar':              (el) => alternarSilencio(el.dataset.email),
+    'agregar-bot':            (el) => agregarBot(el.dataset.nivel),
+    'quitar-bot':             (el) => quitarBot(el.dataset.id),
 
     // --- Selección de tablas ---
     // Se le pasan las dos funciones de selección para no crear un ciclo:

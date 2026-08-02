@@ -307,6 +307,38 @@ y ahora se llama una sola vez, al cerrar la ventana de empates.
 en el cliente: es lógica pura, determinista, y un fallo no se ve en pantalla —
 se ve en el saldo de alguien.
 
+## Bots
+
+Un bot es un jugador más de `salaInfo.jugadores`, con las mismas propiedades, para
+que todo lo que ya recorre esa lista lo trate igual sin saber que es un bot.
+
+Vive entero en el backend (`bots.js`). El cliente solo lo pinta distinto en la
+lista y le enseña al anfitrión los botones para añadirlo o sacarlo.
+
+- **Tres niveles**: `distraido` (55% de atención), `normal` (85%), `experto`
+  (97%), cada uno con su retardo al tapar y al gritar. El distraído no es un bot
+  roto: una sala donde todos juegan perfecto es una sala donde no ganas nunca.
+- **Grita por el mismo camino que una persona** (`procesarLoteria`). No tiene su
+  propia comprobación a propósito — si la tuviera, podría ganar con otras reglas.
+- **Avisa en CADA ficha**, no cuando cree tener figura: el bot no sabe si la
+  tiene. Lo decide el servidor, y si no, no pasa nada.
+- **Su dinero es de la banca.** Sin email, no se escribe nada en Firestore. Su
+  apuesta engorda el bote y se apunta con `registrarEmisionBanca`; si gana, el
+  premio vuelve a la banca en negativo.
+
+⚠️ **Esto emite monedas.** Si gana una persona se lleva también lo que pusieron
+los bots, y esas son nuevas. Es una decisión de producto tomada a propósito, pero
+se vigila en `finanzas/general.monedasEmitidasBanca`.
+
+⚠️ **Los relojes hay que pararlos.** Un bot guarda sus `setTimeout` en
+`bot.relojes` porque si no, al quitarlo o al cerrar la sala seguirían disparando
+sobre un objeto que ya no existe. Se paran al quitar el bot, al cerrar la ronda y
+al cerrar la sala.
+
+⚠️ **Una sala donde solo quedan bots se cierra**, y el anfitrión nuevo siempre es
+una persona: un bot no puede iniciar la partida, y la sala se quedaría congelada
+esperando a que hiciera algo.
+
 ## Las cartas son datos, no imágenes
 
 Este fue el cambio de fondo. Antes una carta era un JPG (`cartas/01.jpg`) y el
@@ -589,7 +621,7 @@ sueltas.
 | `dinero.prueba.js` | Qué manda el cliente al comprar y transferir; validaciones que deben rebotar sin salir a la red |
 | `escapado.prueba.js` | Que un nickname con HTML no ejecute código |
 | `sesion.prueba.js` | Entrar desde el Hub, con la red lenta a propósito |
-| `cartas.prueba.js` | Que las cartas del servidor se pinten como rejilla, que el aviso de baraja cantada se encienda y se apague al taparla, y que no quede ni una petición a los JPG borrados |
+| `cartas.prueba.js` | Que las cartas del servidor se pinten como rejilla, que el aviso de baraja cantada se encienda y se apague al taparla, que las casillas tapadas viajen al gritar, que los bots se vean solo para el anfitrión, y que no quede ni una petición a los JPG borrados |
 
 No hace falta backend: interponen `fetch` y el socket. Sí hace falta red para bajar
 el guión de Socket.IO, que lo sirve Render.

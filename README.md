@@ -190,6 +190,23 @@ La lógica está en `victoria.js` del backend, con 55 pruebas propias. Ahí sí 
 pruebas unitarias, al revés que en el cliente: es lógica pura, determinista, y un
 fallo no se ve en pantalla — se ve en el saldo de alguien.
 
+### 🤖 Bots
+
+Como el servidor ya sabe validar, sabe también cuándo un bot tendría lotería —
+es la misma función. El anfitrión pica un botón y se suma un jugador de la casa.
+
+| Nivel | Se da cuenta | Tarda en tapar |
+|---|---|---|
+| 🤖 Distraído | 55% | 1.4–3.6 s |
+| 🤖 Normal | 85% | 0.7–2.0 s |
+| 🤖 Experto | 97% | 0.3–0.9 s |
+
+El distraído **no es un bot roto**: una sala donde todos juegan perfecto es una
+sala donde no ganas nunca. Que se les pasen barajas es lo que deja hueco.
+
+Un bot grita lotería por el mismo camino que una persona y el servidor lo juzga
+igual. Su dinero es de la banca y nunca toca Firestore.
+
 ---
 
 ## ✨ Funcionalidades
@@ -275,7 +292,8 @@ propósito.
 - [ ] Evaluar migración de Render a VPS propio
 - [ ] Tienda dinámica: mover el catálogo a Firestore (hoy está duplicado en
       `config.js` y en el backend)
-- [ ] Bot para jugar sin sala llena — el servidor ya sabe marcar cartas solo
+- [x] **Bots** con tres niveles, que el anfitrión añade a su sala
+- [ ] Salas de bots permanentes, abiertas para unirse
 - [ ] Modos nuevos que ahora salen casi gratis: figura anunciada por partida,
       contrarreloj, torneo por rondas
 

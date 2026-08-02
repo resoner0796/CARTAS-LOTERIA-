@@ -1625,6 +1625,24 @@ textarea::placeholder { color: rgba(255,255,255,0.6); }
    lo que hacía que en el modal de validación pareciera que faltaba un trozo. */
 .carta-img { box-sizing: border-box; }
 
+/* La baraja con la que se cerró la figura, debajo de la carta ganadora.
+   Se enseña grande a propósito: es el dato que la gente repite después, y
+   compite con la carta entera por la atención. */
+.prueba-cierre {
+    margin-top: 14px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+}
+.prueba-cierre img {
+    width: 92px;
+    max-width: 40%;
+    border: 2px solid var(--amarillo-maiz, gold);
+    border-radius: 6px;
+    box-shadow: 0 0 18px rgba(255, 214, 0, 0.5);
+}
+
 /* Una carta de selección ya no es un <img>: es una rejilla de barajas, igual
    que las compradas. Conserva la clase .carta-img porque de ahí saca la sombra
    y el resalte, pero .tabla-generada lleva borde dorado SIEMPRE, y ese borde

@@ -273,6 +273,80 @@ module.exports = async function cartas(navegador, url) {
     r.igual('solo ocho casillas llevan baraja', esquinas.conBaraja, 8);
     r.igual('y las otras ocho quedan vacías', esquinas.vacias, 8);
 
+    // ── El resultado final dice con qué se ganó ──────────────────────────────
+    await recibirDelServidor(pagina, 'ganadores-multiples', {
+        ganadores: ['Arnes'],
+        premio: 40,
+        pozoGanado: 0,
+        ganadorPozo: null,
+        prueba: {
+            tabla: '02',
+            nickname: 'Arnes',
+            barajas: [17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32],
+            fichas: [{ left: '12.5%', top: '12.5%' }],
+            figura: 'diagonal',
+            barajaFinal: 21
+        }
+    });
+
+    const final = await pagina.evaluate(() => ({
+        texto: document.getElementById('modalSistemaMensaje')?.textContent || '',
+        cierre: document.querySelector('#modalCartaGanadora .prueba-cierre img')?.src || '',
+        casillas: document.querySelectorAll('#modalCartaGanadora .casilla-tabla').length
+    }));
+
+    r.cierto('el resultado final dice por qué figura se ganó',
+        final.texto.includes('diagonal'));
+    r.cierto('enseña la carta ganadora como rejilla', final.casillas === 16);
+    r.cierto('y la baraja con la que se cerró',
+        final.cierre.endsWith('/barajas/21.png'));
+
+    await pagina.evaluate(() => document.getElementById('btnModalAceptar')?.click());
+    await esperar(200);
+
+    // ── Los bots se ven en la lista y se distinguen ──────────────────────────
+    await recibirDelServidor(pagina, 'rol-asignado', { host: true });
+    await recibirDelServidor(pagina, 'jugadores-actualizados', {
+        'yo':        { id: 'yo', nickname: 'Arnes', email: 'prueba@arnes.local', monedas: 500, host: true },
+        'bot:uno':   { id: 'bot:uno', nickname: 'Doña Cuca', esBot: true, nivel: 'distraido', monedas: 0 },
+        'bot:dos':   { id: 'bot:dos', nickname: 'El Catrín', esBot: true, nivel: 'experto', monedas: 0 }
+    });
+
+    const lista = await pagina.evaluate(() => ({
+        texto: document.getElementById('jugadoresLista')?.textContent || '',
+        quitar: document.querySelectorAll('#jugadoresLista [data-accion="quitar-bot"]').length,
+        zonaVisible: document.getElementById('zonaBots')?.style.display
+    }));
+
+    r.cierto('los bots aparecen en la lista', lista.texto.includes('Doña Cuca'));
+    r.cierto('y se distingue su nivel', lista.texto.includes('se distrae'));
+    r.cierto('el experto también se marca', lista.texto.includes('experto'));
+    r.igual('el anfitrión puede sacarlos', lista.quitar, 2);
+    r.igual('y ve los botones para añadir', lista.zonaVisible, 'block');
+
+    // Pedir un bot manda el evento con su nivel.
+    await pagina.evaluate(() => {
+        window.__enviados__ = [];
+        document.querySelector('[data-accion="agregar-bot"][data-nivel="experto"]').click();
+    });
+    await esperar(200);
+    const pedido = await pagina.evaluate(() =>
+        (window.__enviados__ || []).find(e => e.ev === 'agregar-bot') || null);
+    r.cierto('pedir un bot manda el evento', !!pedido);
+    r.igual('con el nivel que se picó', pedido?.datos?.nivel, 'experto');
+
+    // Quien NO es anfitrión no ve nada de esto.
+    await recibirDelServidor(pagina, 'rol-asignado', { host: false });
+    await recibirDelServidor(pagina, 'jugadores-actualizados', {
+        'bot:uno': { id: 'bot:uno', nickname: 'Doña Cuca', esBot: true, nivel: 'normal', monedas: 0 }
+    });
+    const comoInvitado = await pagina.evaluate(() => ({
+        zona: document.getElementById('zonaBots')?.style.display,
+        quitar: document.querySelectorAll('#jugadoresLista [data-accion="quitar-bot"]').length
+    }));
+    r.igual('quien no es anfitrión no ve los botones de bot', comoInvitado.zona, 'none');
+    r.igual('ni puede sacarlos', comoInvitado.quitar, 0);
+
     // ── Que no quede rastro de los JPG ───────────────────────────────────────
     // Se mira todo lo que la página llegó a PEDIR por red, no lo que hay en el
     // DOM: una ruta muerta se ve en el tráfico aunque no deje hueco visible.

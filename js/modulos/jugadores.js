@@ -28,10 +28,44 @@ export function alternarSilencio(email) {
     socket.emit("silenciar-jugador", { sala: partida.sala, email, silenciar: !callado });
 }
 
+/** Cómo se presenta cada nivel de bot en la lista. */
+const NIVEL_BOT = {
+    distraido: '🤖 se distrae',
+    normal:    '🤖',
+    experto:   '🤖 experto'
+};
+
+/** Pide al servidor un bot más. Solo el anfitrión, y solo antes de empezar. */
+export function agregarBot(nivel) {
+    if (!partida.soyHost) return;
+    socket.emit("agregar-bot", { sala: partida.sala, nivel });
+}
+
+/** Saca un bot de la sala. */
+export function quitarBot(id) {
+    if (!partida.soyHost) return;
+    socket.emit("quitar-bot", { sala: partida.sala, id });
+}
+
 /** Una fila de la lista: corona del anfitrión, racha, apuesta y botón de silencio. */
 function filaJugador(j) {
     const apostado = j.apostado ? "💸" : "";
     const corona = j.host ? "👑" : "";
+
+    // Un bot se distingue a simple vista, y con su nivel: si no, parece que
+    // estás jugando contra gente y no lo estás.
+    if (j.esBot) {
+        const etiqueta = NIVEL_BOT[j.nivel] || '🤖';
+        const quitar = partida.soyHost
+            ? `<button class="btn-mute" data-accion="quitar-bot" data-id="${escaparHtml(j.id)}"
+                       title="Sacarlo de la sala">✖️</button>`
+            : "";
+        return `
+        <div style="display:flex; justify-content:space-between; align-items:center; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.1); opacity:0.85;">
+            <span>${etiqueta} ${escaparHtml(j.nickname)}</span>
+            <span style="display:flex; align-items:center; gap:6px;">${apostado}${quitar}</span>
+        </div>`;
+    }
 
     let racha = "";
     if (j.racha > 0) {
@@ -93,11 +127,21 @@ export function iniciarJugadores(alCambiarSaldo) {
         const enJuego = $("jugadoresListaIngame");
         if (enSala) enSala.innerHTML = html;
         if (enJuego) enJuego.innerHTML = html;
+
+        // Los botones de bot solo tienen sentido para el anfitrión. Se decide
+        // aquí y no al entrar porque `partida.soyHost` llega en `rol-asignado`,
+        // que puede tardar más que el primer pintado de la lista.
+        const zona = $("zonaBots");
+        if (zona) zona.style.display = partida.soyHost ? "block" : "none";
     });
 }
 
 socket.on("silenciados-actualizados", (lista) => {
     partida.silenciados = Array.isArray(lista) ? lista : [];
+});
+
+socket.on("bot-rechazado", ({ motivo }) => {
+    mostrarAlerta(motivo || "No se pudo añadir el bot.", "Sin bot 🤖");
 });
 
 socket.on("estas-silenciado", () => {

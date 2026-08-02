@@ -194,7 +194,29 @@
     </div>
     
     <div id="jugadoresLista" style="width: 100%; margin-top: 20px;"></div>
-    
+
+    <!-- Solo lo ve el anfitrión, y solo antes de empezar. Lo enseña
+         jugadores.js al recibir la lista, que es cuando se sabe si eres tú. -->
+    <div id="zonaBots" style="display:none; width:100%; margin-top:14px;">
+        <div style="font-size:0.85rem; color:#bbb; margin-bottom:8px;">
+            ¿Falta gente? Mete jugadores de la casa:
+        </div>
+        <div class="sala-botones-row">
+            <button data-accion="agregar-bot" data-nivel="distraido"
+                    style="background:#90a4ae; color:#0f2027; font-size:0.8rem; padding:8px;">
+                🤖 Distraído
+            </button>
+            <button data-accion="agregar-bot" data-nivel="normal"
+                    style="background:#4dd0e1; color:#003333; font-size:0.8rem; padding:8px;">
+                🤖 Normal
+            </button>
+            <button data-accion="agregar-bot" data-nivel="experto"
+                    style="background:#ffd54f; color:#3e2723; font-size:0.8rem; padding:8px;">
+                🤖 Experto
+            </button>
+        </div>
+    </div>
+
     <button id="btnSalirLobby" data-accion="salir-sala" style="background-color: #dc3545; margin-top: 30px;">Salir al Menú</button>
   </div>
 
