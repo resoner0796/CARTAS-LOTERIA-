@@ -1,7 +1,7 @@
 // Al subir este número, la caché anterior se borra entera en la próxima visita.
 // Hay que subirlo cuando algo cacheado deje de ser válido — como ahora, que las
 // hojas de estilo viejas están atrapadas en los navegadores de la gente.
-const CACHE_NAME = 'loteria-pro-v3';
+const CACHE_NAME = 'loteria-pro-v4';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
