@@ -109,16 +109,22 @@ export function mostrarAlerta(mensaje, titulo = "Aviso del Sistema", prueba = nu
                 }
                 rejilla.appendChild(casilla);
             });
-            marco.appendChild(rejilla);
-
+            // Las fichas van DENTRO de la rejilla, no en el marco.
+            //
+            // Su posición es un porcentaje que se midió sobre la rejilla al
+            // ponerlas, así que solo cae en su sitio si se calcula contra la
+            // rejilla. Colgadas del marco caían 85px a la izquierda: el marco es
+            // más ancho y la rejilla va centrada dentro.
             (prueba.fichas || []).forEach(pos => {
                 const ficha = document.createElement("img");
                 ficha.src = prueba.skin || FICHA_POR_DEFECTO;
                 ficha.className = "ficha";
                 ficha.style.left = pos.left;
                 ficha.style.top = pos.top;
-                marco.appendChild(ficha);
+                rejilla.appendChild(ficha);
             });
+
+            marco.appendChild(rejilla);
 
             zonaCarta.appendChild(rotulo);
             zonaCarta.appendChild(marco);

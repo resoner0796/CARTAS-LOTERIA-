@@ -230,9 +230,15 @@ export function marcarFicha(e, contenedor) {
                     || contenedor.querySelector(".tabla-generada");
     if (!referencia) return;
 
+    // El porcentaje se mide contra la ZONA DE CASILLAS, no contra el elemento
+    // entero. `left: 20%` en una ficha absoluta se resuelve sobre el padding
+    // box del padre, así que medir sobre el borde exterior desplaza la ficha
+    // tanto como mida el borde. `clientLeft` es el grosor del borde y
+    // `clientWidth` el ancho ya sin él: usando esos dos, lo que se mide y lo
+    // que se aplica hablan del mismo rectángulo.
     const marco = referencia.getBoundingClientRect();
-    const px = ((e.clientX - marco.left) / marco.width) * 100;
-    const py = ((e.clientY - marco.top) / marco.height) * 100;
+    const px = ((e.clientX - marco.left - referencia.clientLeft) / referencia.clientWidth) * 100;
+    const py = ((e.clientY - marco.top - referencia.clientTop) / referencia.clientHeight) * 100;
 
     if (navigator.vibrate) navigator.vibrate(30);
 
@@ -241,7 +247,11 @@ export function marcarFicha(e, contenedor) {
     ficha.classList.add("ficha");
     ficha.style.left = `${px}%`;
     ficha.style.top = `${py}%`;
-    contenedor.appendChild(ficha);
+    // Dentro de la MISMA rejilla contra la que se midió el porcentaje. Colgarla
+    // del contenedor funcionaba mientras los dos ocupaban lo mismo, pero es una
+    // coincidencia que se rompe en cuanto uno lleva margen: en el modal del
+    // resultado las fichas salían 85px a la izquierda por eso.
+    referencia.appendChild(ficha);
 
     const casilla = e.target.closest?.('.casilla-tabla');
     if (casilla) {

@@ -407,6 +407,37 @@ module.exports = async function cartas(navegador, url) {
     const jpgs = pedidos.filter(u => /imagenes\/cartas\//.test(u));
     r.igual('en toda la sesión no se pidió ni un JPG de carta', jpgs.length, 0);
 
+    // ── En el móvil las cuatro cartas no se pisan ────────────────────────────
+    // La rejilla no tenía `box-sizing: border-box`, así que su margen blanco y
+    // su filo se SUMABAN al 100% y desbordaban el hueco 22px. Con cuatro cartas
+    // en el tablero del móvil el espacio entre ellas medía -12px: se solapaban.
+    await pagina.setViewport({ width: 390, height: 844 });
+    await recibirDelServidor(pagina, 'info-sala', {
+        modo: 'tradicional', costo: 1,
+        cartas: ['01', '02', '03', '04'].map(id => ({
+            id, cartas: Array.from({ length: 16 }, (_, i) => i + 1), modo: 'normal'
+        }))
+    });
+    await recibirDelServidor(pagina, 'estado-sala-restaurado', {
+        enJuego: true, cartas: ['01', '02', '03', '04'], apostado: true, monedas: 50
+    });
+
+    const enMovil = await pagina.evaluate(() => {
+        const g = [...document.querySelectorAll('#juegoCartas .tabla-generada')]
+            .map(x => x.getBoundingClientRect());
+        if (g.length < 4) return { cuantas: g.length };
+        return {
+            cuantas: g.length,
+            horizontal: Math.round(g[1].left - (g[0].left + g[0].width)),
+            vertical: Math.round(g[2].top - (g[0].top + g[0].height))
+        };
+    });
+
+    r.igual('el tablero del móvil pone las cuatro cartas', enMovil.cuantas, 4);
+    r.cierto('con espacio horizontal entre ellas, no encimadas',
+        enMovil.horizontal >= 8);
+    r.cierto('y espacio vertical también', enMovil.vertical >= 8);
+
     r.cierto('sin errores de JS', errores.length === 0);
     if (errores.length) console.log('       ' + errores.join('\n       '));
 

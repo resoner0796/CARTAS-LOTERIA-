@@ -491,6 +491,20 @@ los de la sala, y la sesión vive en `localStorage`.
   nunca las reponía. Apuesta tras apuesta la cuadrícula bajaba a cero y al ganar
   no volvían. Quien tocara `volarDesdeSaldo` tiene que dejar `dataset.saldo` con
   lo que de verdad queda visible.
+- **Las fichas se colgaban del elemento equivocado.** Su posición es un
+  porcentaje medido sobre `.tabla-generada`, así que solo cae en su sitio si se
+  resuelve contra `.tabla-generada`. En el modal del resultado colgaban de
+  `.prueba-tabla`, que es más ancho y lleva la rejilla centrada dentro: las
+  fichas salían **85px a la izquierda**. Ahora van dentro de la rejilla en los
+  dos sitios. Además se mide contra el *padding box* (`clientLeft`/`clientWidth`)
+  y no contra el borde exterior, porque es sobre el padding box donde el
+  navegador resuelve un `left:%` — medido, la ficha cae a menos de 1px de donde
+  se picó.
+- **A `.tabla-generada` le faltaba `box-sizing: border-box`.** Su margen blanco
+  (9px×2) y su filo (2px×2) se sumaban al `width:100%` y desbordaban el hueco
+  22px. En el tablero del móvil, con cuatro cartas, el espacio entre ellas medía
+  **-12px**: se solapaban. Se veía como «amontonadas», que es un síntoma que
+  suena a falta de margen y era desbordamiento.
 - **Cachear respuestas parciales revienta la Cache API.** Los `<audio>` se piden
   por rangos y el servidor responde `206`; `cache.put()` solo admite respuestas
   completas y rechazaba con "Cache.put() encountered a network error". Como los

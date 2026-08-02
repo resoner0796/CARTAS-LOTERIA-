@@ -203,8 +203,11 @@ h1, h2, h3 {
 .btn-full { width: 100%; margin: 10px 0 0 0; }
 
 .sala-botones-row {
-    display: flex; flex-direction: row; justify-content: center; gap: 15px; 
-    width: 100%; max-width: 500px; margin: 20px 0;
+    display: flex; flex-direction: row; justify-content: center; gap: 15px;
+    /* `auto` a los lados: con `margin: 20px 0` la fila se pegaba a la izquierda
+       en cuanto el contenedor era más ancho que sus 500px, que es lo que pasa
+       en escritorio. */
+    width: 100%; max-width: 500px; margin: 20px auto;
 }
 .sala-botones-row button {
     flex: 1; margin: 0; padding: 1rem 0.5rem; font-size: 0.9rem;
@@ -305,9 +308,15 @@ input::placeholder { color: rgba(255,255,255,0.6); }
     max-width: 45%; 
 }
 
+/* El tablero del móvil: 2×2. El hueco sube a 14px porque con las cuatro cartas
+   pegadas se leen como un bloque y no como cuatro cartas.
+   La base tiene que dejar sitio al hueco (2 × base + hueco ≤ 100%): si no, la
+   cuarta salta a una tercera fila. */
+#juegoCartas { gap: 14px; }
+
 #juegoCartas .carta-juego {
-    flex-basis: 45%; 
-    max-width: 48%;
+    flex-basis: calc(50% - 8px);
+    max-width: calc(50% - 8px);
     position: relative;
     display: flex; justify-content: center;
 }
@@ -1390,8 +1399,14 @@ body {
     #contenedorCartas .carta-img { width: 170px; max-width: 30%; }
 
     /* En el tablero son 4 como mucho: 2×2 se lee mejor y se aprovecha el ancho.
-       Con 3 por fila la cuarta se quedaba sola abajo. */
-    #juegoCartas .carta-juego { flex-basis: calc(50% - 10px); max-width: calc(50% - 10px); }
+       Con 3 por fila la cuarta se quedaba sola abajo.
+
+       El hueco entre cartas se sube a 14px porque en el móvil las cuatro se
+       leen como un bloque si van pegadas. La base tiene que bajar la MITAD del
+       hueco (2 × base + hueco ≤ 100%): si no, la cuarta carta no cabe en la
+       segunda fila y salta a una tercera. */
+    #juegoCartas { gap: 14px; }
+    #juegoCartas .carta-juego { flex-basis: calc(50% - 8px); max-width: calc(50% - 8px); }
 
     .menu-card { min-width: 45%; }
 
@@ -2211,6 +2226,13 @@ textarea::placeholder { color: rgba(255,255,255,0.6); }
     border: 2px solid var(--amarillo-maiz, gold);
     aspect-ratio: 4 / 6.35;     /* 4 columnas × 4 casillas de 1:1.587 */
     width: 100%;
+    /* Las fichas cuelgan de aquí y se colocan en porcentaje: este es el
+       elemento contra el que se mide, así que es el que tiene que anclarlas. */
+    position: relative;
+    /* Sin esto, el margen blanco (9px×2) y el filo (2px×2) se SUMAN al 100% y
+       la carta desborda su hueco 22px. En el tablero del móvil eso hacía que
+       las cuatro se solaparan: el espacio entre ellas medía -12px. */
+    box-sizing: border-box;
 }
 
 .casilla-tabla {
