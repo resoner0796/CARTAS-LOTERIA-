@@ -210,6 +210,12 @@ propósito.
 - [x] Empaquetado con esbuild antes de ofuscar (habilita los módulos)
 - [x] Partir `app.js` en módulos ES — 18 módulos; de 2.030 líneas a ~700
 - [ ] Evaluar migración de Render a VPS propio
+- [ ] Tienda dinámica: mover el catálogo a Firestore (hoy está duplicado en
+      `config.js` y en el backend)
+- [ ] Generador de cartas: packs de 4 tablas por 20 monedas y pantalla «Mis
+      Cartas» — **la generación tiene que ser del servidor**, ver `CLAUDE.md`
+- [ ] A futuro: validación automática de ganadores, cuando las tablas tengan
+      barajas conocidas
 
 ---
 

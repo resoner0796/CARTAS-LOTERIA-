@@ -380,6 +380,43 @@ service worker no se instalaría y nadie se enteraría. Pasó al convertir los f
 Rendimiento:
 - Los audios (1.8 MB) están bien como están.
 
+## En el horizonte: tienda dinámica y cartas propias
+
+Idea de Ulises, sin aterrizar todavía. Se anota con lo que ya se sabe del
+proyecto, para que quien la retome no empiece de cero.
+
+**1. La tienda deja de estar en el código.** Hoy el catálogo vive en DOS sitios:
+`modulos/config.js` (para pintar) y `CATALOGO_ITEMS` del backend (para cobrar).
+Están duplicados y hay que acordarse de tocar los dos. La idea es moverlo a
+Firestore, como ya se hace con `juegos_hub` para el catálogo del Hub.
+
+⚠️ **El precio tiene que seguir saliendo del servidor.** Que el catálogo esté en
+Firestore no cambia la regla: el backend lo lee de ahí y cobra lo que diga; el
+cliente solo pinta. Si en algún momento el precio vuelve a viajar en la
+petición, se reabre el agujero que costó cerrar seis veces.
+
+**2. Generador de cartas.** Vender packs de 4 tablas por 20 monedas, que el
+jugador genera y luego ve en un botón «Mis Cartas» de la pantalla de selección.
+Hay un repo aparte, `generador-de-cartas`, con la lógica.
+
+⚠️ **La generación tiene que ocurrir en el SERVIDOR.** Es el punto que decide si
+esto se puede hacer o no. Hoy la validación de un ganador es visual: el anfitrión
+mira la tabla y decide. Si las tablas las genera el cliente Y el sistema pasa a
+validar solo —que es la gracia de tener tablas con barajas conocidas— entonces
+quien controle su navegador puede fabricarse una tabla con las cartas que acaban
+de salir. Sería el mismo patrón de siempre: una decisión de dinero tomada en el
+cliente.
+
+La forma sana: el servidor genera las tablas, las guarda por usuario en
+Firestore, y el cliente solo las pide y las pinta. El repo del generador puede
+servir de base, pero su lógica acaba en el backend.
+
+**3. Y entonces se abre lo bueno.** Con las tablas guardadas y sus barajas
+conocidas, el servidor puede comprobar una lotería sin que nadie mire: ya sabe
+qué cartas cantó y qué lleva cada tabla. Eso quitaría la parte más incómoda del
+juego —el anfitrión validándose a sí mismo— pero es un cambio grande y conviene
+hacerlo después, no a la vez.
+
 Infra:
 - Render (plan free) duerme a los 15 min. Se mantiene despierto con UptimeRobot.
 - El estado de las salas vive en RAM: un reinicio de Render tumba las partidas activas.
