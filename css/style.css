@@ -275,7 +275,7 @@ input::placeholder { color: rgba(255,255,255,0.6); }
 }
 
 .ficha.saliendo {
-    animation: ficha-despedida 550ms cubic-bezier(0.35, -0.35, 0.65, 1) forwards;
+    animation: ficha-despedida 720ms cubic-bezier(0.34, -0.4, 0.62, 1) forwards;
     animation-delay: var(--retraso, 0ms);
     pointer-events: none;
     z-index: 30;                 /* por encima de las tablas mientras vuela */
@@ -284,6 +284,13 @@ input::placeholder { color: rgba(255,255,255,0.6); }
 /* Quien haya pedido menos movimiento en su sistema ve las fichas irse sin más. */
 @media (prefers-reduced-motion: reduce) {
     .ficha.saliendo { animation: none; opacity: 0; transition: opacity 120ms; }
+}
+
+/* En escritorio las cartas se ven mucho más grandes que en el móvil, y con el
+   tope de 60px la ficha quedaba como una lenteja encima de la baraja. El 25% ya
+   es proporcional; lo que sobraba era el tope. */
+@media (min-width: 1024px) {
+    #juegoCartas .ficha { width: 30%; max-width: 96px; }
 }
 
 /* FICHA EN MODAL VICTORIA (MÁS CHICA) */
@@ -2176,9 +2183,12 @@ textarea::placeholder { color: rgba(255,255,255,0.6); }
 .tabla-generada {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
-    gap: 2px;
+    gap: 3px;
     background: #fff;
-    padding: 4px;
+    /* El margen blanco alrededor de la rejilla es lo que hace que parezca una
+       carta impresa. Con 4px las barajas de la orilla quedaban pegadas al
+       borde y se veía recortada. */
+    padding: 9px;
     border-radius: 6px;
     border: 2px solid var(--amarillo-maiz, gold);
     aspect-ratio: 4 / 6.35;     /* 4 columnas × 4 casillas de 1:1.587 */

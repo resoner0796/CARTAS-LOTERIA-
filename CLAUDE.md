@@ -530,7 +530,7 @@ sueltas.
 | `dinero.prueba.js` | Qué manda el cliente al comprar y transferir; validaciones que deben rebotar sin salir a la red |
 | `escapado.prueba.js` | Que un nickname con HTML no ejecute código |
 | `sesion.prueba.js` | Entrar desde el Hub, con la red lenta a propósito |
-| `cartas.prueba.js` | Que las cartas del servidor se pinten como rejilla, y que no quede ni una petición a los JPG borrados |
+| `cartas.prueba.js` | Que las cartas del servidor se pinten como rejilla, que el aviso de baraja cantada se encienda y se apague al taparla, y que no quede ni una petición a los JPG borrados |
 
 No hace falta backend: interponen `fetch` y el socket. Sí hace falta red para bajar
 el guión de Socket.IO, que lo sirve Render.

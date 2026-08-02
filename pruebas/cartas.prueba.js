@@ -158,6 +158,39 @@ module.exports = async function cartas(navegador, url) {
         mesa.barajas, '17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32');
     r.igual('y tampoco ahí queda una imagen de carta', mesa.imagenesDeCarta, 0);
 
+    // ── El aviso de la baraja cantada ────────────────────────────────────────
+    // La mesa tiene la carta '02', que lleva las barajas 17 a 32.
+    await pagina.evaluate(() => {
+        document.querySelectorAll('.pantalla').forEach(p => p.classList.remove('activa'));
+        document.getElementById('pantallaJuego').classList.add('activa');
+    });
+    await recibirDelServidor(pagina, 'carta-cantada', '17');
+
+    const encendida = await pagina.evaluate(() =>
+        document.querySelectorAll('#juegoCartas .casilla-tabla.baraja-cantada').length);
+    r.igual('al cantar una baraja que tienes, su casilla late', encendida, 1);
+
+    const cantadaNoTenida = await recibirDelServidor(pagina, 'carta-cantada', '54');
+    const apagadaOtra = await pagina.evaluate(() =>
+        document.querySelectorAll('#juegoCartas .casilla-tabla.baraja-cantada').length);
+    r.igual('el evento de la siguiente baraja llega', cantadaNoTenida, 'ok');
+    r.igual('y una que no tienes apaga la anterior', apagadaOtra, 0);
+
+    // Se vuelve a encender y se le pone la ficha encima tocándola.
+    await recibirDelServidor(pagina, 'carta-cantada', '17');
+    const trasMarcar = await pagina.evaluate(() => {
+        const casilla = document.querySelector('#juegoCartas .casilla-tabla.baraja-cantada');
+        if (!casilla) return { latiendo: -1, fichas: -1 };
+        // Se pica la baraja misma, que es lo que toca el dedo.
+        casilla.querySelector('img').click();
+        return {
+            latiendo: document.querySelectorAll('#juegoCartas .baraja-cantada').length,
+            fichas: document.querySelectorAll('#juegoCartas .ficha').length
+        };
+    });
+    r.igual('poner la ficha encima apaga el latido', trasMarcar.latiendo, 0);
+    r.igual('y la ficha se queda puesta', trasMarcar.fichas, 1);
+
     // ── Modo esquinas: los huecos ────────────────────────────────────────────
     await recibirDelServidor(pagina, 'info-sala', {
         modo: 'pozo', costo: 2, cartas: CARTAS_ESQUINAS

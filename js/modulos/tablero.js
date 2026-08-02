@@ -242,12 +242,20 @@ export function marcarFicha(e, contenedor) {
     ficha.style.left = `${px}%`;
     ficha.style.top = `${py}%`;
     contenedor.appendChild(ficha);
+
+    // La casilla marcada deja de latir. El aviso está para ayudar a encontrar la
+    // baraja que acaban de cantar, y una vez tapada ya no ayuda: sigue llamando
+    // la atención sobre algo que ya está resuelto.
+    //
+    // Se busca por dónde se tocó, no por el número: es lo único que dice QUÉ
+    // casilla se acaba de tapar, que es lo que hay que apagar.
+    e.target.closest?.('.casilla-tabla')?.classList.remove('baraja-cantada');
 }
 
 /** Cuánto vuelan las fichas al salir despedidas, y cuánto tardan. */
-const VUELO = 260;                  // px desde el centro de su tabla
-const DURACION_VUELO = 550;         // ms, igual que la animación del CSS
-const CASCADA = 200;                // ms de diferencia entre la primera y la última
+const VUELO = 320;                  // px desde el centro de su carta
+const DURACION_VUELO = 720;         // ms, igual que la animación del CSS
+const CASCADA = 260;                // ms de diferencia entre la primera y la última
 
 /**
  * Quita las fichas del tablero.
@@ -375,13 +383,12 @@ export function resetearTablero() {
 /**
  * Enciende en la mesa las barajas iguales a la que acaban de cantar.
  *
- * Solo vale para las cartas PROPIAS: en esas cada casilla es una imagen suelta
- * con su número, así que se puede señalar. Las 53 de siempre son una imagen
- * entera y ahí no hay nada que buscar — el jugador la localiza a ojo, como en
- * la mesa de verdad.
+ * Vale para todas las cartas desde que dejaron de ser imágenes: cada casilla es
+ * una baraja suelta con su número, así que se puede señalar.
  *
  * Se resalta, NO se marca: poner la ficha sigue siendo cosa de quien juega. Si
- * se marcara solo, no habría partida.
+ * se marcara solo, no habría partida. Y en cuanto se pone la ficha encima, el
+ * aviso se apaga —lo hace `marcarFicha()`— porque ya cumplió.
  */
 function resaltarBarajaCantada(numeroConCeros) {
     // Primero se apaga la anterior: el aviso late hasta que cantan la siguiente,
