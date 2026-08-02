@@ -501,6 +501,22 @@ module.exports = async function cartas(navegador, url) {
     r.igual('dentro de la carta, el hueco entre columnas', dentro.columnas, 3);
     r.igual('es el mismo que entre filas', dentro.filas, dentro.columnas);
 
+    // La ficha se mide en porcentaje de la CARTA, no de la casilla, y eso se
+    // presta a que sobresalga sin que se note al escribirlo: con el 25% ocupaba
+    // el 124% de su casilla y tapaba a las vecinas.
+    const laFicha = await pagina.evaluate(() => {
+        const casilla = document.querySelector('#juegoCartas .casilla-tabla');
+        const r = casilla.getBoundingClientRect();
+        casilla.querySelector('img').dispatchEvent(new MouseEvent('click', {
+            bubbles: true, clientX: r.left + r.width / 2, clientY: r.top + r.height / 2
+        }));
+        const f = document.querySelector('#juegoCartas .ficha');
+        return f ? Math.round(f.getBoundingClientRect().width / r.width * 100) : -1;
+    });
+    r.cierto(`la ficha cabe en su casilla (ocupa el ${laFicha}%)`,
+        laFicha > 0 && laFicha <= 100);
+    r.cierto('y se ve, no es un punto', laFicha >= 60);
+
     r.cierto('sin errores de JS', errores.length === 0);
     if (errores.length) console.log('       ' + errores.join('\n       '));
 

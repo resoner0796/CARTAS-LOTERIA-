@@ -251,8 +251,13 @@ input::placeholder { color: rgba(255,255,255,0.6); }
 /* --- FICHA (AJUSTADA TAMAÑO MÓVIL) --- */
 .ficha {
     position: absolute;
-    width: 25%; 
-    max-width: 60px;
+    /* ⚠️ El porcentaje es sobre la CARTA, no sobre la casilla. Una carta son 4
+       columnas, así que el 25% de la carta es más que una casilla: sobra el
+       margen del marco y los huecos. Medido, con 25% la ficha ocupaba el 124%
+       de su casilla — se salía por los cuatro lados y tapaba a las vecinas.
+       Con 18% queda en torno al 85%: se ve tapada sin invadir nada. */
+    width: 18%;
+    max-width: 64px;
     height: auto;
     top: 50%; left: 50%;
     transform: translate(-50%, -50%);
@@ -293,7 +298,10 @@ input::placeholder { color: rgba(255,255,255,0.6); }
    tope de 60px la ficha quedaba como una lenteja encima de la baraja. El 25% ya
    es proporcional; lo que sobraba era el tope. */
 @media (min-width: 1024px) {
-    #juegoCartas .ficha { width: 30%; max-width: 96px; }
+    /* Mismo porcentaje que en el móvil: al ser relativo a la carta, escala solo
+       y guarda la proporción con la casilla. Solo sube el tope, porque aquí las
+       cartas son mucho más grandes. */
+    #juegoCartas .ficha { width: 18%; max-width: 92px; }
 }
 
 /* FICHA EN MODAL VICTORIA (MÁS CHICA) */
@@ -1649,13 +1657,11 @@ textarea::placeholder { color: rgba(255,255,255,0.6); }
        encoge a su contenido y el `text-align` no tiene sobre qué alinear. El
        ancho tiene que ser el mismo que el del historial para que el número
        quede a plomo con su esquina. */
-    /* Las mismas medidas que `.historial-container`, para que el número quede a
-       plomo con su esquina derecha. La pantalla de juego es un flex en columna
-       centrado: sin ancho propio el div se encoge a su contenido y el
-       `text-align` no tiene sobre qué alinear — el número salía centrado. */
+    /* Centrado sobre el historial: es el sitio donde la vista ya está mirando,
+       porque es donde aparece cada baraja nueva. */
     width: 95%;
     max-width: 600px;
-    text-align: right;
+    text-align: center;
     font-size: 0.8rem;
     font-weight: bold;
     color: var(--amarillo-maiz, gold);
@@ -2006,6 +2012,11 @@ textarea::placeholder { color: rgba(255,255,255,0.6); }
 /* Una carta propia en la prueba: la rejilla hace de "imagen", con el mismo
    marco dorado que llevaría una de siempre. */
 #modalCartaGanadora .prueba-tabla > .tabla-generada {
+    /* El marco de 12px es para la carta del tablero, que mide 170px o más. Aquí
+       la carta va a 150px como mucho y ese mismo marco se come el borde: se
+       ajusta a la escala en la que se enseña. */
+    padding: 5px;
+    gap: 2px;
     width: 100%;
     box-shadow: 0 0 18px rgba(255, 234, 0, 0.5);
     animation: dealCard 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
@@ -2301,15 +2312,15 @@ textarea::placeholder { color: rgba(255,255,255,0.6); }
 
 .casilla-tabla {
     background: #fff;
-    /* Ni esquinas redondeadas ni filete: los bordes son cosa de la carta, no de
-       cada baraja. Con filete negro en las 16 la carta parecía una cuadrícula
-       de recortes en vez de una carta impresa. */
+    /* Sin esquinas redondeadas: una baraja es un rectángulo. El contorno negro
+       sí se queda — es lo que le da el aire de carta impresa; sin él las
+       barajas se funden unas con otras y parece un collage. */
     border-radius: 0;
     overflow: hidden;
     display: flex;
     align-items: center;
     justify-content: center;
-    border: 0;
+    border: 1px solid #111;
     box-sizing: border-box;
 }
 .casilla-tabla img {

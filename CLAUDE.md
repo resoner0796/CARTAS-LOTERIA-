@@ -511,6 +511,11 @@ los de la sala, y la sesión vive en `localStorage`.
   y no contra el borde exterior, porque es sobre el padding box donde el
   navegador resuelve un `left:%` — medido, la ficha cae a menos de 1px de donde
   se picó.
+- **La ficha se mide en porcentaje de la CARTA, no de la casilla.** Una carta
+  son cuatro columnas más el marco y los huecos, así que el 25% de la carta es
+  MÁS que una casilla: medido, la ficha ocupaba el **124%** de la suya y tapaba
+  a las vecinas. Al escribir el CSS no se nota, porque 25% con cuatro columnas
+  parece exacto. Está en el 18%, que da un 85%, y hay una prueba que lo mide.
 - **El `aspect-ratio` de la carta separaba las filas.** `.tabla-generada` tenía
   `aspect-ratio: 4/6.35` y las filas en `1fr`. Ese ratio pedía más altura de la
   que necesitan cuatro casillas, y las filas se repartían el sobrante: el hueco
